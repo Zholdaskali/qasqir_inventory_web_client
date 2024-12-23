@@ -5,6 +5,7 @@ import successIcon from '../assets/success.svg'
 
 import inviteIllustration from '../assets/illustrations/invite.svg'
 import { toast } from "react-toastify";
+import { API_CREATE_INVITE } from "../api/API"
 
 const CreateInvite = () => {
 
@@ -19,7 +20,7 @@ const CreateInvite = () => {
         e.preventDefault();
 
         try{
-            const path = 'http://localhost:8081/api/v1/admin/auth/sign-up-invite';
+            const path = API_CREATE_INVITE;
             const response = await axios.post(path,
                 {
                     userLogin,

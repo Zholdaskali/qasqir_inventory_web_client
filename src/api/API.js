@@ -8,6 +8,7 @@ const swagger = "http://localhost:8081/swagger-ui/index.html#/"
 const API_BASE = 'http://localhost:8081'
 const API_PATH_ADMIN = "/api/v1/admin/"
 const API_PATH_USER = "/api/v1/user/"
+const API_PATH_EMPLOYEE = "/api/v1/employee"
 const API_PATH_WAREHOUSE_MANAGER = "/api/v1/warehouse-manager/"
 
 // API BASES 
@@ -34,6 +35,10 @@ export const API_GET_ORGANIZATION = API_BASE + API_PATH_USER + "organization"
 
 
 // USER API`s
+
+// --------------------------------------------------------------------- //
+// WAREHOUSE-MANAGER API`s
+export const API_GET_WAREHOUSE_LIST = API_BASE + API_PATH_EMPLOYEE + "/warehouses"
 
 // --------------------------------------------------------------------- //
 

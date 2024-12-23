@@ -36,13 +36,13 @@ const ConfirmationWrapper = ({ title, message, children, onConfirm }) => {
                         <hr className="w-3/4 my-5" />
                         <div className="flex w-2/3 justify-between">
                             <button
-                                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg"
+                                className="bg-[#FFF2EA] hover:bg-red-300 text-[#E84D43] px-4 py-2 rounded-lg"
                                 onClick={handleCloseConfirmation}
                             >
                                 Отмена
                             </button>
                             <button
-                                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg"
+                                className="bg-[#E3F3E9] hover:bg-green-300 text-[#11B066] px-4 py-2 rounded-lg text-bold"
                                 onClick={handleConfirm}
                             >
                                 Подтвердить

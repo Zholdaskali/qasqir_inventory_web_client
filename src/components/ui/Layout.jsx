@@ -102,7 +102,7 @@ const Layout = ({ setIsAuthenticated }) => {
                             <img src="/logo.svg" alt="" className="w-24 h-24" />
                             <h1 className=" text-main-dull-blue font-medium  text-lg">QASQIR INVENTORY</h1>
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col w-full items-start gap-y-5 text-sm">
                             {hasRole("admin") && (
                                 <div className="flex flex-col w-full items-start gap-y-5 text-sm">
                                     <button onClick={handleLogsList} className="flex justify-between items-center w-full">
@@ -138,6 +138,15 @@ const Layout = ({ setIsAuthenticated }) => {
                             )}
                             {hasRole("warehouse_manager") && (
                                 <>
+                                <div className="flex flex-col w-full items-start gap-y-5 text-sm">  
+                                    <NavLink to="/warehouse-list" className="flex items-center justify-between gap-x-3 w-full">
+                                        <div className="flex items-center  gap-x-3">
+                                            <FaUsers size={30} />
+                                            <p>Склады</p>
+                                        </div>
+                                        <IoIosArrowForward size={15} />
+                                    </NavLink>
+                                </div>
                                 </>
                             )}
                             {hasRole("employee") || hasRole("storekeeper") && (
