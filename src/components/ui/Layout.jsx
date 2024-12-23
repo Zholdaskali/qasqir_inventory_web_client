@@ -13,6 +13,7 @@ import { VscOrganization } from "react-icons/vsc";
 import { GrUser } from "react-icons/gr";
 import { TbMessage2Search } from "react-icons/tb";
 import { toast } from "react-toastify";
+import { FaWarehouse } from 'react-icons/fa';
 // icons 
 
 import { clearUser } from "../../store/slices/userSlice";
@@ -141,7 +142,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                 <div className="flex flex-col w-full items-start gap-y-5 text-sm">  
                                     <NavLink to="/warehouse-list" className="flex items-center justify-between gap-x-3 w-full">
                                         <div className="flex items-center  gap-x-3">
-                                            <FaUsers size={30} />
+                                            <FaWarehouse size={30} />
                                             <p>Склады</p>
                                         </div>
                                         <IoIosArrowForward size={15} />

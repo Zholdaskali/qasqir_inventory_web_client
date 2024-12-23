@@ -24,7 +24,7 @@ import EditProfile from './page/profile-pages/EditProfile'
 import OrganizationProfile from './page/organization-pages/OrganizationProfile'
 
 // Warehouse-manager page
-import WarehouseList from './page/WarehouseList'
+import WarehouseList from './page/warehouse-pages/WarehouseList'
 
 import { useSelector } from 'react-redux'
 import InviteList from './page/super-admin-pages/InviteList'

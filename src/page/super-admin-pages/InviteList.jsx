@@ -36,7 +36,7 @@ const InviteList = () => {
     return (
         <div className="h-[90vh] flex flex-col w-full justify-center items-center">
             <div className='flex w-full justify-between items-center border-b py-5'>
-                <h1 className="text-2xl">Приглашенные Пользователи</h1>
+                <h1 className="text-2xl">Приглашения</h1>
                 <button
                     onClick={fetchInviteList}
                     className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
