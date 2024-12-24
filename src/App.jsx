@@ -57,12 +57,12 @@ function App() {
                   <Route path='edit-organization-profile' element={<EditOrganizationProfile/>}/>
                 </>
               )}
-              {(hasRole("warehouse_manager")) && (
+              {(hasRole("employee")) && (
                 <>
                 <Route path='warehouse-list' element={<WarehouseList />} />
                 </>
               )}
-              {hasRole("employee") &&  (
+              {hasRole("warehouse_manager") &&  (
                 <>
                 </>
               )}

@@ -6,20 +6,19 @@ import { IoIosNotificationsOutline } from "react-icons/io";
 import filterIcon from "../../assets/icons/filter.svg";
 import { API_GET_WAREHOUSE_LIST } from "../../api/API";
 import { saveWarehouseList } from "../../store/slices/warehouseListSlice";
-import WarehouseDetailPanel from "../../page/warehouse-pages/WarehouseDetailPanel"; // Импорт панели деталей
-import WarehouseSaveModalComponent from "../../components/log-components/WarehouseSaveModal"; // Переименовали компонент
+import WarehouseDetailPanel from "../../page/warehouse-pages/WarehouseDetailPanel";
+import WarehouseSaveModal from "../../components/modal-components/WarehouseSaveModal";
 
 const WarehouseList = () => {
     const [warehouses, setWarehouses] = useState([]);
     const [selectedWarehouse, setSelectedWarehouse] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [isWarehouseButtonDisabled, setWarehouseButtonDisabled] = useState(false); // Состояние для кнопки
-    const [isWarehouseSaveModalOpen, setIsWarehouseSaveModalOpen] = useState(false); // Состояние для модалки
+    const [isWarehouseButtonDisabled, setWarehouseButtonDisabled] = useState(false);
+    const [isWarehouseSaveModalOpen, setIsWarehouseSaveModalOpen] = useState(false);
 
     const authToken = useSelector((state) => state.token.token);
     const dispatch = useDispatch();
 
-    // Функция для загрузки списка складов
     const fetchWarehouseList = async () => {
         try {
             const response = await axios.get(API_GET_WAREHOUSE_LIST, {
@@ -27,32 +26,27 @@ const WarehouseList = () => {
             });
             setWarehouses(response.data.body);
             dispatch(saveWarehouseList(response.data.body));
-            toast.success("Склады успешно загружены");
         } catch (error) {
             toast.error("Ошибка загрузки складов");
         }
     };
 
-    // Загружаем список складов при монтировании компонента
     useEffect(() => {
         fetchWarehouseList();
     }, [authToken]);
 
-    // Функция для выбора склада
     const handleWarehouseClick = (warehouse) => {
         setSelectedWarehouse(warehouse);
         setIsPanelOpen(true);
     };
 
-    // Закрытие панели с деталями склада
     const handleClosePanel = () => {
         setIsPanelOpen(false);
-        setTimeout(() => setSelectedWarehouse(null), 300); // Сброс выбранного склада после закрытия
+        setTimeout(() => setSelectedWarehouse(null), 300);
     };
 
-    // Функция для открытия модалки для создания нового склада
     const handleCreateWarehouse = () => {
-        setIsWarehouseSaveModalOpen(true); // Открытие модального окна
+        setIsWarehouseSaveModalOpen(true);
     };
 
     return (
@@ -78,7 +72,6 @@ const WarehouseList = () => {
                     </div>
                 </div>
 
-                {/* Карточки складов */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                     {warehouses.length > 0 ? (
                         warehouses.map((warehouse) => (
@@ -96,7 +89,7 @@ const WarehouseList = () => {
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{
-                                                    width: `${warehouse.usagePercent}%`, // Отображаем процент использования
+                                                    width: `${warehouse.usagePercent = 90}%`,
                                                     backgroundColor:
                                                         warehouse.usagePercent < 50
                                                             ? "green"
@@ -133,26 +126,23 @@ const WarehouseList = () => {
                 </div>
             </div>
 
-            {/* Кнопка добавления склада */}
             <button
-                className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white ${isWarehouseButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
+                className={`bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white ${
+                    isWarehouseButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
                 }`}
                 onClick={handleCreateWarehouse}
-                disabled={isWarehouseButtonDisabled} // Отключаем кнопку, если необходимо
+                disabled={isWarehouseButtonDisabled}
             >
                 +
             </button>
 
-            {/* Модалка для добавления склада */}
             {isWarehouseSaveModalOpen && (
-                <WarehouseSaveModalComponent
+                <WarehouseSaveModal
                     authToken={authToken}
-                    setCreateWarehouseModal={setIsWarehouseSaveModalOpen}
-                    setIsWarehouseButtonDisabled={setWarehouseButtonDisabled}
+                    setIsWarehouseSaveModalOpen={setIsWarehouseSaveModalOpen}
                 />
             )}
 
-            {/* Панель с деталями склада */}
             <WarehouseDetailPanel
                 warehouse={selectedWarehouse}
                 isOpen={isPanelOpen}

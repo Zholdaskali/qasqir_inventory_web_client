@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -56,38 +55,36 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     };
 
     return (
-        <div className="flex absolute top-0 left-0 z-30 items-center justify-center w-full h-screen">
-            <div className="bg-white rounded-xl z-20 py-16 px-12 shadow-md w-1/2">
-                <form
-                    onSubmit={createInvite}
-                    className="flex flex-col items-center gap-y-10 p-5 text-center"
-                >
-                    <h1 className="text-2xl self-start text-main-dull-gray">
-                        Создать приглашение
-                    </h1>
-                    <div className="w-full flex flex-row gap-x-5">
-                        <div className="flex flex-col items-start w-1/2 gap-y-3">
-                            <label htmlFor="firstname" className="ml-5">
-                                Имя
-                            </label>
+        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50">
+            {/* Фон, который будет под модальным окном */}
+            <div
+                className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 z-10"
+                onClick={() => setCreateInviteModal(false)}
+            ></div>
+
+            {/* Модальное окно */}
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-4/5 lg:w-3/5 xl:w-2/5 z-20">
+                <form onSubmit={createInvite} className="flex flex-col gap-y-8 text-center">
+                    <h1 className="text-2xl font-semibold text-main-dull-gray mb-6">Создать приглашение</h1>
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="flex flex-col items-start gap-y-3">
+                            <label htmlFor="firstname" className="ml-3 text-left text-main-dull-blue">Имя</label>
                             <input
                                 type="text"
                                 id="firstname"
-                                className="px-5 py-3 rounded-xl border-b text-main-dull-blue w-full"
+                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
                                 placeholder="Имя пользователя"
                                 required
                                 value={inviteUserFirstName}
                                 onChange={(e) => setInviteFirstName(e.target.value)}
                             />
                         </div>
-                        <div className="flex flex-col items-start w-1/2 gap-y-3">
-                            <label htmlFor="lastname" className="ml-5">
-                                Фамилия
-                            </label>
+                        <div className="flex flex-col items-start gap-y-3">
+                            <label htmlFor="lastname" className="ml-3 text-left text-main-dull-blue">Фамилия</label>
                             <input
                                 type="text"
                                 id="lastname"
-                                className="px-5 py-3 rounded-xl border-b text-main-dull-blue w-full"
+                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
                                 placeholder="Фамилия пользователя"
                                 required
                                 value={inviteUserLastName}
@@ -95,29 +92,25 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                             />
                         </div>
                     </div>
-                    <div className="w-full flex flex-row gap-x-5">
-                        <div className="flex flex-col items-start w-1/2 gap-y-3">
-                            <label htmlFor="userNumber" className="ml-5">
-                                Номер телефона
-                            </label>
+                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div className="flex flex-col items-start gap-y-3">
+                            <label htmlFor="userNumber" className="ml-3 text-left text-main-dull-blue">Номер телефона</label>
                             <input
                                 type="tel"
                                 id="userNumber"
-                                className="px-5 py-3 rounded-xl border-b text-main-dull-blue w-full"
+                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
                                 placeholder="Номер телефона"
                                 required
                                 value={inviteUserNumber}
                                 onChange={(e) => setInviteUserNumber(e.target.value)}
                             />
                         </div>
-                        <div className="flex flex-col items-start w-1/2 gap-y-3">
-                            <label htmlFor="userEmail" className="ml-5">
-                                Почта пользователя
-                            </label>
+                        <div className="flex flex-col items-start gap-y-3">
+                            <label htmlFor="userEmail" className="ml-3 text-left text-main-dull-blue">Почта пользователя</label>
                             <input
                                 type="email"
                                 id="userEmail"
-                                className="px-5 py-3 rounded-xl border-b text-main-dull-blue w-full"
+                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
                                 placeholder="Почта пользователя"
                                 required
                                 value={inviteEmail}
@@ -126,13 +119,11 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                         </div>
                     </div>
                     <div className="flex flex-col w-full gap-y-3 items-start">
-                        <label htmlFor="password" className="ml-5">
-                            Пароль для пользователя
-                        </label>
+                        <label htmlFor="password" className="ml-3 text-left text-main-dull-blue">Пароль для пользователя</label>
                         <input
                             id="password"
                             type="password"
-                            className="px-5 py-3 rounded-xl border-b text-main-dull-blue w-full"
+                            className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
                             placeholder="Пароль для пользователя"
                             required
                             value={invitePassword}
@@ -142,7 +133,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     <div className="w-full">
                         <button
                             type="button"
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-xl"
+                            className="bg-main-dull-blue hover:bg-main-purp-dark text-white px-6 py-2 rounded-xl w-full sm:w-auto mt-4"
                             onClick={() => setIsRoleModalOpen(true)}
                         >
                             Выбрать роли
@@ -158,16 +149,13 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     </div>
                     <button
                         type="submit"
-                        className="bg-main-dull-blue self-end hover:bg-main-dull-gray transition-colors text-white px-8 py-2 rounded-xl"
+                        className="bg-main-dull-blue self-end hover:bg-main-dull-gray text-white px-8 py-2 rounded-xl mt-4"
                     >
                         Создать приглашение
                     </button>
                 </form>
             </div>
-            <div
-                className="w-full h-screen absolute z-10 backdrop-blur-md"
-                onClick={() => setCreateInviteModal(false)}
-            ></div>
+
             <Notification />
             {isRoleModalOpen && (
                 <InviteRoleSelectionModal

@@ -1,5 +1,12 @@
 import { useEffect, useState } from 'react';
 import { YMaps, Map, Placemark } from 'react-yandex-maps';
+import { API_DELETE_WAREHOUSE } from '../../api/API';
+import { useSelector } from "react-redux";
+import axios from "axios";
+import ConfirmationWrapper from "../../components/ui/ConfirmationWrapper";
+import Notification from "../../components/notification/Notification";
+import { NavLink } from "react-router-dom";
+
 
 const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const [mapState, setMapState] = useState({
@@ -37,6 +44,28 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
             geocodeAddress(warehouse.location);
         }
     }, [ymaps, warehouse?.location]);
+
+    const authToken = useSelector((state) => state.token.token);
+
+    // Удаление warehouse
+    const handleDeleteWarehouse = async () => {
+        try {
+            const response = await axios.delete(
+                `${API_DELETE_WAREHOUSE}${warehouse.id}`,
+                {
+                    headers: { "Auth-token": authToken },
+                }
+            );
+            console.log(response.data.message);
+            onClose(true);
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Ошибка при удалении склада";
+            console.log(errorMessage);
+        }
+    };
+
+    const user = useSelector((state) => state.user)
+    const hasRole = (role) => user?.userRoles?.includes(role)
 
     return (
         <>
@@ -101,8 +130,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                             {/* Карта */}
                             <div>
                                 <h3 className="font-semibold mb-2">Расположение</h3>
-                                <div className="h-96 rounded-lg overflow-hidden">
-                                    <YMaps query={{ apikey: 'ваш-api-ключ' }}>
+                                <div className="h-96 rounded-lg overflow-hidden relative">
+                                    {loading && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                                            <p className="text-gray-600">Загрузка карты...</p>
+                                        </div>
+                                    )}
+                                    <YMaps query={{ apikey: '50973b40-0383-4443-b280-6bc7f3905673' }}>
                                         <Map
                                             defaultState={mapState}
                                             state={mapState}
@@ -127,11 +161,6 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                             )}
                                         </Map>
                                     </YMaps>
-                                    {loading && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                                            <p className="text-gray-600">Загрузка карты...</p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -142,10 +171,30 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                         <button className="flex-1 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">
                             Список товаров
                         </button>
-                        <button className="flex-1 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">
-                            Настройка
-                        </button>
+                        {
+                            hasRole('warehouse_manager') && (
+                                <>
+                                <button className="flex-1 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                                    Настройка
+                                </button>
+
+                                <ConfirmationWrapper
+                                    title="Все данные пользователя будут удалены !!!"
+                                    onConfirm={handleDeleteWarehouse}
+                                >
+                                    <button className="bg-[#FFF2EA] hover:bg-red-300 text-[#E84D43] px-4 py-2 rounded-lg">
+                                        Удалить склад
+                                    </button>
+                                </ConfirmationWrapper>
+                                </>
+                            )
+                        }
                     </div>
+                </div>
+
+                {/* Уведомления */}
+                <div className="fixed top-0 right-0 z-20 p-4">
+                    <Notification />
                 </div>
             </div>
         </>

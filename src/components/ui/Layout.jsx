@@ -137,7 +137,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                     </NavLink>
                                 </div>
                             )}
-                            {hasRole("warehouse_manager") && (
+                            {hasRole("employee") && (
                                 <>
                                 <div className="flex flex-col w-full items-start gap-y-5 text-sm">  
                                     <NavLink to="/warehouse-list" className="flex items-center justify-between gap-x-3 w-full">
@@ -150,7 +150,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                 </div>
                                 </>
                             )}
-                            {hasRole("employee") || hasRole("storekeeper") && (
+                            {hasRole("warehouse_manager") || hasRole("storekeeper") && (
                                 <>
                                 </>
                             )}

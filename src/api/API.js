@@ -39,8 +39,10 @@ export const API_GET_ORGANIZATION = API_BASE + API_PATH_USER + "organization"
 // --------------------------------------------------------------------- //
 // WAREHOUSE-MANAGER API`s
 export const API_GET_WAREHOUSE_LIST = API_BASE + API_PATH_EMPLOYEE + "warehouses"
+
 export const API_CREATE_WAREHOUSE = API_BASE + API_PATH_WAREHOUSE_MANAGER + "warehouses"
 
+export const API_DELETE_WAREHOUSE = API_BASE + API_PATH_WAREHOUSE_MANAGER + "warehouses/"
 // --------------------------------------------------------------------- //
 
 // ADMIN API`s
