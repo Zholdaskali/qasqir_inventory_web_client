@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { IoIosNotificationsOutline } from "react-icons/io";
+import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import filterIcon from "../../assets/icons/filter.svg";
 import { API_GET_WAREHOUSE_LIST } from "../../api/API";
 import { saveWarehouseList } from "../../store/slices/warehouseListSlice";
@@ -53,9 +54,16 @@ const WarehouseList = () => {
         <div className="w-full h-full px-5 py-5 rounded-xl">
             <div className="flex flex-col gap-y-5 overflow-auto">
                 <div className="flex w-full items-center justify-between border-b py-10">
-                    <h1 onClick={fetchWarehouseList} className="text-2xl w-full">
-                        Склады
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl w-full">Склады</h1>
+                        <button
+                            onClick={fetchWarehouseList}
+                            className="flex items-center justify-center bg-gray-200 p-2 rounded-full hover:bg-gray-300"
+                            title="Обновить"
+                        >
+                            <HiRefresh className="w-6 h-6 text-gray-600" />
+                        </button>
+                    </div>
                     <div className="flex items-center w-2/5 gap-x-5">
                         <input
                             type="search"
@@ -72,7 +80,7 @@ const WarehouseList = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 item-center">
                     {warehouses.length > 0 ? (
                         warehouses.map((warehouse) => (
                             <div
@@ -89,7 +97,7 @@ const WarehouseList = () => {
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{
-                                                    width: `${warehouse.usagePercent = 90}%`,
+                                                    width: `${warehouse.usagePercent = 10 || 0}%`,
                                                     backgroundColor:
                                                         warehouse.usagePercent < 50
                                                             ? "green"

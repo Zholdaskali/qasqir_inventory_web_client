@@ -23,8 +23,9 @@ import EditProfile from './page/profile-pages/EditProfile'
 // Organization 
 import OrganizationProfile from './page/organization-pages/OrganizationProfile'
 
-// Warehouse-manager page
+// Warehouse-manager pagex1
 import WarehouseList from './page/warehouse-pages/WarehouseList'
+import WarehouseZoneList from './page/warehouse-pages/WarehouseZoneList'
 
 import { useSelector } from 'react-redux'
 import InviteList from './page/super-admin-pages/InviteList'
@@ -60,11 +61,12 @@ function App() {
               {(hasRole("employee")) && (
                 <>
                 <Route path='warehouse-list' element={<WarehouseList />} />
+                <Route path='warehouse-structure' element={<WarehouseZoneList />} />
                 </>
               )}
               {hasRole("warehouse_manager") &&  (
                 <>
-                </>
+                  </>
               )}
               {hasRole("storekeeper") &&  (
                 <>

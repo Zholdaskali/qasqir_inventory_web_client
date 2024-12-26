@@ -9,6 +9,7 @@ import { saveUserList } from "../store/slices/userListSlice";
 import avatar from "../assets/placeholders/avatar.png";
 import filterIcon from "../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
+import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import CreateInviteModal from "../components/super-admin-components/log-components/CreateInviteModal";
 import UserProfileModal from "../components/modal-components/UserProfileModal";
 
@@ -16,7 +17,7 @@ const UsersList = () => {
     const authToken = useSelector((state) => state.token.token);
     const dispatch = useDispatch();
     const users = useSelector((state) => state.userList);
-    const user = useSelector((state) => state.user)
+    const user = useSelector((state) => state.user);
 
     const [userModal, setUserModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -46,23 +47,39 @@ const UsersList = () => {
     };
 
     const handleCreateInviteModal = () => {
-        setCreateInviteModal(true)
-    }
+        setCreateInviteModal(true);
+    };
 
     const handleModalClose = (isDeleted) => {
         if (isDeleted) fetchUserList(); // Повторно получаем данные после удаления
         setUserModal(false);
     };
+
     return (
         <div className="w-full h-full px-5 py-5 rounded-xl">
             <div className="flex flex-col gap-y-5 overflow-auto">
-                <div className="flex w-full items-center justify- border-b py-10">
-                    <h1 onClick={fetchUserList} className="text-2xl w-full">
-                        Пользователи
-                    </h1>
+                <div className="flex w-full items-center justify-between border-b py-10">
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-2xl w-full">Пользователи</h1>
+                        <button
+                            onClick={fetchUserList}
+                            className="flex items-center justify-center bg-gray-200 p-2 rounded-full hover:bg-gray-300"
+                            title="Обновить"
+                        >
+                            <HiRefresh className="w-6 h-6 text-gray-600" />
+                        </button>
+                    </div>
                     <div className="flex items-center w-2/5 gap-x-5">
-                        <input type="search" className="shadow-inner w-full px-6 py-2 rounded-lg border" placeholder="Поиск" />
-                        <img src={filterIcon} alt="filter" className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue" />
+                        <input
+                            type="search"
+                            className="shadow-inner w-full px-6 py-2 rounded-lg border"
+                            placeholder="Поиск"
+                        />
+                        <img
+                            src={filterIcon}
+                            alt="filter"
+                            className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue"
+                        />
                         <div className="w-0.5 bg-main-dull-gray h-8 bg-opacity-65"></div>
                         <IoIosNotificationsOutline size={50} />
                     </div>
@@ -85,7 +102,10 @@ const UsersList = () => {
                         {users.map((users) => (
                             <tr
                                 key={users.userId}
-                                className={`${users.email == user.email ? 'bg-[#E3F3E9] hover:bg-[#11b0666e]' : 'bg-white hover:bg-gray-50'} border-b border-full  transition cursor-pointer`}
+                                className={`${users.email === user.email
+                                    ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
+                                    : "bg-white hover:bg-gray-50"
+                                    } border-b border-full transition cursor-pointer`}
                                 onClick={() => handleUserModal(users)}
                             >
                                 <td className="p-5">
@@ -102,15 +122,21 @@ const UsersList = () => {
                                 <td className="py-4 px-2">
                                     <div className="flex items-center justify-start text-center text-white">
                                         <div
-                                            className={`${users.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
+                                            className={`${users.emailVerified
+                                                ? "bg-[#E3F3E9]"
+                                                : "bg-[#FFF2EA]"
                                                 } text-center flex items-center justify-center px-2 rounded-full`}
                                         >
                                             <div
-                                                className={`${users.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"
+                                                className={`${users.emailVerified
+                                                    ? "bg-[#11B066]"
+                                                    : "bg-[#E84D43]"
                                                     } h-3 w-3 rounded-full`}
                                             ></div>
                                             <p
-                                                className={`${users.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"
+                                                className={`${users.emailVerified
+                                                    ? "text-[#11B066]"
+                                                    : "text-[#E84D43]"
                                                     } px-2 py-1 rounded`}
                                             >
                                                 {`${users.emailVerified ? "Подтверждено" : "Не подтверждено"}`}
@@ -126,7 +152,9 @@ const UsersList = () => {
                 </table>
                 {/* Button */}
                 <button
-                    className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white ${isInviteButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
+                    className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white ${isInviteButtonDisabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                         }`}
                     onClick={handleCreateInviteModal}
                     disabled={isInviteButtonDisabled}
