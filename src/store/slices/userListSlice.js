@@ -1,13 +1,12 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// Функция для преобразования формата даты
 const formatDate = (isoString) => {
   const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/); // Извлекаем только дату
   if (!match) {
     return "Неправильная дата";
   }
   const [, year, month, day] = match;
-  return `${month}/${day}/${year}`; // Формат MM/DD/YYYY
+  return `${month}/${day}/${year}`;
 };
 
 const initialState = [];
@@ -17,13 +16,12 @@ const userListSlice = createSlice({
   initialState,
   reducers: {
     saveUserList: (state, action) => {
-      // Преобразуем формат даты для каждого пользователя
       const formattedUserList = action.payload.map((user) => ({
         ...user,
-        registrationDate: formatDate(user.registrationDate), // Преобразуем поле registrationDate
+        registrationDate: formatDate(user.registrationDate),
       }));
 
-      return formattedUserList; // Сохраняем преобразованные данные в state
+      return formattedUserList; 
     },
     clearUserList:()=>initialState
   },

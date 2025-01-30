@@ -10,10 +10,17 @@ const API_PATH_ADMIN = "/api/v1/admin/"
 const API_PATH_USER = "/api/v1/user/"
 const API_PATH_EMPLOYEE = "/api/v1/employee/"
 const API_PATH_WAREHOUSE_MANAGER = "/api/v1/warehouse-manager/"
+// const API_PATH_STOREKEEPER = "api/v1/storekeeper"
 
 // API BASES 
 
 // --------------------------------------------------------------------- //
+
+// EMPLOYEE
+
+export const API_GET_NOMENCLATURES = API_BASE + API_PATH_EMPLOYEE + "nomenclatures"
+
+export const API_GET_CATEGORIES = API_BASE + API_PATH_EMPLOYEE + "categories"
 
 // USER API`s
 
@@ -47,6 +54,8 @@ export const API_DELETE_WAREHOUSE = API_BASE + API_PATH_WAREHOUSE_MANAGER + "war
 export const API_WAREHOUSE_ZONES = API_BASE + API_PATH_WAREHOUSE_MANAGER + "warehouses"
 
 export const API_WAREHOUSE_ZONE_CREATE = API_BASE + API_PATH_WAREHOUSE_MANAGER + "warehouses/"
+
+
 // --------------------------------------------------------------------- //
 
 // ADMIN API`s

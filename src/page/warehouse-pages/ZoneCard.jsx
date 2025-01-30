@@ -58,20 +58,22 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     {/* Кнопка "+" отображается только для родительских зон */}
                     {!isChild && hasRole("warehouse_manager") && (
                         <>
-                            <button 
+                            <button
                                 className="hover:bg-gray-100 rounded"
                                 onClick={handleCreateZone}  // Открытие модального окна
                             >
                                 <span className="text-xl">+</span>
                             </button>
-                            <button 
-                                className="hover:bg-gray-100 rounded"
-                                onClick={handleDeleteZone}  // Удаление зоны
-                            >
-                               <BiDotsVerticalRounded /> {/* Кнопка для удаления */}
-                            </button>
                         </>
                     )}
+                    <>
+                        <button
+                            className="hover:bg-gray-100 rounded"
+                            onClick={handleDeleteZone}  // Удаление зоны
+                        >
+                            <BiDotsVerticalRounded /> {/* Кнопка для удаления */}
+                        </button>   
+                    </>
                 </div>
             </div>
 

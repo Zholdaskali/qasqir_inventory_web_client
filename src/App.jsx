@@ -19,6 +19,8 @@ import LoginLogs from './page/super-admin-pages/logs/LoginLogs'
 // User profile
 import SettingsPage from './page/profile-pages/SettingsPage'
 import EditProfile from './page/profile-pages/EditProfile'
+import NomenclatureList from './page/inventory-pages/NomenclatureList'
+import CategoryList from './page/inventory-pages/CategoryList'
 
 // Organization 
 import OrganizationProfile from './page/organization-pages/OrganizationProfile'
@@ -26,10 +28,15 @@ import OrganizationProfile from './page/organization-pages/OrganizationProfile'
 // Warehouse-manager pagex1
 import WarehouseList from './page/warehouse-pages/WarehouseList'
 import WarehouseZoneList from './page/warehouse-pages/WarehouseZoneList'
+import DashboardPage from './page/DashboardPage'
+
+
+// Storekeeper
 
 import { useSelector } from 'react-redux'
 import InviteList from './page/super-admin-pages/InviteList'
 import EditOrganizationProfile from './page/organization-pages/EditOrganizationProfile'
+
 
 
 function App() {
@@ -45,7 +52,7 @@ function App() {
           <Route path="*" element={<Navigate to="/sign-in" />} />
         ) : (
           <>
-            <Route path='/' element={<Layout setIsAuthenticated={setIsAuthenticated} isAuthenticated={isAuthenticated}/>}>
+            <Route path='/' element={<Layout setIsAuthenticated={setIsAuthenticated} isAuthenticated={isAuthenticated} />}>
               <Route index element={<SettingsPage />} />
               {hasRole("admin") && (
                 <>
@@ -55,26 +62,28 @@ function App() {
                   <Route path='create-company' element={<CreateAdmin />} />
                   <Route path='users-list' element={<UsersList />} />
                   <Route path='invite-list' element={<InviteList />} />
-                  <Route path='edit-organization-profile' element={<EditOrganizationProfile/>}/>
+                  <Route path='edit-organization-profile' element={<EditOrganizationProfile />} />
                 </>
               )}
               {(hasRole("employee")) && (
                 <>
-                <Route path='warehouse-list' element={<WarehouseList />} />
-                <Route path='warehouse-structure' element={<WarehouseZoneList />} />
+                  <Route path='warehouse-list' element={<WarehouseList />} />
+                  <Route path='warehouse-structure' element={<WarehouseZoneList />} />
+                  <Route path='nomenclature-list' element={<NomenclatureList />} />
+                  <Route path='category-list' element={<CategoryList />} />
                 </>
               )}
-              {hasRole("warehouse_manager") &&  (
+              {hasRole("warehouse_manager") && (
                 <>
-                  </>
+                  <Route path='dashboard' element={<DashboardPage />} />
+                </>
               )}
-              {hasRole("storekeeper") &&  (
+              {hasRole("storekeeper") && (
                 <>
-                
                 </>
               )}
               <Route path='edit-profile' element={<EditProfile />} />
-              <Route path='organization-profile' element={<OrganizationProfile/>}/>
+              <Route path='organization-profile' element={<OrganizationProfile />} />
             </Route>
 
           </>

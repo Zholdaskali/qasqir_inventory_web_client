@@ -3,34 +3,34 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-import { API_GET_USERS } from "../api/API";
-import { saveUserList } from "../store/slices/userListSlice";
+import { API_GET_NOMENCLATURES } from "../../api/API";
+import { saveUserList } from "../../store/slices/userListSlice";
 
-import avatar from "../assets/placeholders/avatar.png";
-import filterIcon from "../assets/icons/filter.svg";
+import avatar from "../../assets/placeholders/avatar.png";
+import filterIcon from "../../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
-import CreateInviteModal from "../components/super-admin-components/log-components/CreateInviteModal";
-import UserProfileModal from "../components/modal-components/UserProfileModal";
+import { HiRefresh } from "react-icons/hi";
+import CreateInviteModal from "../../components/super-admin-components/log-components/CreateInviteModal";
+import UserProfileModal from "../../components/modal-components/UserProfileModal";
 
-const UsersList = () => {
+const NomenclatureList = () => {
     const authToken = useSelector((state) => state.token.token);
     const dispatch = useDispatch();
-    const users = useSelector((state) => state.userList);
-    const user = useSelector((state) => state.user);
+    const nomenclatures = useSelector((state) => state.nomenclatureList);
+    const nomenclature = useSelector((state) => state.nomenclature);
 
-    const [userModal, setUserModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState(null);
+    const [nomenclatureModal, setNomenclatureModal] = useState(false);
+    const [selectedUser, setSelectedNomenclature] = useState(null);
 
-    const [createInviteModal, setCreateInviteModal] = useState(false);
-    const [isInviteButtonDisabled, setIsInviteButtonDisabled] = useState(false);
+    const [createNomenclatureModal, setCreateNomenclatureModal] = useState(false);
+    const [isInviteButtonDisabled, setIsCreateNomenclatureButtonDisable] = useState(false);
 
-    const fetchUserList = async () => {
+    const fetchNomenclatureList = async () => {
         try {
-            const response = await axios.get(API_GET_USERS, {
+            const response = await axios.get(API_GET_NOMENCLATURES, {
                 headers: { "Auth-token": authToken },
             });
-            dispatch(saveUserList(response.data.body));
+            dispatch(save(response.data.body));
             toast.success("Успешно");
         } catch (error) {
             toast.error("Ошибка загрузки пользователей");
@@ -38,21 +38,21 @@ const UsersList = () => {
     };
 
     useEffect(() => {
-        fetchUserList();
+        fetchNomenclatureList();
     }, []);
 
-    const handleUserModal = (user) => {
-        setSelectedUser(user);
-        setUserModal(true);
+    const handleNomenclatureModal = (nomenclature) => {
+        setSelectedNomenclature(nomenclature);
+        setNomenclatureModal(true);
     };
 
-    const handleCreateInviteModal = () => {
-        setCreateInviteModal(true);
+    const handleCreateCategoryModal = () => {
+        setCreateNomenclatureModal(true);
     };
 
     const handleModalClose = (isDeleted) => {
-        if (isDeleted) fetchUserList(); // Повторно получаем данные после удаления
-        setUserModal(false);
+        if (isDeleted) fetchNomenclatureList();
+        setNomenclatureModal(false);
     };
 
     return (
@@ -60,10 +60,10 @@ const UsersList = () => {
             <div className="flex flex-col gap-y-5 overflow-auto">
                 <div className="flex w-full items-center justify-between border-b py-10">
                     <div className="flex items-center gap-4">
-                        <h1 className="text-2xl w-full">Пользователи</h1>
+                        <h1 className="text-2xl w-full">Номенклатуры</h1>
                         <button
-                            onClick={fetchUserList}
-                            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-300"
+                            onClick={fetchNomenclatureList}
+                            className="flex items-center justify-center bg-gray-200 p-2 rounded-full hover:bg-gray-300"
                             title="Обновить"
                         >
                             <HiRefresh className="w-6 h-6 text-gray-600" />
@@ -89,63 +89,67 @@ const UsersList = () => {
                     <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full">
                         <tr className="text-sm">
                             <th></th>
-                            <th className="text-start">ID пользователя</th>
-                            <th className="text-start">Имя пользователя</th>
-                            <th className="text-start">Email пользователя</th>
-                            <th className="text-start">Номер телефона</th>
-                            <th className="text-start">Подтверждения email</th>
-                            <th className="text-start">Дата регистрации</th>
-                            <th className="text-start">Роль</th>
+                            <th className="text-start">ID</th>
+                            <th className="text-start">Имя</th>
+                            <th className="text-start">Артикль</th>
+                            <th className="text-start">Код</th>
+                            <th className="text-start">Тип</th>
+                            <th className="text-start">Категория</th>
+                            <th className="text-start">Единица измерения</th>
+                            <th className="text-start">Создатель</th>
+                            <th className="text-start">Дата создания</th>
+                            <th className="text-start">Последнее изменение</th>
+                            <th className="text-start">Дата изменение</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((users) => (
+                        {nomenclatures.map((nomenclatures) => (
                             <tr
-                                key={users.userId}
-                                className={`${users.email === user.email
+                                key={nomenclatures.userId}
+                                className={`${nomenclatures.email === nomenclature.email
                                     ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
                                     : "bg-white hover:bg-gray-50"
                                     } border-b border-full transition cursor-pointer`}
-                                onClick={() => handleUserModal(users)}
+                                onClick={() => handleNomenclatureModal(nomenclatures)}
                             >
                                 <td className="p-5">
                                     <img
                                         className="rounded-full w-10 h-10"
-                                        src={users.imagePath || avatar}
+                                        src={nomenclatures.imagePath || avatar}
                                         alt=""
                                     />
                                 </td>
-                                <td className="py-4 px-2">{users.userId}</td>
-                                <td className="py-4 px-2">{users.userName}</td>
-                                <td className="py-4 px-2">{users.email}</td>
-                                <td className="py-4 px-2">{users.userNumber}</td>
+                                <td className="py-4 px-2">{nomenclatures.userId}</td>
+                                <td className="py-4 px-2">{nomenclatures.userName}</td>
+                                <td className="py-4 px-2">{nomenclatures.email}</td>
+                                <td className="py-4 px-2">{nomenclatures.userNumber}</td>
                                 <td className="py-4 px-2">
                                     <div className="flex items-center justify-start text-center text-white">
                                         <div
-                                            className={`${users.emailVerified
+                                            className={`${nomenclatures.emailVerified
                                                 ? "bg-[#E3F3E9]"
                                                 : "bg-[#FFF2EA]"
                                                 } text-center flex items-center justify-center px-2 rounded-full`}
                                         >
                                             <div
-                                                className={`${users.emailVerified
+                                                className={`${nomenclatures.emailVerified
                                                     ? "bg-[#11B066]"
                                                     : "bg-[#E84D43]"
                                                     } h-3 w-3 rounded-full`}
                                             ></div>
                                             <p
-                                                className={`${users.emailVerified
+                                                className={`${nomenclatures.emailVerified
                                                     ? "text-[#11B066]"
                                                     : "text-[#E84D43]"
                                                     } px-2 py-1 rounded`}
                                             >
-                                                {`${users.emailVerified ? "Подтверждено" : "Не подтверждено"}`}
+                                                {`${nomenclatures.emailVerified ? "Подтверждено" : "Не подтверждено"}`}
                                             </p>
                                         </div>
                                     </div>
                                 </td>
-                                <td className="py-4 px-2">{users.registrationDate}</td>
-                                <td className="py-4 px-2">{users.userRoles.join(", ")}</td>
+                                <td className="py-4 px-2">{nomenclatures.registrationDate}</td>
+                                <td className="py-4 px-2">{nomenclatures.userRoles.join(", ")}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -156,29 +160,29 @@ const UsersList = () => {
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                         }`}
-                    onClick={handleCreateInviteModal}
+                    onClick={handleCreateCategoryModal}
                     disabled={isInviteButtonDisabled}
                 >
                     +
                 </button>
             </div>
-            {createInviteModal && (
+            {createNomenclatureModal && (
                 <CreateInviteModal
                     authToken={authToken}
-                    setCreateInviteModal={setCreateInviteModal}
-                    setIsInviteButtonDisabled={setIsInviteButtonDisabled}
+                    setCreateInviteModal={setCreateNomenclatureModal}
+                    setIsInviteButtonDisabled={setIsCreateNomenclatureButtonDisable}
                 />
             )}
 
-            {userModal && (
+            {nomenclatureModal && (
                 <UserProfileModal
                     selectedUser={selectedUser}
                     onClose={handleModalClose}
-                    fetchUserList={fetchUserList}
+                    fetchUserList={fetchNomenclatureList}
                 />
             )}
         </div>
     );
 };
 
-export default UsersList;
+export default NomenclatureList;

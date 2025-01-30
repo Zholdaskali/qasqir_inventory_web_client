@@ -6,7 +6,7 @@ import { IoIosNotificationsOutline } from "react-icons/io";
 import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import filterIcon from "../../assets/icons/filter.svg";
 import { API_GET_WAREHOUSE_LIST } from "../../api/API";
-import { saveWarehouseList } from "../../store/slices/warehouseListSlice";
+import { saveWarehouseList } from "../../store/slices/warehouseSlice/warehouseListSlice";
 import WarehouseDetailPanel from "../../page/warehouse-pages/WarehouseDetailPanel";
 import WarehouseSaveModal from "../../components/modal-components/WarehouseSaveModal";
 
