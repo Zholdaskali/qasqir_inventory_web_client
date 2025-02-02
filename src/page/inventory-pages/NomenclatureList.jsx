@@ -4,7 +4,6 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 import { API_GET_NOMENCLATURES } from "../../api/API";
-import { saveUserList } from "../../store/slices/userListSlice";
 
 import avatar from "../../assets/placeholders/avatar.png";
 import filterIcon from "../../assets/icons/filter.svg";
@@ -12,6 +11,7 @@ import { IoIosNotificationsOutline } from "react-icons/io";
 import { HiRefresh } from "react-icons/hi";
 import CreateInviteModal from "../../components/super-admin-components/log-components/CreateInviteModal";
 import UserProfileModal from "../../components/modal-components/UserProfileModal";
+import { saveNomenclatureList } from "../../store/slices/inventorySlice/nomenclatureListSlice";
 
 const NomenclatureList = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -23,14 +23,16 @@ const NomenclatureList = () => {
     const [selectedUser, setSelectedNomenclature] = useState(null);
 
     const [createNomenclatureModal, setCreateNomenclatureModal] = useState(false);
-    const [isInviteButtonDisabled, setIsCreateNomenclatureButtonDisable] = useState(false);
+    const [isInviteButtonDisabled, setIsCreateNomenclatureButtonDisable] =
+        useState(false);
 
     const fetchNomenclatureList = async () => {
         try {
-            const response = await axios.get(API_GET_NOMENCLATURES, {
+            const response = await axios.get(`/api/v1/warehouse-manager/${1}/nomenclatures`, {
                 headers: { "Auth-token": authToken },
             });
-            dispatch(save(response.data.body));
+            console.log(response.data.body)
+            dispatch(saveNomenclatureList(response.data.body));
             toast.success("Успешно");
         } catch (error) {
             toast.error("Ошибка загрузки пользователей");
@@ -103,62 +105,30 @@ const NomenclatureList = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {nomenclatures.map((nomenclatures) => (
-                            <tr
-                                key={nomenclatures.userId}
-                                className={`${nomenclatures.email === nomenclature.email
-                                    ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
-                                    : "bg-white hover:bg-gray-50"
-                                    } border-b border-full transition cursor-pointer`}
-                                onClick={() => handleNomenclatureModal(nomenclatures)}
-                            >
-                                <td className="p-5">
-                                    <img
-                                        className="rounded-full w-10 h-10"
-                                        src={nomenclatures.imagePath || avatar}
-                                        alt=""
-                                    />
-                                </td>
-                                <td className="py-4 px-2">{nomenclatures.userId}</td>
-                                <td className="py-4 px-2">{nomenclatures.userName}</td>
-                                <td className="py-4 px-2">{nomenclatures.email}</td>
-                                <td className="py-4 px-2">{nomenclatures.userNumber}</td>
-                                <td className="py-4 px-2">
-                                    <div className="flex items-center justify-start text-center text-white">
-                                        <div
-                                            className={`${nomenclatures.emailVerified
-                                                ? "bg-[#E3F3E9]"
-                                                : "bg-[#FFF2EA]"
-                                                } text-center flex items-center justify-center px-2 rounded-full`}
-                                        >
-                                            <div
-                                                className={`${nomenclatures.emailVerified
-                                                    ? "bg-[#11B066]"
-                                                    : "bg-[#E84D43]"
-                                                    } h-3 w-3 rounded-full`}
-                                            ></div>
-                                            <p
-                                                className={`${nomenclatures.emailVerified
-                                                    ? "text-[#11B066]"
-                                                    : "text-[#E84D43]"
-                                                    } px-2 py-1 rounded`}
-                                            >
-                                                {`${nomenclatures.emailVerified ? "Подтверждено" : "Не подтверждено"}`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="py-4 px-2">{nomenclatures.registrationDate}</td>
-                                <td className="py-4 px-2">{nomenclatures.userRoles.join(", ")}</td>
+                        {Array.isArray(nomenclatures) ? (
+                            nomenclatures.map((nomenclature) => (
+                                <tr key={nomenclature.id}>
+                                    <td className="py-4 px-2">{nomenclature.id}</td>
+                                    <td className="py-4 px-2">{nomenclature.name}</td>
+                                    <td className="py-4 px-2">{nomenclature.article}</td>
+                                    <td className="py-4 px-2">{nomenclature.code}</td>
+                                    <td className="py-4 px-2">{nomenclature.type}</td>
+                                    <td className="py-4 px-2">{nomenclature.measurement}</td>
+                                    <td className="py-4 px-2">{nomenclature.tnved}</td>
+                                    <td className="py-4 px-2">{nomenclature.createdBy}</td>
+                                    <td className="py-4 px-2">{nomenclature.updatedBy}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="9">Данные загружаются...</td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
                 {/* Button */}
                 <button
-                    className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white ${isInviteButtonDisabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
+                    className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white ${isInviteButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
                         }`}
                     onClick={handleCreateCategoryModal}
                     disabled={isInviteButtonDisabled}

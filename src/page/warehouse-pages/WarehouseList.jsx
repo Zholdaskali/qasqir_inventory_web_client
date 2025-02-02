@@ -58,7 +58,7 @@ const WarehouseList = () => {
                         <h1 className="text-2xl w-full">Склады</h1>
                         <button
                             onClick={fetchWarehouseList}
-                            className="flex items-center justify-center bg-gray-200 p-2 rounded-full hover:bg-gray-300"
+                            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-300"
                             title="Обновить"
                         >
                             <HiRefresh className="w-6 h-6 text-gray-600" />
