@@ -16,7 +16,6 @@ const categoryListSlice = createSlice({
   initialState,
   reducers: {
     saveCategoryList: (state, action) => {
-      // Преобразуем каждую категорию
       const formattedCategoryList = action.payload.map((category) => ({
         ...category,
         createdAt: formatDate(category.createdAt),

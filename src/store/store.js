@@ -7,6 +7,9 @@ import exceptionLogSlice from './slices/logSlices/exceptionSlice'
 import userListSlice from './slices/userListSlice'
 import inviteListSlice from './slices/inviteListSlice'
 import organizationSlice from './slices/organizationSlice'
+import categoryListSlice from './slices/inventorySlice/categoryListSlice'
+import categorySlice from './slices/inventorySlice/categorySlice'
+import nomenclatureListSlice from './slices/inventorySlice/nomenclatureListSlice'
 
 export const store = configureStore({
     reducer: {
@@ -18,5 +21,8 @@ export const store = configureStore({
         userList: userListSlice,
         inviteList: inviteListSlice,
         organization: organizationSlice,
+        categoryList: categoryListSlice,
+        category: categorySlice,
+        nomenclatureList: nomenclatureListSlice
     }
 });

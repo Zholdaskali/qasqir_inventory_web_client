@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "react-toastify";
 import { API_CREATE_WAREHOUSE } from "../../api/API"; // Подставьте ваш API
 
-const WarehouseSaveModal = ({ authToken, setIsWarehouseSaveModalOpen }) => {
+const WarehouseSaveModal = ({ authToken, setIsWarehouseSaveModalOpen, onClose}) => {
     const [warehouseName, setWarehouseName] = useState("");
     const [warehouseLocation, setWarehouseLocation] = useState("");
     const [isFormError, setIsFormError] = useState(false);
@@ -15,19 +15,19 @@ const WarehouseSaveModal = ({ authToken, setIsWarehouseSaveModalOpen }) => {
             toast.error("Заполните все поля");
             return;
         }
-
         try {
-            await axios.post(
+            const response = await axios.post(
                 API_CREATE_WAREHOUSE,
                 { name: warehouseName, location: warehouseLocation },
                 { headers: { "Auth-token": authToken } }
             );
             toast.success(response.data.message || "Склад успешно добавлен");
-            setIsWarehouseSaveModalOpen(false);
+            onClose(); // Закрываем модалку и обновляем список складов
         } catch (error) {
-            toast.error(error.response?.data?.message  || "Ошибка создания склада");
+            toast.error(error.response?.data?.message || "Ошибка создания склада");
         }
     };
+    
 
     return (
         <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center">

@@ -30,6 +30,7 @@ const UsersList = () => {
             const response = await axios.get(API_GET_USERS, {
                 headers: { "Auth-token": authToken },
             });
+            console.log(response)
             dispatch(saveUserList(response.data.body));
             toast.success("Успешно");
         } catch (error) {
@@ -51,7 +52,7 @@ const UsersList = () => {
     };
 
     const handleModalClose = (isDeleted) => {
-        if (isDeleted) fetchUserList(); // Повторно получаем данные после удаления
+        if (isDeleted) fetchUserList(); 
         setUserModal(false);
     };
 

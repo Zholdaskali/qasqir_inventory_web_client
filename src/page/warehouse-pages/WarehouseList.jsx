@@ -36,6 +36,12 @@ const WarehouseList = () => {
         fetchWarehouseList();
     }, [authToken]);
 
+    const handleModalClose = () => {
+        setIsWarehouseSaveModalOpen(false);
+        fetchWarehouseList();  // Обновляем список складов после добавления
+    };
+    
+
     const handleWarehouseClick = (warehouse) => {
         setSelectedWarehouse(warehouse);
         setIsPanelOpen(true);
@@ -43,6 +49,7 @@ const WarehouseList = () => {
 
     const handleClosePanel = () => {
         setIsPanelOpen(false);
+        fetchWarehouseList()
         setTimeout(() => setSelectedWarehouse(null), 300);
     };
 
@@ -51,7 +58,7 @@ const WarehouseList = () => {
     };
 
     return (
-        <div className="w-full h-full px-5 py-5 rounded-xl">
+        <div className="w-full h-full px-5 py-5 rounded-xl overflow-auto">
             <div className="flex flex-col gap-y-5 overflow-auto">
                 <div className="flex w-full items-center justify-between border-b py-10">
                     <div className="flex items-center gap-4">
@@ -148,6 +155,7 @@ const WarehouseList = () => {
                 <WarehouseSaveModal
                     authToken={authToken}
                     setIsWarehouseSaveModalOpen={setIsWarehouseSaveModalOpen}
+                    onClose={handleModalClose}
                 />
             )}
 

@@ -32,7 +32,9 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                     zoom: 15,
                 });
                 setLoading(false);
+                
             }
+            
         } catch (error) {
             console.error("Ошибка геокодинга:", error);
             setLoading(false);
@@ -72,14 +74,14 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
         <>
             {/* Оверлей */}
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? "opacity-30" : "opacity-0 pointer-events-none"
+                className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? "opacity-30" : "opacity-0 pointer-events-none" 
                     }`}
                 onClick={onClose}
             />
 
             {/* Панель */}
             <div
-                className={`fixed inset-y-0 right-0 w-[700px] bg-white shadow-xl transform transition-all duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"
+                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"
                     }`}
             >
                 <div className="h-full flex flex-col">
@@ -198,14 +200,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
 
                     {/* Кнопки */}
                     <div
-                        className={`p-6 border-t space-x-4 flex transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"
-                            }`}
+                        className={`p-6 border-t flex gap-x-5 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
                     >
                         <NavLink
                             to="/warehouse-structure"
                             state={{ warehouse }} // передача данных через state
                             className={({ isActive }) =>
-                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 ${isActive
+                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${isActive
                                     ? "bg-blue-500 text-white"
                                     : "bg-gray-100 hover:bg-gray-200"
                                 }`
@@ -220,7 +221,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                     to="/#"
                                     state={{ warehouse }} // передача данных через state
                                     className={({ isActive }) =>
-                                        `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 ${isActive
+                                        `flex-1 px-4 py-2 rounded-lg transition-colors text-center duration-200 ${isActive
                                             ? "bg-blue-500 text-white"
                                             : "bg-gray-100 hover:bg-gray-200"
                                         }`
@@ -232,7 +233,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                     title="Все данные пользователя будут удалены !!!"
                                     onConfirm={handleDeleteWarehouse}
                                 >
-                                    <button className="bg-[#FFF2EA] hover:bg-red-300 text-[#E84D43] px-4 py-2 rounded-lg">
+                                    <button className="bg-[#FFF2EA] hover:bg-red-300 text-center text-[#E84D43] px-4 py-2 rounded-lg">
                                         Удалить склад
                                     </button>
                                 </ConfirmationWrapper>

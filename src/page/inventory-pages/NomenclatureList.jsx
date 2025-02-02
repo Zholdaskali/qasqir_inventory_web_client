@@ -23,15 +23,15 @@ const NomenclatureList = () => {
     const [selectedUser, setSelectedNomenclature] = useState(null);
 
     const [createNomenclatureModal, setCreateNomenclatureModal] = useState(false);
-    const [isInviteButtonDisabled, setIsCreateNomenclatureButtonDisable] =
-        useState(false);
+    const [isInviteButtonDisabled, setIsCreateNomenclatureButtonDisable] = useState(false);
 
     const fetchNomenclatureList = async () => {
         try {
-            const response = await axios.get(`/api/v1/warehouse-manager/${1}/nomenclatures`, {
+            const response = await axios.get(`/api/v1/warehouse-manager/1/nomenclatures`, {
                 headers: { "Auth-token": authToken },
             });
             console.log(response.data.body)
+            console.log("успешно")
             dispatch(saveNomenclatureList(response.data.body));
             toast.success("Успешно");
         } catch (error) {
@@ -41,7 +41,7 @@ const NomenclatureList = () => {
 
     useEffect(() => {
         fetchNomenclatureList();
-    }, []);
+    }, []); 
 
     const handleNomenclatureModal = (nomenclature) => {
         setSelectedNomenclature(nomenclature);

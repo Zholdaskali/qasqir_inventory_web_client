@@ -21,7 +21,7 @@ const CategoryList = () => {
 
   const fetchCategoryList = async () => {
     try {
-      setLoading(true); // Включаем состояние загрузки
+      setLoading(true); 
       const response = await axios.get(API_GET_CATEGORIES, {
         headers: { "Auth-token": authToken },
       });
@@ -86,7 +86,6 @@ const CategoryList = () => {
           <table className="table-auto w-full border-separate border-spacing-y-4">
             <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full">
               <tr className="text-sm">
-                <th></th>
                 <th className="text-start">ID</th>
                 <th className="text-start">Имя</th>
                 <th className="text-start">Создатель</th>
@@ -99,13 +98,6 @@ const CategoryList = () => {
               {categories && categories.length > 0 ? (
                 categories.map((category) => (
                   <tr key={category.id}>
-                    <td className="p-5">
-                      <img
-                        className="rounded-full w-10 h-10"
-                        src={category.imagePath || avatar}
-                        alt="Аватар"
-                      />
-                    </td>
                     <td className="py-4 px-2">{category.id}</td>
                     <td className="py-4 px-2">{category.name}</td>
                     <td className="py-4 px-2">{category.createdBy}</td>
