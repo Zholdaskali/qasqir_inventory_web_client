@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 import { useState } from "react";
 import axios from "axios";
-import { API_CHANGE_ROLE } from "../../api/API";
+import { API_CHANGE_ROLE } from "../../../api/API";
 import { useSelector } from "react-redux";
 
 const rolesList = [

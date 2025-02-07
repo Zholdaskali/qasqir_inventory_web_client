@@ -1,7 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "react-toastify";
-import { API_CREATE_WAREHOUSE } from "../../api/API"; // Подставьте ваш API
+import { API_CREATE_WAREHOUSE } from "../../../api/API"; // Подставьте ваш API
 
 const WarehouseSaveModal = ({ authToken, setIsWarehouseSaveModalOpen, onClose}) => {
     const [warehouseName, setWarehouseName] = useState("");

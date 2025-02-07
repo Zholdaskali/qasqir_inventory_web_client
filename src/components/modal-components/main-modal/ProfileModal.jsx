@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
 import { useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { clearUser } from '../../store/slices/userSlice';
-import { API_SIGN_OUT } from '../../api/API';
+import { clearUser } from '../../../store/slices/userSlice';
+import { API_SIGN_OUT } from '../../../api/API';
 
 import { useNavigate } from 'react-router-dom';
 

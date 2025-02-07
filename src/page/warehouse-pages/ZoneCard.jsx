@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import { useSelector } from "react-redux";
 import WarehouseZoneSaveModal from '../../components/modal-components/WarehouseZoneCreateModal';
-import ZoneSettingModal from '../../components/modal-components/ZoneSettingModal'
+import ZoneSettingModal from '../../components/modal-components/warehouse-modal/ZoneSettingModal'
 import axios from "axios";
 
 const ZoneCard = ({ zone, warehouse, onClose }) => {

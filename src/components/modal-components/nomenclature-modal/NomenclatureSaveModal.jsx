@@ -3,32 +3,32 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 
-const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
+const NomenclatureSettingsModal = ({ nomenclature, onClose, categoryId }) => {
     const authToken = useSelector((state) => state.token.token);
+    const userId = useSelector((state) => state.user.userId);
 
-    // Состояния для полей
+
     const [name, setName] = useState("");
     const [article, setArticle] = useState("");
     const [code, setCode] = useState("");
     const [type, setType] = useState("");
-    const [category, setCategory] = useState("");
+    const [tnvedCode, setTnvedCode] = useState("");
     const [measurement, setMeasurement] = useState("");
 
-    // Устанавливаем данные при открытии модального окна
     useEffect(() => {
         if (nomenclature) {
             setName(nomenclature.name);
             setArticle(nomenclature.article);
             setCode(nomenclature.code);
             setType(nomenclature.type);
-            setCategory(nomenclature.category);
-            setMeasurement(nomenclature.measurement);
+            setTnvedCode(nomenclature.tnved_code);
+            setMeasurement(nomenclature.measurement_unit);
         } else {
             setName("");
             setArticle("");
             setCode("");
             setType("");
-            setCategory("");
+            setTnvedCode("");
             setMeasurement("");
         }
     }, [nomenclature]);
@@ -36,29 +36,21 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const handleSave = async (e) => {
         e.preventDefault();
 
-        const data = { name, article, code, type, category, measurement };
+        if (!categoryId) {
+            toast.error("Ошибка: Категория с ID не найден!");
+            return;
+        }
+
+        const data = { name, article, code, type, tnved_code: tnvedCode, measurement_unit: measurement, updated_by: userId };
 
         try {
-            let response;
-            if (nomenclature) {
-                // Если редактирование
-                response = await axios.put(
-                    `http://localhost:8081/api/v1/warehouse-manager/nomenclatures/${nomenclature.id}`,
-                    data,
-                    { headers: { "Auth-token": authToken } }
-                );
-                toast.success("Номенклатура успешно обновлена");
-            } else {
-                // Если создание
-                response = await axios.post(
-                    `http://localhost:8081/api/v1/warehouse-manager/nomenclatures`,
-                    data,
-                    { headers: { "Auth-token": authToken } }
-                );
-                toast.success("Номенклатура успешно создана");
-            }
-
-            onClose(); // Закрываем модальное окно
+            const response = await axios.post(
+                `http://localhost:8081/api/v1/warehouse-manager/${categoryId}/nomenclatures`,
+                data,
+                { headers: { "Auth-token": authToken } }
+            );
+            toast.success("Номенклатура успешно создана");
+            onClose();
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при сохранении");
         }
@@ -88,8 +80,8 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                         <input className="w-full border px-3 py-2 rounded" value={type} onChange={(e) => setType(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">Категория</label>
-                        <input className="w-full border px-3 py-2 rounded" value={category} onChange={(e) => setCategory(e.target.value)} />
+                        <label className="block mb-1">tnved code</label>
+                        <input className="w-full border px-3 py-2 rounded" value={tnvedCode} onChange={(e) => setTnvedCode(e.target.value)} />
                     </div>
                     <div>
                         <label className="block mb-1">Единица измерения</label>

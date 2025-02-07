@@ -11,7 +11,7 @@ import filterIcon from "../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import CreateInviteModal from "../components/super-admin-components/log-components/CreateInviteModal";
-import UserProfileModal from "../components/modal-components/UserProfileModal";
+import UserProfileModal from "../components/modal-components/main-modal/UserProfileModal";
 
 const UsersList = () => {
     const authToken = useSelector((state) => state.token.token);

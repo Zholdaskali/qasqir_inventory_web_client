@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
-import Notification from "../../components/notification/Notification";
+import Notification from "../../notification/Notification";
 
 
 

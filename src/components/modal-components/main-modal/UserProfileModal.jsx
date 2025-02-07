@@ -1,14 +1,14 @@
 /* eslint-disable react/prop-types */
 
 import { useMemo, useState } from "react";
-import avatar from "../../assets/placeholders/avatar.png";
+import avatar from "../../../assets/placeholders/avatar.png";
 import { IoMdClose } from "react-icons/io";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import { API_SUPER_ADMIN_DELETE_USER } from "../../api/API";
+import { API_SUPER_ADMIN_DELETE_USER } from "../../../api/API";
 import RoleSelectionModal from "./RoleSelectionModal";
-import userIcon from "../../assets/icons/user.svg";
-import ConfirmationWrapper from "../ui/ConfirmationWrapper";
+import userIcon from "../../../assets/icons/user.svg";
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
 
 const UserProfileModal = ({ selectedUser, onClose, fetchUserList }) => {
     const userRole = useMemo(() => {

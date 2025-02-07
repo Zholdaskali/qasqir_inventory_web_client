@@ -6,8 +6,8 @@ import { useNavigate } from "react-router-dom";
 
 import { API_GET_CATEGORIES } from "../../api/API";
 import { saveCategoryList } from "../../store/slices/inventorySlice/categoryListSlice";
-import CategorySaveModal from "../../components/modal-components/CategorySaveModal";
-import CategorySettingsModal from "../../components/modal-components/CategorySettingsModal";
+import CategorySaveModal from "../../components/modal-components/category-modal/CategorySaveModal";
+import CategorySettingsModal from "../../components/modal-components/category-modal/CategorySettingsModal";
 
 import filterIcon from "../../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";

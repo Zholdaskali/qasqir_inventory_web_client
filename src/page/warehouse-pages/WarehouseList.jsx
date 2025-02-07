@@ -8,7 +8,7 @@ import filterIcon from "../../assets/icons/filter.svg";
 import { API_GET_WAREHOUSE_LIST } from "../../api/API";
 import { saveWarehouseList } from "../../store/slices/warehouseSlice/warehouseListSlice";
 import WarehouseDetailPanel from "../../page/warehouse-pages/WarehouseDetailPanel";
-import WarehouseSaveModal from "../../components/modal-components/WarehouseSaveModal";
+import WarehouseSaveModal from "../../components/modal-components/warehouse-modal/WarehouseSaveModal";
 
 const WarehouseList = () => {
     const [warehouses, setWarehouses] = useState([]);

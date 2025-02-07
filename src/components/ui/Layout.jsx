@@ -157,11 +157,8 @@ const Layout = ({ setIsAuthenticated }) => {
               </button>
               {operationLogsList && (
                 <div className="flex flex-col pl-6 gap-1">
-                  <NavLink to="/#">Оприходования</NavLink>
-                  <NavLink to="/#">Возврат</NavLink>
-                  <NavLink to="/#">Перемещение</NavLink>
-                  <NavLink to="/#">Производство</NavLink>
-                  <NavLink to="/#">Продажа</NavLink>
+                  <NavLink to="/warehouse-tabs">Операции</NavLink>
+                  <NavLink to="/#">Отчетность</NavLink>
                 </div>
               )}
             </>

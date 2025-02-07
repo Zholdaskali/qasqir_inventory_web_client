@@ -6,7 +6,8 @@ import { useParams } from "react-router-dom";
 import { saveNomenclatureList } from "../../store/slices/inventorySlice/nomenclatureListSlice";
 import { HiRefresh } from "react-icons/hi";
 import { FiSettings } from "react-icons/fi";
-import NomenclatureSettingsModal from "../../components/modal-components/NomenclatureSettingsModal";
+import NomenclatureSaveModal from "../../components/modal-components/nomenclature-modal/NomenclatureSaveModal";
+import NomenclatureSettingModal from "../../components/modal-components/nomenclature-modal/NomenclatureSettingModal"
 
 const NomenclatureList = () => {
     const { categoryId } = useParams();
@@ -42,7 +43,7 @@ const NomenclatureList = () => {
     };
 
     return (
-        <div className="w-full h-full px-5 py-5 rounded-xl">
+        <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
             <div className="flex flex-col gap-y-5 overflow-auto">
                 <div className="flex w-full items-center justify-between border-b py-10">
                     <div className="flex items-center gap-4">
@@ -56,15 +57,14 @@ const NomenclatureList = () => {
                         </button>
                     </div>
                 </div>
-                <table className="table-auto w-full border-separate border-spacing-y-4">
-                    <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full">
+                <table className="overflow-x-auto">
+                    <thead className="w-full border-separate border-spacing-y-4 min-w-max">
                         <tr className="text-sm">
                             <th>ID</th>
                             <th>Имя</th>
                             <th>Артикль</th>
                             <th>Код</th>
                             <th>Тип</th>
-                            <th>Категория</th>
                             <th>Единица измерения</th>
                             <th>Создатель</th>
                             <th>Дата создания</th>
@@ -86,7 +86,6 @@ const NomenclatureList = () => {
                                         <td className="py-4 px-2">{nomenclature.article}</td>
                                         <td className="py-4 px-2">{nomenclature.code}</td>
                                         <td className="py-4 px-2">{nomenclature.type}</td>
-                                        <td className="py-4 px-2">{nomenclature.category}</td>
                                         <td className="py-4 px-2">{nomenclature.measurement}</td>
                                         <td className="py-4 px-2">{nomenclature.createdBy}</td>
                                         <td className="py-4 px-2">{nomenclature.createdAt}</td>
@@ -124,7 +123,7 @@ const NomenclatureList = () => {
 
             {/* Модальное окно редактирования */}
             {selectedNomenclature && (
-                <NomenclatureSettingsModal
+                <NomenclatureSettingModal
                     nomenclature={selectedNomenclature}
                     onClose={() => setSelectedNomenclature(null)}
                 />
@@ -132,9 +131,10 @@ const NomenclatureList = () => {
 
             {/* Модальное окно создания */}
             {isCreateModalOpen && (
-                <NomenclatureSettingsModal
+                <NomenclatureSaveModal
                     nomenclature={null} // Передаём null, чтобы модалка понимала, что это создание
                     onClose={() => setIsCreateModalOpen(false)}
+                    categoryId={categoryId}
                 />
             )}
         </div>
