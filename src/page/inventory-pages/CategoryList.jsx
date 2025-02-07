@@ -2,75 +2,83 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 import { API_GET_CATEGORIES } from "../../api/API";
 import { saveCategoryList } from "../../store/slices/inventorySlice/categoryListSlice";
+import CategorySaveModal from "../../components/modal-components/CategorySaveModal";
+import CategorySettingsModal from "../../components/modal-components/CategorySettingsModal";
 
-import avatar from "../../assets/placeholders/avatar.png";
 import filterIcon from "../../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { HiRefresh } from "react-icons/hi";
+import { FiSettings } from "react-icons/fi";
 
 const CategoryList = () => {
-  const authToken = useSelector((state) => state.token.token); // Токен для авторизации
-  const categories = useSelector((state) => state.categoryList); // Список категорий из Redux
+  const authToken = useSelector((state) => state.token.token);
+  const categories = useSelector((state) => state.categoryList);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true); // Состояние загрузки
-  const [createInviteModal, setCreateInviteModal] = useState(false); // Управление модалкой для создания
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const fetchCategoryList = async () => {
     try {
-      setLoading(true); 
+      setLoading(true);
       const response = await axios.get(API_GET_CATEGORIES, {
         headers: { "Auth-token": authToken },
       });
-
-      const categoryData = response.data.body; // Достаем массив категорий из ответа
-      console.log("Ответ с бэка:", categoryData);
-
-      dispatch(saveCategoryList(response.data.body)); // Сохраняем категории в Redux
-      console.log("Ответ с :", categories);
-
+      dispatch(saveCategoryList(response.data.body));
       toast.success("Категории успешно загружены");
     } catch (error) {
       console.error("Ошибка при загрузке категорий:", error);
       toast.error("Ошибка загрузки категорий");
     } finally {
-      setLoading(false); // Отключаем состояние загрузки
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategoryList(); // Загружаем категории при первом рендере
+    fetchCategoryList();
   }, []);
 
   const handleCreateCategoryModal = () => {
-    setCreateInviteModal(true); // Открываем модалку
+    setSelectedCategory(null); // Очищаем выбор категории
+    setIsModalOpen(true);
+  };
+
+  const handleSettingsClick = (category) => {
+    setSelectedCategory(category); // Выбираем категорию для редактирования
+    setIsModalOpen(true);
+  };
+
+  const handleCategoryClick = (categoryId) => {
+    navigate(`/nomenclature/${categoryId}`);
   };
 
   return (
-    <div className="w-full h-full px-5 py-5 rounded-xl">
+    <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
       {loading ? (
-        <div>Загрузка...</div>
+        <div className="text-center text-lg">Загрузка...</div>
       ) : (
         <div className="flex flex-col gap-y-5 overflow-auto">
-          {/* Заголовок */}
-          <div className="flex w-full items-center justify-between border-b py-10">
+          <div className="flex flex-col md:flex-row items-center justify-between border-b pb-4">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl w-full">Категории</h1>
+              <h1 className="text-2xl">Категории</h1>
               <button
                 onClick={fetchCategoryList}
-                className="flex items-center justify-center p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-gray-100"
                 title="Обновить"
               >
                 <HiRefresh className="w-6 h-6 text-gray-600" />
               </button>
             </div>
-            <div className="flex items-center w-2/5 gap-x-5">
+            <div className="flex items-center w-full md:w-2/5 gap-x-4 mt-4 md:mt-0">
               <input
                 type="search"
-                className="shadow-inner w-full px-6 py-2 rounded-lg border"
+                className="w-full px-4 py-2 rounded-lg border shadow-inner"
                 placeholder="Поиск"
               />
               <img
@@ -78,54 +86,80 @@ const CategoryList = () => {
                 alt="filter"
                 className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue"
               />
-              <div className="w-0.5 bg-main-dull-gray h-8 bg-opacity-65"></div>
-              <IoIosNotificationsOutline size={50} />
+              <IoIosNotificationsOutline size={40} className="hidden sm:block" />
             </div>
           </div>
-          {/* Таблица */}
-          <table className="table-auto w-full border-separate border-spacing-y-4">
-            <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full">
-              <tr className="text-sm">
-                <th className="text-start">ID</th>
-                <th className="text-start">Имя</th>
-                <th className="text-start">Создатель</th>
-                <th className="text-start">Последнее изменение</th>
-                <th className="text-start">Дата создания</th>
-                <th className="text-start">Дата изменения</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories && categories.length > 0 ? (
-                categories.map((category) => (
-                  <tr key={category.id}>
-                    <td className="py-4 px-2">{category.id}</td>
-                    <td className="py-4 px-2">{category.name}</td>
-                    <td className="py-4 px-2">{category.createdBy}</td>
-                    <td className="py-4 px-2">{category.updatedBy}</td>
-                    <td className="py-4 px-2">{category.createdAt}</td>
-                    <td className="py-4 px-2">{category.updatedAt}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="text-center py-4">
-                    Данные отсутствуют
-                  </td>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-separate border-spacing-y-4 min-w-max">
+              <thead className="text-gray-500 bg-gray-100 h-12">
+                <tr className="text-sm">
+                  <th className="text-left px-2">ID</th>
+                  <th className="text-left px-2">Имя</th>
+                  <th className="text-left px-2">Создатель</th>
+                  <th className="text-left px-2">Последнее изменение</th>
+                  <th className="text-left px-2">Дата создания</th>
+                  <th className="text-left px-2">Дата изменения</th>
+                  <th className="text-left px-2">Настройки</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-          {/* Кнопка */}
+              </thead>
+              <tbody>
+                {categories.length > 0 ? (
+                  categories.map((category) => (
+                    <tr
+                      key={category.id}
+                      className="bg-white border-b cursor-pointer hover:bg-gray-200"
+                      onClick={() => handleCategoryClick(category.id)}
+                    >
+                      <td className="py-3 px-2">{category.id}</td>
+                      <td className="py-3 px-2">{category.name}</td>
+                      <td className="py-3 px-2">{category.createdBy}</td>
+                      <td className="py-3 px-2">{category.updatedBy}</td>
+                      <td className="py-3 px-2">{category.createdAt}</td>
+                      <td className="py-3 px-2">{category.updatedAt}</td>
+                      <td className="py-3 px-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSettingsClick(category);
+                          }}
+                          className="p-2 rounded-full hover:bg-gray-100"
+                        >
+                          <FiSettings className="w-5 h-5 text-gray-600" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4">
+                      Данные отсутствуют
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
           <button
-            className={`bg-main-dull-blue absolute bottom-12 w-12 h-12 self-end rounded-full shadow-xl font-bold text-white`}
+            className="bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white"
             onClick={handleCreateCategoryModal}
           >
             +
           </button>
         </div>
       )}
+
+      {isModalOpen && (
+        selectedCategory ? (
+          <CategorySettingsModal onClose={() => setIsModalOpen(false)} category={selectedCategory} />
+        ) : (
+          <CategorySaveModal onClose={() => setIsModalOpen(false)} />
+        )
+      )}
     </div>
   );
 };
 
 export default CategoryList;
+  

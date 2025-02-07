@@ -5,17 +5,16 @@ import { useSelector } from "react-redux";
 
 
 const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, parentId }) => {
-    const [warehouseZoneName, setWarehouseZoneName] = useState("");  // Состояние для названия зоны
-    const [isFormError, setIsFormError] = useState(false);  // Состояние ошибки формы
+    const [warehouseZoneName, setWarehouseZoneName] = useState("");
+    const [isFormError, setIsFormError] = useState(false);
     const authToken = useSelector((state) => state.token.token);
-    const userId = useSelector((state) => state.user.userId); // Предполагаем, что userId хранится в Redux store
+    const userId = useSelector((state) => state.user.userId);
 
 
 
     const saveWarehouseZone = async (e) => {
         e.preventDefault();
 
-        // Проверка на пустое название зоны
         if (!warehouseZoneName.trim()) {
             setIsFormError(true);
             toast.error("Заполните все поля");
@@ -23,7 +22,6 @@ const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, pa
         }
 
         try {
-            console.log("Attempting to send request...");
             const response = await axios.post(
                 `http://localhost:8081/api/v1/warehouse-manager/warehouses/${warehouseId}/zones?userId=${userId}`,
                 { 
@@ -34,12 +32,9 @@ const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, pa
                     headers: { "Auth-token": authToken } 
                 }
             );
-            console.log("Request successful:", response.data);
-            console.log(warehouseZoneName, parentId); // Печать данных после успешного запроса
             toast.success(response.data.message || "Зона успешно добавлена");
             setIsWarehouseSaveModalOpen(false);  // Закрытие модального окна
         } catch (error) {
-            console.log("Error occurred:", error); // Логирование ошибки
             toast.error(error.response?.data?.message || "Ошибка при создании зоны");
         }
         

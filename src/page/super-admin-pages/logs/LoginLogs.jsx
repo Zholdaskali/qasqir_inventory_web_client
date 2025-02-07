@@ -138,12 +138,6 @@ const LoginLogs = () => {
               />
             </div>
           </div>
-          <div className="flex items-center w-1/2 gap-x-5">
-            <input type="search" className="shadow-inner w-full px-6 py-2 rounded-lg border" placeholder="Поиск" />
-            <img src={filterIcon} alt="filter" className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue" />
-            <div className="w-0.5 bg-main-dull-gray h-8 bg-opacity-65"></div>
-            <IoIosNotificationsOutline size={50} />
-          </div>
         </div>
       </div>
 

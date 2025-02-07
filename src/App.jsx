@@ -69,7 +69,7 @@ function App() {
                 <>
                   <Route path='warehouse-list' element={<WarehouseList />} />
                   <Route path='warehouse-structure' element={<WarehouseZoneList />} />
-                  <Route path='nomenclature-list' element={<NomenclatureList />} />
+                  <Route path="nomenclature/:categoryId" element={<NomenclatureList />} />
                   <Route path='category-list' element={<CategoryList />} />
                 </>
               )}

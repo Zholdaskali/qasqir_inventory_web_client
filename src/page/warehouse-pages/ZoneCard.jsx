@@ -1,37 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import { useSelector } from "react-redux";
 import WarehouseZoneSaveModal from '../../components/modal-components/WarehouseZoneCreateModal';
+import ZoneSettingModal from '../../components/modal-components/ZoneSettingModal'
 import axios from "axios";
 
 const ZoneCard = ({ zone, warehouse, onClose }) => {
     const isChild = Boolean(zone.parentId);
     const user = useSelector((state) => state.user);
-    const authToken = useSelector((state) => state.token.token); // Получаем токен из состояния
+    const authToken = useSelector((state) => state.token.token);
 
-    // Проверка роли пользователя
     const hasRole = (role) => {
         return user?.userRoles && Array.isArray(user.userRoles) && user.userRoles.includes(role);
     };
 
-    // Состояние для управления видимостью модального окна
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Открытие модального окна
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
+
+    const menuRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("click", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+        };
+    }, []);
+
     const handleCreateZone = () => {
         setIsModalOpen(true);
     };
 
-    // Закрытие модального окна
     const handleModalClose = () => {
         setIsModalOpen(false);
     };
 
-    // Асинхронная функция для удаления зоны
+    const handleSettingModalOpen = () => {
+        setIsSettingModalOpen(true)
+    };
+
+    const handleSettingModalClose = () => {
+        setIsSettingModalOpen(false)
+    };
+
     const handleDeleteZone = async () => {
         try {
             const response = await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/warehouses/${warehouse.id}/zones/${zone.id}`,
+                `http://localhost:8081/api/v1/warehouse-manager/warehouses/${zone.id}/zones`,
                 {
                     headers: { "Auth-token": authToken },
                 }
@@ -39,13 +62,15 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
 
             console.log(response.data.message);
             if (onClose) {
-                onClose(true);  // Вызываем onClose после удаления (если передана эта функция)
+                onClose(true);
             }
         } catch (error) {
             const errorMessage = error.response?.data?.message || "Ошибка при удалении зоны";
             console.log(errorMessage);
         }
     };
+
+
 
     return (
         <div className={`p-4 rounded-lg ${isChild ? 'bg-red-50' : 'bg-blue-50'} mb-4`}>
@@ -54,26 +79,49 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     <h3 className="font-medium">{zone.name || "ZONE NAME"}</h3>
                     <p className="text-sm text-gray-600">ZONEID #{zone.id}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 relative" ref={menuRef}>
                     {/* Кнопка "+" отображается только для родительских зон */}
                     {!isChild && hasRole("warehouse_manager") && (
                         <>
                             <button
                                 className="hover:bg-gray-100 rounded"
-                                onClick={handleCreateZone}  // Открытие модального окна
+                                onClick={handleCreateZone}
                             >
                                 <span className="text-xl">+</span>
                             </button>
                         </>
                     )}
-                    <>
-                        <button
-                            className="hover:bg-gray-100 rounded"
-                            onClick={handleDeleteZone}  // Удаление зоны
-                        >
-                            <BiDotsVerticalRounded /> {/* Кнопка для удаления */}
-                        </button>   
-                    </>
+                    <button
+                        className="hover:bg-gray-100 rounded"
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    >
+                        <BiDotsVerticalRounded /> {/* Кнопка для открытия меню */}
+                    </button>
+
+                    {/* Всплывающее меню */}
+                    {isMenuOpen && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg">
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    console.log('Настройки зоны');
+                                    handleSettingModalOpen();
+                                }}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                                Настройки
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    handleDeleteZone();
+                                }}
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                                Удалить
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -86,11 +134,20 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
             {/* Модальное окно */}
             {isModalOpen && (
                 <WarehouseZoneSaveModal
-                    setIsWarehouseSaveModalOpen={setIsModalOpen}  // Функция для закрытия модального окна
-                    warehouseId={warehouse.id}  // Идентификатор склада
-                    parentId={zone.id}  // Идентификатор родительской зоны
+                    setIsWarehouseSaveModalOpen={setIsModalOpen}
+                    warehouseId={warehouse.id}
+                    parentId={zone.id}
                 />
             )}
+            {isSettingModalOpen && (
+                <ZoneSettingModal
+                    setIsSettingModalOpen={setIsSettingModalOpen}
+                    zone={zone}
+                    onClose={() => setIsSettingModalOpen(false)} // Добавляем onClose
+                    warehouseId={warehouse.id}
+                    />
+            )}
+
         </div>
     );
 };

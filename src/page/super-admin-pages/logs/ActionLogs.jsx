@@ -9,7 +9,7 @@ import { API_GET_ACTION_LOGS } from "../../../api/API";
 import Notification from "../../../components/notification/Notification";
 
 import filterIcon from '../../../assets/icons/filter.svg'
-import { IoIosNotificationsOutline } from "react-icons/io"; //notification none
+import { IoIosNotificationsOutline } from "react-icons/io";
 import { CiCalendarDate } from "react-icons/ci";
 
 const ActionLogs = () => {
@@ -21,13 +21,13 @@ const ActionLogs = () => {
   const [endDate, setEndDate] = useState(currentDate);
   const [error, setError] = useState(null);
 
-  const actionLogs = useSelector((state) => state.actionLogs); // Получаем логи из Redux store
+  const actionLogs = useSelector((state) => state.actionLogs);
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
 
 
 
-  const [fields, setFields] = useState([]); // Состояние для сохранения названий полей
+  const [fields, setFields] = useState([]);
 
   const fetchActionLogs = async () => {
     setError(null);
@@ -43,26 +43,21 @@ const ActionLogs = () => {
       const data = response.data.body;
 
       if (data?.length > 0) {
-        // Извлекаем названия полей из первого объекта
         const fieldNames = Object.keys(data[0]);
-        setFields(fieldNames); // Сохраняем названия полей в стейт
+        setFields(fieldNames);
 
-        // Сортировка данных по убыванию даты
         const sortedData = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        dispatch(saveActionLogs(sortedData)); // Сохраняем отсортированные логи в Redux
+        dispatch(saveActionLogs(sortedData));
       } else {
-        dispatch(saveActionLogs([])); // Очищаем Redux, если данных нет
+        dispatch(saveActionLogs([]));
       }
 
-      toast.success("Успешно", { toastId: "fetchSuccess" }); // Уникальный тост
+      toast.success("Успешно", { toastId: "fetchSuccess" });
     } catch (error) {
       toast.error(error.response?.data?.message);
     }
   };
 
-
-
-  // Функция для генерации файла в формате TXT
   const downloadLogsAsTxt = () => {
     if (actionLogs.length === 0) {
       alert("Нет данных для скачивания");
@@ -71,28 +66,22 @@ const ActionLogs = () => {
 
     const columnHeaders = "Дата | Id пользователя | Действие | Эндпоинт";
 
-    // Преобразуем данные в строку
     const logsContent = [
       columnHeaders,
       ...actionLogs.map((log) => `${log.timestamp} | ${log.userId} | ${log.action} | ${log.endpoint}`)
     ].join("\n")
 
-    // Формируем имя файла, используя текущую дату
     const fileName = `action_logs_from_${startDate}_to_${endDate}.txt`;
 
-    // Создаем Blob объект с типом текста
     const blob = new Blob([logsContent], { type: "text/plain;charset=utf-8" });
 
-    // Создаем URL для загрузки
     const url = URL.createObjectURL(blob);
 
-    // Создаем ссылку и инициируем клик для загрузки
     const link = document.createElement("a");
     link.href = url;
-    link.download = fileName; // Устанавливаем имя файла
+    link.download = fileName;
     link.click();
 
-    // Освобождаем созданный URL
     URL.revokeObjectURL(url);
   };
 
@@ -140,12 +129,6 @@ const ActionLogs = () => {
                 className="border px-4 py-3 rounded-lg"
               />
             </div>
-          </div>
-          <div className="flex items-center w-1/2 gap-x-5">
-            <input type="search" className="shadow-inner w-full px-6 py-2 rounded-lg border" placeholder="Поиск" />
-            <img src={filterIcon} alt="filter" className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue" />
-            <div className="w-0.5 bg-main-dull-gray h-8 bg-opacity-65"></div>
-            <IoIosNotificationsOutline size={50} />
           </div>
         </div>
       </div>

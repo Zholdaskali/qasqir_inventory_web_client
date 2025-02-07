@@ -8,7 +8,7 @@ import emailVerifyIllustr from '../../assets/illustrations/email-verify.svg';
 import userIcon from '../../assets/icons/user.svg'
 
 
-import Cookies from 'js-cookie'; // Подключение js-cookie
+import Cookies from 'js-cookie';
 
 import { Spinner } from 'flowbite-react';
 

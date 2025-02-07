@@ -30,18 +30,6 @@ const DashboardPage = () => {
         <div className="w-full h-full px-5 py-5 rounded-xl">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Панель аналитики</h1>
-                <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <input
-                            type="search"
-                            className="shadow-inner w-full px-6 py-2 rounded-lg border"
-                            placeholder="Поиск"
-                        />
-                    </div>
-                    <button className="p-2 rounded-full bg-gray-200">
-                        <Bell className="w-5 h-5" />
-                    </button>
-                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

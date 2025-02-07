@@ -7,15 +7,24 @@ import ConfirmationWrapper from "../../components/ui/ConfirmationWrapper";
 import Notification from "../../components/notification/Notification";
 import { NavLink } from "react-router-dom";
 import WarehouseZoneList from "../../page/warehouse-pages/WarehouseZoneList";
+import WarehouseSettingsModal from "../../components/modal-components/WarehouseSettingModal"; 
+
 
 const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const [mapState, setMapState] = useState({
-        center: [43.238949, 76.889709], // Дефолтные координаты (Алматы)
+        center: [43.238949, 76.889709], 
         zoom: 15,
     });
     const [ymaps, setYmaps] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showZoneSettings, setShowZoneSettings] = useState(false); // Новое состояние для переключения
+    const [showZoneSettings, setShowZoneSettings] = useState(false); 
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    
+
+    const setWarehouse = (updatedWarehouse) => {
+        // Например, здесь можно обновить состояние или вызвать API для сохранения изменений
+        console.log('Updated warehouse:', updatedWarehouse);
+    };
 
     // Функция геокодинга адреса
     const geocodeAddress = async (address) => {
@@ -41,7 +50,6 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
         }
     };
 
-    // Эффект для геокодинга при изменении адреса или загрузке ymaps
     useEffect(() => {
         if (ymaps && warehouse?.location) {
             geocodeAddress(warehouse.location);
@@ -50,7 +58,6 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
 
     const authToken = useSelector((state) => state.token.token);
 
-    // Удаление warehouse
     const handleDeleteWarehouse = async () => {
         try {
             const response = await axios.delete(
@@ -204,7 +211,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                     >
                         <NavLink
                             to="/warehouse-structure"
-                            state={{ warehouse }} // передача данных через state
+                            state={{ warehouse }}
                             className={({ isActive }) =>
                                 `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${isActive
                                     ? "bg-blue-500 text-white"
@@ -217,18 +224,9 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
 
                         {hasRole("warehouse_manager") && (
                             <>
-                                <NavLink
-                                    to="/#"
-                                    state={{ warehouse }} // передача данных через state
-                                    className={({ isActive }) =>
-                                        `flex-1 px-4 py-2 rounded-lg transition-colors text-center duration-200 ${isActive
-                                            ? "bg-blue-500 text-white"
-                                            : "bg-gray-100 hover:bg-gray-200"
-                                        }`
-                                    }
-                                >
+                                <button onClick={() => setShowSettingsModal(true)} className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-center">
                                     Настройки
-                                </NavLink>
+                                </button>
                                 <ConfirmationWrapper
                                     title="Все данные пользователя будут удалены !!!"
                                     onConfirm={handleDeleteWarehouse}
@@ -247,6 +245,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                     <Notification />
                 </div>
             </div>
+            {showSettingsModal && <WarehouseSettingsModal warehouse={warehouse} onClose={() => setShowSettingsModal(false)} onUpdate={setWarehouse} />}
         </>
     );
 };

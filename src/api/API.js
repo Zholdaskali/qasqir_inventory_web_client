@@ -14,11 +14,11 @@ const API_PATH_WAREHOUSE_MANAGER = "/api/v1/warehouse-manager/"
 
 // API BASES 
 
+const API_WAREHOUSE_MANAGER = API_BASE + API_PATH_WAREHOUSE_MANAGER
+
 // --------------------------------------------------------------------- //
 
 // EMPLOYEE
-
-export const API_GET_NOMENCLATURES = API_BASE + API_PATH_WAREHOUSE_MANAGER + "nomenclatures"
 
 export const API_GET_CATEGORIES = API_BASE + API_PATH_EMPLOYEE + "categories"
 
