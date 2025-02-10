@@ -36,6 +36,7 @@ const WarehouseZoneList = () => {
                 zones: response.data.body,
                 loading: false
             }));
+            console.log(response.data.body)
         } catch (error) {
             console.error("Error loading zones:", error);
             setState(prev => ({

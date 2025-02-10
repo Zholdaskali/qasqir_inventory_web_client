@@ -26,8 +26,9 @@ const WarehouseList = () => {
                 headers: { "Auth-token": authToken },
             });
             setWarehouses(response.data.body);
+            console.log(response.data.body)
             dispatch(saveWarehouseList(response.data.body));
-        } catch (error) {
+        } catch (error) {   
             toast.error("Ошибка загрузки складов");
         }
     };

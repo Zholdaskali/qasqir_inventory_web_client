@@ -130,6 +130,11 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                 <p>Дата создания: {zone.createAt ? new Date(zone.createAt).toLocaleDateString() : "Неизвестно"}</p>
                 <p>Последнее изменение: {zone.updateAt ? new Date(zone.updateAt).toLocaleDateString() : "Неизвестно"}</p>
             </div>
+            <div className="text-sm text-gray-500 mt-4" style={{ maxHeight: '150px', overflowY: 'auto' }}>
+                <p>Высота: {zone.height ? zone.height : "Не указано"}</p>
+                <p>Длина: {zone.length ? zone.length : "Не указано"}</p>
+                <p>Ширина: {zone.width ? zone.width : "Не указано"}</p>
+            </div>
 
             {/* Модальное окно */}
             {isModalOpen && (
@@ -145,7 +150,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     zone={zone}
                     onClose={() => setIsSettingModalOpen(false)} // Добавляем onClose
                     warehouseId={warehouse.id}
-                    />
+                />
             )}
 
         </div>

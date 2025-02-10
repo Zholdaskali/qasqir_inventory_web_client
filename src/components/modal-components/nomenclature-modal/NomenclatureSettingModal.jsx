@@ -16,7 +16,6 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Загружаем список категорий при загрузке компонента
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -49,80 +48,56 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
         }
     };
 
-    const handleDelete = async () => {
-        if (!window.confirm("Вы уверены, что хотите удалить номенклатуру?")) return;
-        setLoading(true);
-        try {
-            await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/${nomenclature.id}/nomenclatures`,
-                { headers: { "Auth-token": authToken } }
-            );
-            toast.success("Номенклатура удалена");
-            onClose();
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при удалении");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-60">
-            <div className="bg-white rounded-xl shadow-lg p-6 w-full sm:w-3/4 md:w-1/2 lg:w-1/3 transition-transform transform scale-95 animate-fadeIn">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-6 text-center">
+        <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-1/2 lg:w-1/3">
+                <h2 className="text-2xl font-semibold text-main-dull-gray mb-6 text-center">
                     {nomenclature ? "Редактирование номенклатуры" : "Создание номенклатуры"}
                 </h2>
-                <form onSubmit={handleSave} className="space-y-4">
+                <form onSubmit={handleSave} className="space-y-6">
                     <div>
-                        <label className="block mb-1">Имя</label>
-                        <input className="w-full border px-3 py-2 rounded" value={name} onChange={(e) => setName(e.target.value)} required />
+                        <label className="block text-left mb-2 text-main-dull-blue">Имя</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={name} onChange={(e) => setName(e.target.value)} required />
                     </div>
                     <div>
-                        <label className="block mb-1">Артикль</label>
-                        <input className="w-full border px-3 py-2 rounded" value={article} onChange={(e) => setArticle(e.target.value)} />
+                        <label className="block text-left mb-2 text-main-dull-blue">Артикль</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={article} onChange={(e) => setArticle(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">Код</label>
-                        <input className="w-full border px-3 py-2 rounded" value={code} onChange={(e) => setCode(e.target.value)} />
+                        <label className="block text-left mb-2 text-main-dull-blue">Код</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={code} onChange={(e) => setCode(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">Тип</label>
-                        <input className="w-full border px-3 py-2 rounded" value={type} onChange={(e) => setType(e.target.value)} />
+                        <label className="block text-left mb-2 text-main-dull-blue">Тип</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={type} onChange={(e) => setType(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">tnved code</label>
-                        <input className="w-full border px-3 py-2 rounded" value={tnved_code} onChange={(e) => setTnvedCode(e.target.value)} />
+                        <label className="block text-left mb-2 text-main-dull-blue">tnved code</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={tnved_code} onChange={(e) => setTnvedCode(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">Единица измерения</label>
-                        <input className="w-full border px-3 py-2 rounded" value={measurement_unit} onChange={(e) => setMeasurementUnit(e.target.value)} />
+                        <label className="block text-left mb-2 text-main-dull-blue">Единица измерения</label>
+                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={measurement_unit} onChange={(e) => setMeasurementUnit(e.target.value)} />
                     </div>
                     <div>
-                        <label className="block mb-1">Категория</label>
+                        <label className="block text-left mb-2 text-main-dull-blue">Категория</label>
                         <select
-                            className="w-full border px-3 py-2 rounded"
+                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue"
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
                             required
                         >
                             <option value="" disabled>Выберите категорию</option>
                             {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
+                                <option key={category.id} value={category.id}>{category.name}</option>
                             ))}
                         </select>
                     </div>
-                    <div className="flex justify-between mt-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400">
+                    <div className="flex justify-end space-x-4">
+                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition">
                             Отмена
                         </button>
-                        {nomenclature && (
-                            <button type="button" onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                                Удалить
-                            </button>
-                        )}
-                        <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" disabled={loading}>
+                        <button type="submit" className="px-4 py-2 bg-main-dull-blue text-white rounded hover:bg-main-purp-dark transition" disabled={loading}>
                             {loading ? "Сохранение..." : nomenclature ? "Сохранить" : "Создать"}
                         </button>
                     </div>
@@ -133,3 +108,4 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
 };
 
 export default NomenclatureSettingsModal;
+    
