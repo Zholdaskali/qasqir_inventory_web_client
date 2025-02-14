@@ -82,7 +82,7 @@ const EditProfile = () => {
     };
 
     return (
-        <div className="bg-white w-4/5 h-[70vh] self-center px-10 rounded-xl shadow-sm flex flex-col items-center justify-between py-5">
+        <div className="bg-white w-full md:w-4/5 h-[100vh] md:h-[70vh] self-center px-5 md:px-10 rounded-xl shadow-sm flex flex-col items-center justify-between py-5 overflow-y-scroll">
             <div className='w-full flex items-center justify-between gap-x-3'>
                 <div className="flex items-center gap-x-3">
                     <img src={userIcon} alt="" />
@@ -92,19 +92,19 @@ const EditProfile = () => {
                     <IoMdClose size={30} className="cursor-pointer" />
                 </NavLink>
             </div>
-            <div className='flex'>
-                <div className="flex flex-col items-center gap-y-12 w-1/3">
+            <div className='flex flex-col md:flex-row w-full'>
+                <div className="flex flex-col items-center gap-y-12 w-full md:w-1/3">
                     <img src={user.imagePath ? user.imagePath : avatar} alt="User Avatar" className="w-3/4" />
-                    <button className="flex items-center border-2 border-main-dull-blue w-1/3 py-2 rounded-xl gap-x-2 justify-center">
+                    <button className="flex items-center border-2 border-main-dull-blue w-full md:w-1/3 py-2 rounded-xl gap-x-2 justify-center">
                         <p>Загрузить</p>
                         <img src={camera} alt="Camera Icon" />
                     </button>
-                    <div className="flex w-1/2 uppercase text-xs justify-between">
+                    <div className="flex w-full md:w-1/2 uppercase text-xs justify-between">
                         <p>Дата регистрации</p>
                         <p>{user.registrationDate || "Не указано"}</p>
                     </div>
                 </div>
-                <div className="flex flex-col w-1/2 gap-y-5">
+                <div className="flex flex-col w-full md:w-1/2 gap-y-5 mt-5 md:mt-0">
                     <div className="flex flex-col gap-y-7 font-medium">
                         <div className="space-y-1">
                             <p>Имя пользователя:</p>
@@ -112,7 +112,7 @@ const EditProfile = () => {
                                 type="text"
                                 placeholder={user.userName}
                                 value={newUserName}
-                                className="px-2 py-1 border rounded-xl"
+                                className="w-full px-2 py-1 border rounded-xl"
                                 onChange={(e) => setNewUserName(e.target.value)}
                             />
                         </div>
@@ -122,7 +122,7 @@ const EditProfile = () => {
                                 type="text"
                                 placeholder={user.email}
                                 value={newUserEmail}
-                                className="px-2 py-1 border rounded-xl"
+                                className="w-full px-2 py-1 border rounded-xl"
                                 onChange={(e) => setNewUserEmail(e.target.value)}
                             />
                         </div>
@@ -132,16 +132,16 @@ const EditProfile = () => {
                                 type="text"
                                 placeholder={user.userNumber}
                                 value={newUserNumber}
-                                className="px-2 py-1 border rounded-xl"
+                                className="w-full px-2 py-1 border rounded-xl"
                                 onChange={(e) => setNewUserNumber(e.target.value)}
                             />
                         </div>
                         <div className="space-y-1">
                             <p>Роли пользователя:</p>
-                            <ul className="flex">
+                            <ul className="flex flex-wrap">
                                 {Array.isArray(user.userRoles)
                                     ? user.userRoles.map((role, index) => (
-                                        <li key={index} className="bg-gray-100 rounded-md px-2 py-1">
+                                        <li key={index} className="bg-gray-100 rounded-md mr-2.5 px-2 py-1 mb-2">
                                             {role}
                                         </li>
                                     ))
@@ -149,9 +149,9 @@ const EditProfile = () => {
                                 }
                             </ul>
                         </div>
-                        <div className="flex w-4/5 gap-x-4 items-center justify-between">
-                            <p className="w-1/3">Статус почты : </p>
-                            <div className="w-1/2">
+                        <div className="flex flex-col md:flex-row w-full gap-x-4 items-center justify-between">
+                            <p className="w-full md:w-1/3 mb-2.5">Статус почты : </p>
+                            <div className="w-full md:w-1/2">
                                 <div
                                     className={`${user.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
                                         } text-center flex items-center justify-center px-2 rounded-full`}
@@ -176,13 +176,13 @@ const EditProfile = () => {
                     >
                         <button
                             disabled={isSaveDisabled()}
-                            className={`flex items-center border-2 border-main-dull-blue w-3/4 py-2 rounded-xl gap-x-2 justify-center ${isSaveDisabled() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center border-2 border-main-dull-blue w-full md:w-3/4 py-2 rounded-xl gap-x-2 justify-center ${isSaveDisabled() ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             Сохранить
                         </button>
                     </ConfirmationWrapper>
                     <button
-                        className="flex items-center border-2 border-main-dull-blue w-3/4 py-2 rounded-xl gap-x-2 justify-center"
+                        className="flex items-center border-2 border-main-dull-blue w-full md:w-3/4 py-2 rounded-xl gap-x-2 justify-center mb-2.5"
                         onClick={handlePassReset}
                     >
                         <p>Сменить пароль</p>

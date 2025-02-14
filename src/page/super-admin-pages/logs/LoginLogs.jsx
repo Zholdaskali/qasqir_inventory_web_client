@@ -93,75 +93,84 @@ const LoginLogs = () => {
   };
 
 
+  // ... existing code ...
   return (
-    <div className="h-[90vh] w-full flex flex-col justify-center items-center">
-      <div className="flex w-full justify-between items-center border-b py-5">
-        <h1 className="text-2xl w-1/4">Входы</h1>
-        <div className="flex flex-row items-center justify-between gap-x-5">
-          <div className="flex gap-x-2 mt-2 flex-row items-center">
-            <button
-              onClick={fetchLogInLogs}
-              className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
-            >
-              Вывести
-            </button>
-
-            <button
-              onClick={downloadLogsAsTxt}
-              className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
-            >
-              Скачать
-            </button>
-          </div>
-          <div className="flex w-1/2 mb-4 items-center gap-x-5">
-            <div>
-              <label htmlFor="start-date" className="flex items-center gap-x-2">
-                <CiCalendarDate />
-                <p>Начальная дата</p>
-              </label>
-              <input
-                type="date"
-                id="start-date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border px-4 py-3 rounded-lg"
-              />
+    <div className="h-screen w-full flex flex-col overflow-y-auto p-4">
+        {/* Заголовок и фильтры */}
+        <div className="flex flex-col md:flex-row w-full justify-between items-start md:items-center border-b py-5">
+            <h1 className="text-2xl mb-4 md:mb-0 md:w-1/4">Входы</h1>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full md:w-3/4">
+                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <div className="flex gap-2">
+                        <button
+                            onClick={fetchLogInLogs}
+                            className="bg-main-dull-gray px-4 md:px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+                        >
+                            Вывести
+                        </button>
+                        <button
+                            onClick={downloadLogsAsTxt}
+                            className="bg-main-dull-gray px-4 md:px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+                        >
+                            Скачать
+                        </button>
+                    </div>
+                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                        <div className="w-full md:w-auto">
+                            <label htmlFor="start-date" className="flex items-center gap-x-2 mb-2">
+                                <CiCalendarDate />
+                                <p>Начальная дата</p>
+                            </label>
+                            <input
+                                type="date"
+                                id="start-date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="border px-4 py-3 rounded-lg w-full"
+                            />
+                        </div>
+                        <div className="w-full md:w-auto">
+                            <label htmlFor="end-date" className="flex items-center gap-x-2 mb-2">
+                                <CiCalendarDate />
+                                <p>Конечная дата</p>
+                            </label>
+                            <input
+                                type="date"
+                                id="end-date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="border px-4 py-3 rounded-lg w-full"
+                            />
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label htmlFor="end-date">Конечная дата</label>
-              <input
-                type="date"
-                id="end-date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border px-4 py-3 rounded-lg"
-              />
-            </div>
-          </div>
         </div>
-      </div>
-
-      <div className="overflow-auto h-[70vh] w-full mt-7 p-5 rounded-xl">
-        <table className="table-auto w-full border-separate border-spacing-y-4">
-          <thead className=" text-center">
-            <tr>
-              <th className="text-start px-2 py-1">ID Пользователя</th>
-              <th className="text-start px-2 py-1">Имя Пользователя</th>
-              <th className="text-start px-2 py-1">Дата</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white border-b border-full">
-            {logInLogs.map((log) => (
-              <tr key={log.loginLogId} className='hover:bg-gray-50'>
-                <td className="py-4 px-2">{log.userId}</td>
-                <td className="py-4 px-2">{log.userName}</td>
-                <td className=" py-4 px-2">{log.timestamp}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Notification />
+  
+        {/* Таблица с логами */}
+        <div className="flex-1 overflow-hidden mt-4">
+            <div className="h-full overflow-auto rounded-xl">
+                <table className="table-auto w-full border-separate border-spacing-y-4">
+                    <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 sticky top-0 z-10">
+                        <tr>
+                            <th className="px-4 py-3 text-start">ID Пользователя</th>
+                            <th className="px-4 py-3 text-start">Имя Пользователя</th>
+                            <th className="px-4 py-3 text-start">Дата</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                        {logInLogs.map((log) => (
+                            <tr key={log.loginLogId} className="hover:bg-gray-50">
+                                <td className="py-4 px-4 text-start">{log.userId}</td>
+                                <td className="py-4 px-4 text-start">{log.userName}</td>
+                                <td className="py-4 px-4 text-start">{log.timestamp}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <Notification />
     </div>
   );
 }

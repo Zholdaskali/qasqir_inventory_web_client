@@ -82,72 +82,81 @@ const ExceptionLogs = () => {
         URL.revokeObjectURL(url);
     };
 
+    // ... existing code ...
     return (
-        <div className="h-[90vh] flex flex-col w-full justify-center items-center">
-            <div className="flex w-full justify-between items-center border-b py-5">
-                <h1 className="text-2xl w-1/4">Ошибки</h1>
-                <div className="flex flex-row items-center justify-between gap-x-5 3/4">
-                    <div className="flex gap-x-2 mt-2 flex-row items-center">
-                        <button
-                            onClick={fetchExceptionLogs}
-                            className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
-                        >
-                            Вывести
-                        </button>
+        <div className="h-screen w-full flex flex-col overflow-y-auto p-4">
+            <div className="flex w-full flex-col md:flex-row justify-between items-start md:items-center border-b py-5">
+                <h1 className="text-2xl mb-4 md:mb-0 md:w-1/4">Ошибки</h1>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full md:w-3/4">
+                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                        <div className="flex gap-2">
+                            <button
+                                onClick={fetchExceptionLogs}
+                                className="bg-main-dull-gray px-4 md:px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+                            >
+                                Вывести
+                            </button>
 
-                        <button
-                            onClick={downloadLogsAsTxt}
-                            className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
-                        >
-                            Скачать
-                        </button>
-                    </div>
-                    <div className="flex w-1/2 mb-4 items-center gap-x-5">
-                        <div>
-                            <label htmlFor="start-date" className="flex items-center gap-x-2">
-                                <CiCalendarDate />
-                                <p>Начальная дата</p>
-                            </label>
-                            <input
-                                type="date"
-                                id="start-date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="border px-4 py-3 rounded-lg"
-                            />
+                            <button
+                                onClick={downloadLogsAsTxt}
+                                className="bg-main-dull-gray px-4 md:px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+                            >
+                                Скачать
+                            </button>
                         </div>
-                        <div>
-                            <label htmlFor="end-date">Конечная дата</label>
-                            <input
-                                type="date"
-                                id="end-date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="border px-4 py-3 rounded-lg"
-                            />
+                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                            <div className="w-full md:w-auto">
+                                <label htmlFor="start-date" className="flex items-center gap-x-2 mb-2">
+                                    <CiCalendarDate />
+                                    <p>Начальная дата</p>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="start-date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="border px-4 py-3 rounded-lg w-full"
+                                />
+                            </div>
+                            <div className="w-full md:w-auto">
+                                <label htmlFor="end-date" className="flex items-center gap-x-2 mb-2">
+                                    <CiCalendarDate />
+                                    <p>Конечная дата</p>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="end-date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="border px-4 py-3 rounded-lg w-full"
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="overflow-auto h-[70vh] w-full mt-7 p-5 rounded-xl">
-                <table className="table-auto w-full border-separate border-spacing-y-4">
-                    <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full ">
-                        <tr>
-                            <th className="px-2 py-1 text-start">Причина</th>
-                            <th className="px-2 py-1 text-start">Сообщение</th>
-                            <th className="px-2 py-1 text-start">Дата</th>
-                        </tr>
-                    </thead>
-                    <tbody className="text-center bg-white border-b border-full ">
-                        {exceptionLogs.map((log) => (
-                            <tr key={log.exceptionId} className="hover:bg-gray-50 ">
-                                <td className=" py-4 px-2 ">{log.cause}</td>
-                                <td className=" py-4 px-2 ">{log.message}</td>
-                                <td className=" py-4 px-2 ">{log.timestamp}</td>
+
+            <div className="flex-1 overflow-hidden mt-4">
+                <div className="h-full overflow-auto rounded-xl">
+                    <table className="table-auto w-full border-separate border-spacing-y-4">
+                        <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 sticky top-0">
+                            <tr>
+                                <th className="px-4 py-3 text-start">Причина</th>
+                                <th className="px-4 py-3 text-start">Сообщение</th>
+                                <th className="px-4 py-3 text-start">Дата</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="text-center bg-white">
+                            {exceptionLogs.map((log) => (
+                                <tr key={log.exceptionId} className="hover:bg-gray-50">
+                                    <td className="py-4 px-4 text-start">{log.cause}</td>
+                                    <td className="py-4 px-4 text-start">{log.message}</td>
+                                    <td className="py-4 px-4 text-start">{log.timestamp}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <Notification />
         </div>

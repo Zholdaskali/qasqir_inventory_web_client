@@ -25,8 +25,6 @@ const ActionLogs = () => {
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
 
-
-
   const [fields, setFields] = useState([]);
 
   const fetchActionLogs = async () => {
@@ -86,27 +84,27 @@ const ActionLogs = () => {
   };
 
   return (
-    <div className="h-[90vh] w-full flex flex-col justify-center items-center">
-      <div className="flex w-full justify-between items-center border-b py-5">
-        <h1 className="text-2xl w-1/4">Действия</h1>
-        <div className="flex flex-row items-center justify-between gap-x-5">
-          <div className="flex gap-x-2 mt-2 flex-row items-center">
+    <div className="h-[90vh] w-full flex flex-col justify-center items-center p-4 md:p-6 lg:p-8">
+      {/* Заголовок и фильтры */}
+      <div className="flex flex-col md:flex-row w-full justify-between items-center border-b py-5 gap-4">
+        <h1 className="text-2xl w-full md:w-1/4">Действия</h1>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full md:w-3/4">
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
             <button
               onClick={fetchActionLogs}
-              className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
+              className="bg-main-dull-gray px-4 md:px-8 text-sm py-2 md:py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
             >
               Вывести
             </button>
-
             <button
               onClick={downloadLogsAsTxt}
-              className="bg-main-dull-gray px-8 text-sm py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue"
+              className="bg-main-dull-gray px-4 md:px-8 text-sm py-2 md:py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
             >
               Скачать
             </button>
           </div>
-          <div className="flex w-1/2 mb-4 items-center gap-x-5">
-            <div>
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-1/2">
+            <div className="w-full md:w-1/2">
               <label htmlFor="start-date" className="flex items-center gap-x-2">
                 <CiCalendarDate />
                 <p>Начальная дата</p>
@@ -116,26 +114,28 @@ const ActionLogs = () => {
                 id="start-date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border px-4 py-3 rounded-lg"
+                className="border px-4 py-2 rounded-lg w-full"
               />
             </div>
-            <div>
+            <div className="w-full md:w-1/2">
               <label htmlFor="end-date">Конечная дата</label>
               <input
                 type="date"
                 id="end-date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border px-4 py-3 rounded-lg"
+                className="border px-4 py-2 rounded-lg w-full"
               />
             </div>
           </div>
         </div>
       </div>
-      <div className="overflow-auto h-[70vh] w-full mt-7 p-5 rounded-xl">
+
+      {/* Таблица с логами */}
+      <div className="overflow-auto h-[70vh] w-full mt-7 p-5 rounded-xl scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         <table className="table-auto w-full border-separate border-spacing-y-4">
-          <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full ">
-            <tr className="">
+          <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full sticky top-0">
+            <tr>
               <th className="text-start px-2 py-1">Дата</th>
               <th className="text-start px-2 py-1">Пользователь</th>
               <th className="text-start px-2 py-1">Действие</th>

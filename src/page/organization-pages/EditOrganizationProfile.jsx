@@ -65,9 +65,9 @@ const EditOrganizationProfile = () => {
     };
 
     return (
-        <div className="bg-white w-5/6 h-[70vh] self-center px-4 rounded-xl shadow-sm flex flex-col items-center justify-around gap-y-12">
+        <div className="bg-white w-full md:w-5/6 h-[100vh] md:h-[70vh] self-center px-4 rounded-xl shadow-sm flex flex-col items-center justify-around gap-y-12 py-5 overflow-y-scroll">
             <div className='w-full flex items-center justify-between gap-x-3'>
-                <div className="w-1/2 flex items-center justify-start">
+                <div className="w-full md:w-1/2 flex items-center justify-start">
                     <VscOrganization size={30} />
                     <h1 className='uppercase text-main-dull-blue font-medium'>Обновить Профиль вашей организации</h1>
                 </div>
@@ -75,28 +75,28 @@ const EditOrganizationProfile = () => {
                     <IoMdClose size={30} className="cursor-pointer" />
                 </NavLink>
             </div>
-            <div className='flex w-full'>
-                <div className="flex flex-col items-center gap-y-12 w-1/3">
+            <div className='flex flex-col md:flex-row w-full'>
+                <div className="flex flex-col items-center gap-y-12 w-full md:w-1/3">
                     <img src={organization.imagePath ? organization.imagePath : avatar} alt="User Avatar" className="w-2/3" />
-                    <button className="flex items-center border-2 border-main-dull-blue w-1/3 py-2 rounded-xl gap-x-2 justify-center">
+                    <button className="flex items-center border-2 border-main-dull-blue w-full md:w-1/3 py-2 rounded-xl gap-x-2 justify-center">
                         <p>Загрузить</p>
                         <img src={camera} alt="Camera Icon" />
                     </button>
-                    <div className="flex w-1/2 uppercase text-xs justify-between">
+                    <div className="flex w-full md:w-1/2 uppercase text-xs justify-between">
                         <p>Дата регистрации</p>
                         <p>{organization.registrationDate}</p>
                     </div>
                 </div>
-                <div className="flex flex-col justify-between w-2/3 gap-y-12">
-                    <div className="flex flex-row w-3/4 justify-between gap-x-12 font-medium">
-                        <div className="flex flex-col gap-y-7">
+                <div className="flex flex-col justify-between w-full md:w-2/3 gap-y-12 mt-5 md:mt-0">
+                    <div className="flex flex-col md:flex-row w-full justify-between gap-x-12 font-medium">
+                        <div className="flex flex-col gap-y-7 w-full md:w-1/2">
                             <div className="space-y-1">
                                 <p>Название Организации:</p>
                                 <input
                                     type="text"
                                     placeholder={organization.organizationName}
                                     value={organizationName}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationName(e.target.value)}
                                 />
                             </div>
@@ -106,7 +106,7 @@ const EditOrganizationProfile = () => {
                                     type="text"
                                     placeholder={organization.email}
                                     value={organizationEmail}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationEmail(e.target.value)}
                                 />
                             </div>
@@ -116,19 +116,19 @@ const EditOrganizationProfile = () => {
                                     type="text"
                                     placeholder={organization.phoneNumber}
                                     value={organizationNumber}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationNumber(e.target.value)}
                                 />
                             </div>
                         </div>
-                        <div className="flex flex-col gap-y-7">
+                        <div className="flex flex-col gap-y-7 w-full md:w-1/2 mt-5 md:mt-0">
                             <div className="space-y-1">
                                 <p>Адресс Организации:</p>
                                 <input
                                     type="text"
                                     placeholder={organization.address}
                                     value={organizationAddress}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationAdress(e.target.value)}
                                 />
                             </div>
@@ -138,7 +138,7 @@ const EditOrganizationProfile = () => {
                                     type="text"
                                     placeholder={organization.ownerName}
                                     value={organizationOwner}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationOwner(e.target.value)}
                                 />
                             </div>
@@ -148,7 +148,7 @@ const EditOrganizationProfile = () => {
                                     type="text"
                                     placeholder={organization.websiteLink}
                                     value={organizationWebLink}
-                                    className="px-2 py-1 border rounded-xl"
+                                    className="w-full px-2 py-1 border rounded-xl"
                                     onChange={(e) => setOrganizationWebLink(e.target.value)}
                                 />
                             </div>
@@ -160,7 +160,7 @@ const EditOrganizationProfile = () => {
                     >
                         <button
                             disabled={isSaveDisabled()}
-                            className={`flex items-center border-2 border-main-dull-blue w-3/4 py-2 rounded-xl gap-x-2 justify-center ${isSaveDisabled() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`flex items-center border-2 border-main-dull-blue w-full md:w-3/4 py-2 rounded-xl gap-x-2 justify-center ${isSaveDisabled() ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             Сохранить
                         </button>
