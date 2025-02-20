@@ -57,7 +57,7 @@ const InventoryPage = () => {
           ))}
         </div>
       </div>
-      <div className="p-6 border rounded-xl bg-white shadow-md overflow-y-auto max-h-[700px]">
+      <div className="p-6 border rounded-xl bg-white shadow-md overflow-y-auto max-h-[1000px]">
         {renderContent()}
       </div>
     </div>
