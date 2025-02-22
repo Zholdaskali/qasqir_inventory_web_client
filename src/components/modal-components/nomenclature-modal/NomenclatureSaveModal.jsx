@@ -14,6 +14,9 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
         type: "",
         tnvedCode: "",
         measurement: "",
+        height: 0, // Новое поле
+        length: 0, // Новое поле
+        width: 0, // Новое поле
     });
 
     const handleChange = (e) => {
@@ -39,6 +42,9 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                 tnved_code: formData.tnvedCode,
                 measurement_unit: formData.measurement,
                 created_by: userId,
+                height: formData.height, // Новое поле
+                length: formData.length, // Новое поле
+                width: formData.width, // Новое поле
             };
 
             try {
@@ -124,6 +130,45 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                             placeholder="Введите единицу измерения"
                         />
                     </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Высота (м)</label>
+                        <input
+                            className="w-full border rounded-lg px-4 py-2"
+                            name="height"
+                            type="number"
+                            value={formData.height}
+                            onChange={handleChange}
+                            placeholder="Введите высоту"
+                            min="0"
+                            step="0.1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Длина (м)</label>
+                        <input
+                            className="w-full border rounded-lg px-4 py-2"
+                            name="length"
+                            type="number"
+                            value={formData.length}
+                            onChange={handleChange}
+                            placeholder="Введите длину"
+                            min="0"
+                            step="0.1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Ширина (м)</label>
+                        <input
+                            className="w-full border rounded-lg px-4 py-2"
+                            name="width"
+                            type="number"
+                            value={formData.width}
+                            onChange={handleChange}
+                            placeholder="Введите ширину"
+                            min="0"
+                            step="0.1"
+                        />
+                    </div>
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"
@@ -146,4 +191,3 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
 };
 
 export default NomenclatureSaveModal;
-    

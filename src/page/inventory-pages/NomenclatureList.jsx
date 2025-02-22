@@ -76,6 +76,9 @@ const NomenclatureList = () => {
                   <th className="text-left px-2">Код</th>
                   <th className="text-left px-2">Тип</th>
                   <th className="text-left px-2">Единица измерения</th>
+                  <th className="text-left px-2">Высота (м)</th> {/* Новая колонка */}
+                  <th className="text-left px-2">Длина (м)</th> {/* Новая колонка */}
+                  <th className="text-left px-2">Ширина (м)</th> {/* Новая колонка */}
                   <th className="text-left px-2">Создатель</th>
                   <th className="text-left px-2">Дата создания</th>
                   <th className="text-left px-2">Последнее изменение</th>
@@ -95,6 +98,9 @@ const NomenclatureList = () => {
                       <td className="py-3 px-2">{nomenclature.code}</td>
                       <td className="py-3 px-2">{nomenclature.type}</td>
                       <td className="py-3 px-2">{nomenclature.measurement}</td>
+                      <td className="py-3 px-2">{nomenclature.height}</td> {/* Новая колонка */}
+                      <td className="py-3 px-2">{nomenclature.length}</td> {/* Новая колонка */}
+                      <td className="py-3 px-2">{nomenclature.width}</td> {/* Новая колонка */}
                       <td className="py-3 px-2">{nomenclature.createdBy}</td>
                       <td className="py-3 px-2">{nomenclature.createdAt}</td>
                       <td className="py-3 px-2">{nomenclature.updatedAt}</td>
@@ -113,7 +119,7 @@ const NomenclatureList = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center py-4">
+                    <td colSpan="13" className="text-center py-4"> {/* Обновите colSpan */}
                       Данные отсутствуют
                     </td>
                   </tr>

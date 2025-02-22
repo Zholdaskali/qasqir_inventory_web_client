@@ -4,20 +4,21 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import successIcon from '../../assets/success.svg'; // Импортируйте иконку успеха
 
-const IncomingRequestPage = () => {
+const TransferRequestPage = () => {
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
 
     const [documentNumber, setDocumentNumber] = useState("");
     const [documentDate, setDocumentDate] = useState("");
     const [supplierId, setSupplierId] = useState("");
-    const [tnvedCode, setTnvedCode] = useState("");
+    const [customerId, setCustomerId] = useState("");
     const [items, setItems] = useState([]);
     const [nomenclatureOptions, setNomenclatureOptions] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
     const [zonesByWarehouse, setZonesByWarehouse] = useState({});
     const [containersByZone, setContainersByZone] = useState({});
     const [suppliers, setSuppliers] = useState([]);
+    const [customers, setCustomers] = useState([]);
     const [requestSuccess, setRequestSuccess] = useState(false); // Состояние для успешного создания заявки
 
     // Загрузка номенклатуры
@@ -65,6 +66,21 @@ const IncomingRequestPage = () => {
         fetchSuppliers();
     }, [authToken]);
 
+    // Загрузка клиентов
+    useEffect(() => {
+        const fetchCustomers = async () => {
+            try {
+                const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/customers", {
+                    headers: { "Auth-token": authToken },
+                });
+                setCustomers(response.data.body);
+            } catch (error) {
+                toast.error("Ошибка загрузки клиентов");
+            }
+        };
+        fetchCustomers();
+    }, [authToken]);
+
     // Загрузка зон для выбранного склада
     const fetchZonesForWarehouse = async (warehouseId) => {
         try {
@@ -93,13 +109,10 @@ const IncomingRequestPage = () => {
     const handleAddItem = () => {
         setItems([...items, { 
             nomenclatureId: "", 
-            nomenclatureName: "", 
             quantity: 1, 
-            measurementUnit: "", 
-            warehouseId: "", 
-            warehouseZoneId: "", 
-            containerId: "", 
-            returnable: false 
+            fromWarehouseZoneId: "", 
+            toWarehouseZoneId: "", 
+            containerId: "" 
         }]);
     };
 
@@ -117,31 +130,33 @@ const IncomingRequestPage = () => {
 
     // Обработка изменения номенклатуры
     const handleNomenclatureChange = (index, nomenclatureId) => {
-        const selectedNomenclature = nomenclatureOptions.find(n => n.id === parseInt(nomenclatureId, 10));
-        if (selectedNomenclature) {
-            handleItemChange(index, "nomenclatureId", selectedNomenclature.id);
-            handleItemChange(index, "nomenclatureName", selectedNomenclature.name);
-            handleItemChange(index, "measurementUnit", selectedNomenclature.measurement);
-        }
+        handleItemChange(index, "nomenclatureId", nomenclatureId);
     };
 
-    // Обработка изменения склада
-    const handleWarehouseChange = async (index, warehouseId) => {
-        handleItemChange(index, "warehouseId", warehouseId);
-        handleItemChange(index, "zoneId", "");
-        handleItemChange(index, "containerId", "");
+    // Обработка изменения склада (для зоны отправки)
+    const handleFromWarehouseChange = async (index, warehouseId) => {
+        handleItemChange(index, "fromWarehouseZoneId", "");
         if (warehouseId) {
             await fetchZonesForWarehouse(warehouseId);
         }
     };
 
-    // Обработка изменения зоны
-    const handleZoneChange = async (index, zoneId) => {
-        handleItemChange(index, "zoneId", zoneId);
-        handleItemChange(index, "containerId", "");
-        if (zoneId) {
-            await fetchContainersForZone(zoneId);
+    // Обработка изменения склада (для зоны получения)
+    const handleToWarehouseChange = async (index, warehouseId) => {
+        handleItemChange(index, "toWarehouseZoneId", "");
+        if (warehouseId) {
+            await fetchZonesForWarehouse(warehouseId);
         }
+    };
+
+    // Обработка изменения зоны (для зоны отправки)
+    const handleFromZoneChange = async (index, zoneId) => {
+        handleItemChange(index, "fromWarehouseZoneId", zoneId);
+    };
+
+    // Обработка изменения зоны (для зоны получения)
+    const handleToZoneChange = async (index, zoneId) => {
+        handleItemChange(index, "toWarehouseZoneId", zoneId);
     };
 
     // Обработка изменения контейнера
@@ -149,36 +164,37 @@ const IncomingRequestPage = () => {
         handleItemChange(index, "containerId", containerId);
     };
 
-    // Отправка заявки
+    // Отправка заявки на перемещение
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const payload = {
-                documentType: "INCOMING",
+                documentType: "TRANSFER",
                 documentNumber,
                 documentDate,
                 supplierId: parseInt(supplierId, 10),
-                tnvedCode,
+                customerId: parseInt(customerId, 10),
+                tnvedCode: "TRANSFER", // Фиксированное значение
                 items: items.map(item => ({
                     nomenclatureId: parseInt(item.nomenclatureId, 10),
                     quantity: parseFloat(item.quantity),
-                    warehouseZoneId: parseInt(item.zoneId, 10),
+                    fromWarehouseZoneId: parseInt(item.fromWarehouseZoneId, 10),
+                    toWarehouseZoneId: parseInt(item.toWarehouseZoneId, 10),
                     containerId: item.containerId ? parseInt(item.containerId, 10) : null,
-                    returnable: item.returnable,
                 })),
                 createdBy: userId,
             };
             console.log("Отправляемый payload:", JSON.stringify(payload, null, 2));
-            const response = await axios.post("http://localhost:8081/api/v1/storekeeper/incoming", payload, {
+            const response = await axios.post("http://localhost:8081/api/v1/storekeeper/transfer", payload, {
                 headers: { "Auth-token": authToken },
             });
-            toast.success(response?.data?.message || "Заявка успешно создана");
+            toast.success(response?.data?.message || "Заявка на перемещение успешно создана");
             setRequestSuccess(true); // Показываем сообщение об успехе
             setTimeout(() => {
                 setRequestSuccess(false); // Скрываем сообщение через 2 секунды
             }, 2000);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при создании заявки");
+            toast.error(error.response?.data?.message || "Ошибка при создании заявки на перемещение");
         }
     };
 
@@ -191,23 +207,36 @@ const IncomingRequestPage = () => {
                         <div className='bg-white w-2/5 md:w-1/5 px-4 py-8 md:px-2 rounded-xl'>
                             <div className='flex flex-col items-center gap-y-8 md:gap-y-16'>
                                 <img src={successIcon} className='w-1/2 md:w-1/3' alt="Успех" />
-                                <h2>Заявка успешно создана</h2>
+                                <h2>Заявка на перемещение успешно создана</h2>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            <h2 className="text-2xl font-semibold text-main-dull-gray text-center">Создание Оприходование</h2>
+            <h2 className="text-2xl font-semibold text-main-dull-gray text-center">Создание заявки на перемещение</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                     <label className="block text-main-dull-blue">Номер документа</label>
-                    <input className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} required />
+                    <input
+                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                        value={documentNumber}
+                        onChange={(e) => setDocumentNumber(e.target.value)}
+                        required
+                    />
                 </div>
+
                 <div>
                     <label className="block text-main-dull-blue">Дата документа</label>
-                    <input type="date" className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={documentDate} onChange={(e) => setDocumentDate(e.target.value)} required />
+                    <input
+                        type="date"
+                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                        value={documentDate}
+                        onChange={(e) => setDocumentDate(e.target.value)}
+                        required
+                    />
                 </div>
+
                 <div>
                     <label className="block text-main-dull-blue">Поставщик</label>
                     <select
@@ -224,22 +253,36 @@ const IncomingRequestPage = () => {
                         ))}
                     </select>
                 </div>
-                {/* <div>
-                    <label className="block text-main-dull-blue">Код ТН ВЭД</label>
-                    <input className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={tnvedCode} onChange={(e) => setTnvedCode(e.target.value)} required />
-                </div> */}
-                
+
+                <div>
+                    <label className="block text-main-dull-blue">Клиент</label>
+                    <select
+                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                        value={customerId}
+                        onChange={(e) => setCustomerId(e.target.value)}
+                        required
+                    >
+                        <option value="">Выберите клиента</option>
+                        {customers.map((customer) => (
+                            <option key={customer.id} value={customer.id}>
+                                {customer.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
                 <h3 className="text-lg font-semibold text-main-dull-gray">Товары</h3>
                 {items.map((item, index) => (
                     <div key={index} className="border border-main-dull-blue p-4 rounded-lg space-y-4">
                         <h4 className="text-md font-medium text-main-dull-blue">Товар #{index + 1}</h4>
-                        
+
                         <div>
                             <label className="block text-main-dull-blue">Выберите номенклатуру</label>
                             <select
                                 className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
                                 value={item.nomenclatureId}
                                 onChange={(e) => handleNomenclatureChange(index, e.target.value)}
+                                required
                             >
                                 <option value="">Выберите номенклатуру</option>
                                 {nomenclatureOptions.map((nomenclature) => (
@@ -252,15 +295,21 @@ const IncomingRequestPage = () => {
 
                         <div>
                             <label className="block text-main-dull-blue">Количество</label>
-                            <input type="number" className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={item.quantity} onChange={(e) => handleItemChange(index, "quantity", e.target.value)} required />
-                        </div>  
+                            <input
+                                type="number"
+                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                                value={item.quantity}
+                                onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                                required
+                            />
+                        </div>
 
                         <div>
-                            <label className="block text-main-dull-blue">Выберите склад</label>
+                            <label className="block text-main-dull-blue">Склад отправки</label>
                             <select
                                 className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.warehouseId}
-                                onChange={(e) => handleWarehouseChange(index, e.target.value)}
+                                value={item.fromWarehouseZoneId}
+                                onChange={(e) => handleFromWarehouseChange(index, e.target.value)}
                                 required
                             >
                                 <option value="">Выберите склад</option>
@@ -272,17 +321,17 @@ const IncomingRequestPage = () => {
                             </select>
                         </div>
 
-                        {item.warehouseId && (
+                        {item.fromWarehouseZoneId && (
                             <div>
-                                <label className="block text-main-dull-blue">Выберите зону</label>
+                                <label className="block text-main-dull-blue">Зона отправки</label>
                                 <select
                                     className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                    value={item.zoneId}
-                                    onChange={(e) => handleZoneChange(index, e.target.value)}
+                                    value={item.fromWarehouseZoneId}
+                                    onChange={(e) => handleFromZoneChange(index, e.target.value)}
                                     required
                                 >
                                     <option value="">Выберите зону</option>
-                                    {zonesByWarehouse[item.warehouseId]?.map((zone) => (
+                                    {zonesByWarehouse[item.fromWarehouseZoneId]?.map((zone) => (
                                         <option key={zone.id} value={zone.id}>
                                             {zone.name}
                                         </option>
@@ -291,18 +340,36 @@ const IncomingRequestPage = () => {
                             </div>
                         )}
 
-                        {item.zoneId && (
+                        <div>
+                            <label className="block text-main-dull-blue">Склад получения</label>
+                            <select
+                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                                value={item.toWarehouseZoneId}
+                                onChange={(e) => handleToWarehouseChange(index, e.target.value)}
+                                required
+                            >
+                                <option value="">Выберите склад</option>
+                                {warehouses.map((warehouse) => (
+                                    <option key={warehouse.id} value={warehouse.id}>
+                                        {warehouse.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {item.toWarehouseZoneId && (
                             <div>
-                                <label className="block text-main-dull-blue">Выберите контейнер (необязательно)</label>
+                                <label className="block text-main-dull-blue">Зона получения</label>
                                 <select
                                     className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                    value={item.containerId}
-                                    onChange={(e) => handleContainerChange(index, e.target.value)}
+                                    value={item.toWarehouseZoneId}
+                                    onChange={(e) => handleToZoneChange(index, e.target.value)}
+                                    required
                                 >
-                                    <option value="">Не выбрано</option>
-                                    {containersByZone[item.zoneId]?.map((container) => (
-                                        <option key={container.id} value={container.id}>
-                                            {container.name}
+                                    <option value="">Выберите зону</option>
+                                    {zonesByWarehouse[item.toWarehouseZoneId]?.map((zone) => (
+                                        <option key={zone.id} value={zone.id}>
+                                            {zone.name}
                                         </option>
                                     ))}
                                 </select>
@@ -310,27 +377,45 @@ const IncomingRequestPage = () => {
                         )}
 
                         <div>
-                            <label className="block text-main-dull-blue">Возвратная тара</label>
-                            <input
-                                type="checkbox"
-                                checked={item.returnable}
-                                onChange={(e) => handleItemChange(index, "returnable", e.target.checked)}
-                            />
+                            <label className="block text-main-dull-blue">Контейнер (необязательно)</label>
+                            <select
+                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                                value={item.containerId}
+                                onChange={(e) => handleContainerChange(index, e.target.value)}
+                            >
+                                <option value="">Не выбрано</option>
+                                {containersByZone[item.fromWarehouseZoneId]?.map((container) => (
+                                    <option key={container.id} value={container.id}>
+                                        {container.name}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                        
-                        <button type="button" onClick={() => handleRemoveItem(index)} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveItem(index)}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                        >
                             Удалить
                         </button>
                     </div>
                 ))}
-                
-                <button type="button" onClick={handleAddItem} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+
+                <button
+                    type="button"
+                    onClick={handleAddItem}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                >
                     Добавить товар
                 </button>
-                
+
                 <div className="flex justify-end space-x-4">
-                    <button type="submit" className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition">
-                        Создать заявку
+                    <button
+                        type="submit"
+                        className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
+                    >
+                        Создать заявку на перемещение
                     </button>
                 </div>
             </form>
@@ -338,4 +423,4 @@ const IncomingRequestPage = () => {
     );
 };
 
-export default IncomingRequestPage;
+export default TransferRequestPage;
