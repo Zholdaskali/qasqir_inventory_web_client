@@ -3,6 +3,8 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import successIcon from '../../assets/success.svg'; // Импортируйте иконку успеха
+import Notification from "../../components/notification/Notification";
+
 
 const IncomingRequestPage = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -80,7 +82,7 @@ const IncomingRequestPage = () => {
     // Загрузка контейнеров для выбранной зоны
     const fetchContainersForZone = async (zoneId) => {
         try {
-            const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/zones/${zoneId}/containers`, {
+            const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${zoneId}`, {
                 headers: { "Auth-token": authToken },
             });
             setContainersByZone((prev) => ({ ...prev, [zoneId]: response.data.body }));
@@ -91,31 +93,28 @@ const IncomingRequestPage = () => {
 
     // Добавление товара
     const handleAddItem = () => {
-        setItems([...items, { 
-            nomenclatureId: "", 
-            nomenclatureName: "", 
-            quantity: 1, 
-            measurementUnit: "", 
-            warehouseId: "", 
-            warehouseZoneId: "", 
-            containerId: "", 
-            returnable: false 
+        setItems([...items, {
+            nomenclatureId: "",
+            nomenclatureName: "",
+            quantity: 1,
+            measurementUnit: "",
+            warehouseId: "",
+            warehouseZoneId: "",
+            containerId: "",
+            returnable: false
         }]);
     };
 
-    // Удаление товара
     const handleRemoveItem = (index) => {
         setItems(items.filter((_, i) => i !== index));
     };
 
-    // Изменение данных товара
     const handleItemChange = (index, field, value) => {
         const updatedItems = [...items];
         updatedItems[index][field] = value;
         setItems(updatedItems);
     };
 
-    // Обработка изменения номенклатуры
     const handleNomenclatureChange = (index, nomenclatureId) => {
         const selectedNomenclature = nomenclatureOptions.find(n => n.id === parseInt(nomenclatureId, 10));
         if (selectedNomenclature) {
@@ -125,7 +124,6 @@ const IncomingRequestPage = () => {
         }
     };
 
-    // Обработка изменения склада
     const handleWarehouseChange = async (index, warehouseId) => {
         handleItemChange(index, "warehouseId", warehouseId);
         handleItemChange(index, "zoneId", "");
@@ -135,7 +133,6 @@ const IncomingRequestPage = () => {
         }
     };
 
-    // Обработка изменения зоны
     const handleZoneChange = async (index, zoneId) => {
         handleItemChange(index, "zoneId", zoneId);
         handleItemChange(index, "containerId", "");
@@ -144,12 +141,10 @@ const IncomingRequestPage = () => {
         }
     };
 
-    // Обработка изменения контейнера
     const handleContainerChange = (index, containerId) => {
         handleItemChange(index, "containerId", containerId);
     };
 
-    // Отправка заявки
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -228,23 +223,26 @@ const IncomingRequestPage = () => {
                     <label className="block text-main-dull-blue">Код ТН ВЭД</label>
                     <input className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={tnvedCode} onChange={(e) => setTnvedCode(e.target.value)} required />
                 </div> */}
-                
+
                 <h3 className="text-lg font-semibold text-main-dull-gray">Товары</h3>
                 {items.map((item, index) => (
                     <div key={index} className="border border-main-dull-blue p-4 rounded-lg space-y-4">
                         <h4 className="text-md font-medium text-main-dull-blue">Товар #{index + 1}</h4>
-                        
+
                         <div>
-                            <label className="block text-main-dull-blue">Выберите номенклатуру</label>
+                            <label className="block text-main-dull-blue font-medium mb-2">Выберите номенклатуру</label>
                             <select
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                                 value={item.nomenclatureId}
                                 onChange={(e) => handleNomenclatureChange(index, e.target.value)}
                             >
                                 <option value="">Выберите номенклатуру</option>
                                 {nomenclatureOptions.map((nomenclature) => (
                                     <option key={nomenclature.id} value={nomenclature.id}>
-                                        {nomenclature.name}
+                                        <span className="font-semibold">{nomenclature.name}</span>
+                                        <span className="text-sm text-gray-500 ml-2">
+                                            {` | Длина: ${nomenclature.length} | Высота: ${nomenclature.height} | Ширина: ${nomenclature.width}`}
+                                        </span>
                                     </option>
                                 ))}
                             </select>
@@ -253,7 +251,7 @@ const IncomingRequestPage = () => {
                         <div>
                             <label className="block text-main-dull-blue">Количество</label>
                             <input type="number" className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={item.quantity} onChange={(e) => handleItemChange(index, "quantity", e.target.value)} required />
-                        </div>  
+                        </div>
 
                         <div>
                             <label className="block text-main-dull-blue">Выберите склад</label>
@@ -284,7 +282,10 @@ const IncomingRequestPage = () => {
                                     <option value="">Выберите зону</option>
                                     {zonesByWarehouse[item.warehouseId]?.map((zone) => (
                                         <option key={zone.id} value={zone.id}>
-                                            {zone.name}
+                                            <span className="font-semibold">{zone.name}</span>
+                                        <span className="text-sm text-gray-500 ml-2">
+                                            {` | Длина: ${zone.length} | Высота: ${zone.height} | Ширина: ${zone.width} | Свободные место: ${zone.capacity}`}
+                                        </span>
                                         </option>
                                     ))}
                                 </select>
@@ -302,38 +303,35 @@ const IncomingRequestPage = () => {
                                     <option value="">Не выбрано</option>
                                     {containersByZone[item.zoneId]?.map((container) => (
                                         <option key={container.id} value={container.id}>
-                                            {container.name}
+                                        
+                                            <span className="font-semibold">{container.serialNumber}</span>
+                                        <span className="text-sm text-gray-500 ml-2">
+                                            {` | Длина: ${container.length} | Высота: ${container.height} | Ширина: ${container.width} | ${container.capacity}`}
+                                        </span>
                                         </option>
+                                        
                                     ))}
                                 </select>
                             </div>
                         )}
 
-                        <div>
-                            <label className="block text-main-dull-blue">Возвратная тара</label>
-                            <input
-                                type="checkbox"
-                                checked={item.returnable}
-                                onChange={(e) => handleItemChange(index, "returnable", e.target.checked)}
-                            />
-                        </div>
-                        
                         <button type="button" onClick={() => handleRemoveItem(index)} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
                             Удалить
                         </button>
                     </div>
                 ))}
-                
+
                 <button type="button" onClick={handleAddItem} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
                     Добавить товар
                 </button>
-                
+
                 <div className="flex justify-end space-x-4">
                     <button type="submit" className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition">
                         Создать заявку
                     </button>
                 </div>
             </form>
+            <Notification />
         </div>
     );
 };

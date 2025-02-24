@@ -115,22 +115,22 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                 {/* Индикатор заполненности */}
                                 <div className="mb-6">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-gray-600">Заполненность</span>
+                                        <span className="text-gray-600">Свободное пространство склада</span>
                                         <span className="font-bold">
-                                            {warehouse?.usagePercent || 0}%
+                                            {warehouse?.warehouseCapacity || 0}%
                                         </span>
                                     </div>
                                     <div className="w-full h-2 bg-gray-200 rounded-full">
                                         <div
                                             className="h-full rounded-full transition-all duration-500"
                                             style={{
-                                                width: `${warehouse?.usagePercent || 0}%`,
+                                                width: `${warehouse?.warehouseCapacity || 0}%`,
                                                 backgroundColor:
-                                                    (warehouse?.usagePercent || 0) < 50
-                                                        ? "green"
-                                                        : (warehouse?.usagePercent || 0) < 80
+                                                    (warehouse?.warehouseCapacity || 0) < 50
+                                                        ? "red"
+                                                        : (warehouse?.warehouseCapacity || 0) < 80
                                                             ? "orange"
-                                                            : "red",
+                                                            : "green",
                                             }}
                                         />
                                     </div>

@@ -11,7 +11,6 @@ import CategorySettingsModal from "../../components/modal-components/category-mo
 
 import filterIcon from "../../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { HiRefresh } from "react-icons/hi";
 import { FiSettings } from "react-icons/fi";
 
 const CategoryList = () => {
@@ -58,6 +57,13 @@ const CategoryList = () => {
     navigate(`/nomenclature/${categoryId}`);
   };
 
+  const handleModalClose = (shouldRefresh) => {
+    setIsModalOpen(false);
+    if (shouldRefresh) {
+      fetchCategoryList(); // Обновляем список категорий, если нужно
+    }
+  };
+
   return (
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
       {loading ? (
@@ -67,13 +73,6 @@ const CategoryList = () => {
           <div className="flex flex-col md:flex-row items-center justify-between border-b pb-4">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl">Категории</h1>
-              <button
-                onClick={fetchCategoryList}
-                className="p-2 rounded-full hover:bg-gray-100"
-                title="Обновить"
-              >
-                <HiRefresh className="w-6 h-6 text-gray-600" />
-              </button>
             </div>
             <div className="flex items-center w-full md:w-2/5 gap-x-4 mt-4 md:mt-0">
               <input
@@ -152,9 +151,14 @@ const CategoryList = () => {
 
       {isModalOpen && (
         selectedCategory ? (
-          <CategorySettingsModal onClose={() => setIsModalOpen(false)} category={selectedCategory} />
+          <CategorySettingsModal
+            onClose={handleModalClose} // Передаем функцию для автообновления
+            category={selectedCategory}
+          />
         ) : (
-          <CategorySaveModal onClose={() => setIsModalOpen(false)} />
+          <CategorySaveModal
+            onClose={handleModalClose} // Передаем функцию для автообновления
+          />
         )
       )}
     </div>
@@ -162,4 +166,3 @@ const CategoryList = () => {
 };
 
 export default CategoryList;
-  

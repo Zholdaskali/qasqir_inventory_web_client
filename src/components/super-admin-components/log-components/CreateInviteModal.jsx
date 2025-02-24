@@ -7,7 +7,6 @@ import Notification from "../../notification/Notification";
 import InviteRoleSelectionModal from "../../modal-components/InviteRoleSelectionModal";
 
 const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
-
     const rolesList = [
         { id: 1, name: "Админ" },
         { id: 2, name: "Кладовщик" },
@@ -25,11 +24,57 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
 
     const inviteUserName = `${inviteUserFirstName} ${inviteUserLastName}`;
 
+    // Функция для генерации случайного пароля
+    const generatePassword = () => {
+        const length = 12;
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+        let password = "";
+        for (let i = 0; i < length; i++) {
+            password += charset.charAt(Math.floor(Math.random() * charset.length));
+        }
+        setInvitePassword(password);
+    };
+
+    // Функция для проверки номера телефона
+    const validatePhoneNumber = (phoneNumber) => {
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/; // Пример для международного формата
+        return phoneRegex.test(phoneNumber);
+    };
+
+    // Функция для проверки email
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
+    // Функция для обновления выбранных ролей с автоматическим добавлением роли "Сотрудник"
+    const updateSelectedRoles = (newRoles) => {
+        const rolesToAdd = newRoles.filter((roleId) => [1, 2, 3].includes(roleId)); // Роли "Админ", "Кладовщик", "Продавец"
+        const hasEmployeeRole = newRoles.includes(4); // Роль "Сотрудник"
+
+        // Если выбрана одна из ролей "Админ", "Кладовщик", "Продавец" и роль "Сотрудник" ещё не выбрана, добавляем её
+        if (rolesToAdd.length > 0 && !hasEmployeeRole) {
+            newRoles.push(4); // Добавляем роль "Сотрудник"
+        }
+
+        setSelectedRoles([...new Set(newRoles)]); // Убираем дубликаты
+    };
+
     const createInvite = async (e) => {
         e.preventDefault();
 
         if (!inviteUserName.trim() || !inviteEmail.trim() || !invitePassword.trim() || selectedRoles.length === 0) {
             toast.error("Заполните все поля и выберите роли");
+            return;
+        }
+
+        if (!validatePhoneNumber(inviteUserNumber)) {
+            toast.error("Некорректный номер телефона");
+            return;
+        }
+
+        if (!validateEmail(inviteEmail)) {
+            toast.error("Некорректный email");
             return;
         }
 
@@ -120,15 +165,24 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     </div>
                     <div className="flex flex-col w-full gap-y-3 items-start">
                         <label htmlFor="password" className="ml-3 text-left text-main-dull-blue">Пароль для пользователя</label>
-                        <input
-                            id="password"
-                            type="password"
-                            className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                            placeholder="Пароль для пользователя"
-                            required
-                            value={invitePassword}
-                            onChange={(e) => setInvitePassword(e.target.value)}
-                        />
+                        <div className="flex gap-2 w-full">
+                            <input
+                                id="password"
+                                type="password"
+                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
+                                placeholder="Пароль для пользователя"
+                                required
+                                value={invitePassword}
+                                onChange={(e) => setInvitePassword(e.target.value)}
+                            />
+                            <button
+                                type="button"
+                                className="bg-main-dull-blue hover:bg-main-purp-dark text-white px-4 py-2 rounded-xl"
+                                onClick={generatePassword}
+                            >
+                                Сгенерировать
+                            </button>
+                        </div>
                     </div>
                     <div className="w-full">
                         <button
@@ -160,7 +214,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
             {isRoleModalOpen && (
                 <InviteRoleSelectionModal
                     onClose={() => setIsRoleModalOpen(false)}
-                    setSelectedRoles={setSelectedRoles}
+                    setSelectedRoles={updateSelectedRoles} // Передаем обновленную функцию
                 />
             )}
         </div>

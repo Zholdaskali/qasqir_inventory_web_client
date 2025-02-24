@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import filterIcon from "../../assets/icons/filter.svg";
 import { API_GET_WAREHOUSE_LIST } from "../../api/API";
 import { saveWarehouseList } from "../../store/slices/warehouseSlice/warehouseListSlice";
@@ -26,9 +25,8 @@ const WarehouseList = () => {
                 headers: { "Auth-token": authToken },
             });
             setWarehouses(response.data.body);
-            console.log(response.data.body)
             dispatch(saveWarehouseList(response.data.body));
-        } catch (error) {   
+        } catch (error) {
             toast.error("Ошибка загрузки складов");
         }
     };
@@ -39,9 +37,8 @@ const WarehouseList = () => {
 
     const handleModalClose = () => {
         setIsWarehouseSaveModalOpen(false);
-        fetchWarehouseList();  // Обновляем список складов после добавления
+        fetchWarehouseList(); // Обновляем список складов после добавления
     };
-    
 
     const handleWarehouseClick = (warehouse) => {
         setSelectedWarehouse(warehouse);
@@ -50,7 +47,7 @@ const WarehouseList = () => {
 
     const handleClosePanel = () => {
         setIsPanelOpen(false);
-        fetchWarehouseList()
+        fetchWarehouseList(); // Обновляем список складов после закрытия панели
         setTimeout(() => setSelectedWarehouse(null), 300);
     };
 
@@ -64,14 +61,7 @@ const WarehouseList = () => {
                 <div className="flex w-full items-center justify-between border-b py-10">
                     <div className="flex items-center gap-4">
                         <h1 className="text-2xl w-full">Склады</h1>
-                        <button
-                            onClick={fetchWarehouseList}
-                            className="flex items-center justify-center p-2 rounded-full hover:bg-gray-300"
-                            title="Обновить"
-                        >
-                            <HiRefresh className="w-6 h-6 text-gray-600" />
-                        </button>
-                    </div>  
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 item-center">
@@ -91,18 +81,18 @@ const WarehouseList = () => {
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{
-                                                    width: `${warehouse.usagePercent = 10 || 0}%`,
+                                                    width: `${(warehouse.warehouseCapacity || 0).toFixed(4)}%`,
                                                     backgroundColor:
-                                                        warehouse.usagePercent < 50
-                                                            ? "green"
-                                                            : warehouse.usagePercent < 80
+                                                        warehouse.warehouseCapacity < 50
+                                                            ? "red"
+                                                            : warehouse.warehouseCapacity < 80
                                                             ? "orange"
-                                                            : "red",
+                                                            : "green",
                                                 }}
                                             ></div>
                                         </div>
                                         <p className="text-gray-600 text-sm mt-2">
-                                            {warehouse.usagePercent || 0}%
+                                            {(warehouse.warehouseCapacity || 0).toFixed(2)}%
                                         </p>
                                     </div>
                                 </div>

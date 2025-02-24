@@ -30,14 +30,14 @@ import WarehouseList from './page/warehouse-pages/WarehouseList'
 import WarehouseZoneList from './page/warehouse-pages/WarehouseZoneList'
 import DashboardPage from './page/DashboardPage'
 
-
 // Storekeeper
-
+import SupplierList from './page/inventory-pages/SupplierList'
+import CustomerList from './page/inventory-pages/CustomerList'
 import { useSelector } from 'react-redux'
 import InviteList from './page/super-admin-pages/InviteList'
 import EditOrganizationProfile from './page/organization-pages/EditOrganizationProfile'
-import IncomingRequestPage from './page/main-operation-pages/IncomingRequestPage'
 import WarehouseTabsPage from './page/main-operation-pages/WarehouseTabsPage'
+import TransactionList from './page/inventory-pages/TransactionList'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -80,8 +80,10 @@ function App() {
               )}
               {hasRole("storekeeper") && (
                 <>
-                  <Route path='incoming' element={<IncomingRequestPage />} />
                   <Route path='warehouse-tabs' element={<WarehouseTabsPage />} />
+                  <Route path='supplier-list' element={<SupplierList />} />
+                  <Route path='customer-list' element={<CustomerList />} />
+                  <Route path='transaction-list' element={<TransactionList />} />
                 </>
               )}
               <Route path='edit-profile' element={<EditProfile />} />

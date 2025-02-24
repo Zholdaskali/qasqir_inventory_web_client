@@ -28,7 +28,7 @@ const NomenclatureList = () => {
         {
           headers: { "Auth-token": authToken },
         }
-      );
+      );  
       setLocalNomenclatures(response.data.body); // Записываем в локальный state
       dispatch(saveNomenclatureList(response.data.body)); // Сохраняем в Redux
       toast.success("Номенклатуры успешно загружены");

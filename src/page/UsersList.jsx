@@ -9,7 +9,6 @@ import { saveUserList } from "../store/slices/userListSlice";
 import avatar from "../assets/placeholders/avatar.png";
 import filterIcon from "../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
-import { HiRefresh } from "react-icons/hi"; // Импорт иконки обновления
 import CreateInviteModal from "../components/super-admin-components/log-components/CreateInviteModal";
 import UserProfileModal from "../components/modal-components/main-modal/UserProfileModal";
 
@@ -30,7 +29,6 @@ const UsersList = () => {
             const response = await axios.get(API_GET_USERS, {
                 headers: { "Auth-token": authToken },
             });
-            console.log(response)
             dispatch(saveUserList(response.data.body));
             toast.success("Успешно");
         } catch (error) {
@@ -52,23 +50,20 @@ const UsersList = () => {
     };
 
     const handleModalClose = (isDeleted) => {
-        if (isDeleted) fetchUserList(); 
+        if (isDeleted) fetchUserList(); // Обновляем список пользователей, если пользователь был удален
         setUserModal(false);
     };
 
-// ... existing code ...
+    const handleInviteModalClose = () => {
+        setCreateInviteModal(false);
+        fetchUserList(); // Обновляем список пользователей после создания приглашения
+    };
+
     return (
         <div className="h-screen w-full flex flex-col overflow-y-auto p-4">
             <div className="flex flex-col md:flex-row w-full items-start md:items-center justify-between border-b py-5 gap-4">
                 <div className="flex items-center gap-4">
                     <h1 className="text-2xl">Пользователи</h1>
-                    <button
-                        onClick={fetchUserList}
-                        className="flex items-center justify-center p-2 rounded-full hover:bg-gray-300"
-                        title="Обновить"
-                    >
-                        <HiRefresh className="w-6 h-6 text-gray-600" />
-                    </button>
                 </div>
                 <div className="flex flex-col md:flex-row items-center w-full md:w-2/5 gap-4">
                     <input
@@ -87,7 +82,7 @@ const UsersList = () => {
                     </div>
                 </div>
             </div>
-    
+
             {/* Таблица */}
             <div className="flex-1 overflow-hidden mt-4">
                 <div className="h-full overflow-auto rounded-xl">
@@ -105,60 +100,60 @@ const UsersList = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white">
-                            {users.map((users) => (
+                            {users.map((userItem) => (
                                 <tr
-                                    key={users.userId}
-                                    className={`${users.email === user.email
+                                    key={userItem.userId}
+                                    className={`${userItem.email === user.email
                                         ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
                                         : "bg-white hover:bg-gray-50"
                                         } border-b transition cursor-pointer`}
-                                    onClick={() => handleUserModal(users)}
+                                    onClick={() => handleUserModal(userItem)}
                                 >
                                     <td className="p-5">
                                         <img
                                             className="rounded-full w-10 h-10"
-                                            src={users.imagePath || avatar}
+                                            src={userItem.imagePath || avatar}
                                             alt=""
                                         />
                                     </td>
-                                    <td className="py-4 px-4">{users.userId}</td>
-                                    <td className="py-4 px-4">{users.userName}</td>
-                                    <td className="py-4 px-4">{users.email}</td>
-                                    <td className="py-4 px-4">{users.userNumber}</td>
+                                    <td className="py-4 px-4">{userItem.userId}</td>
+                                    <td className="py-4 px-4">{userItem.userName}</td>
+                                    <td className="py-4 px-4">{userItem.email}</td>
+                                    <td className="py-4 px-4">{userItem.userNumber}</td>
                                     <td className="py-4 px-4">
                                         <div className="flex items-center justify-start">
                                             <div
-                                                className={`${users.emailVerified
+                                                className={`${userItem.emailVerified
                                                     ? "bg-[#E3F3E9]"
                                                     : "bg-[#FFF2EA]"
                                                     } flex items-center px-2 rounded-full`}
                                             >
                                                 <div
-                                                    className={`${users.emailVerified
+                                                    className={`${userItem.emailVerified
                                                         ? "bg-[#11B066]"
                                                         : "bg-[#E84D43]"
                                                         } h-3 w-3 rounded-full`}
                                                 ></div>
                                                 <p
-                                                    className={`${users.emailVerified
+                                                    className={`${userItem.emailVerified
                                                         ? "text-[#11B066]"
                                                         : "text-[#E84D43]"
                                                         } px-2 py-1`}
                                                 >
-                                                    {users.emailVerified ? "Подтверждено" : "Не подтверждено"}
+                                                    {userItem.emailVerified ? "Подтверждено" : "Не подтверждено"}
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-4">{users.registrationDate}</td>
-                                    <td className="py-4 px-4">{users.userRoles.join(", ")}</td>
+                                    <td className="py-4 px-4">{userItem.registrationDate}</td>
+                                    <td className="py-4 px-4">{userItem.userRoles.join(", ")}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
             </div>
-                        
+
             {/* Кнопка добавления */}
             <button
                 className={`bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white ${
@@ -169,20 +164,21 @@ const UsersList = () => {
             >
                 +
             </button>
-            
+
             {createInviteModal && (
                 <CreateInviteModal
                     authToken={authToken}
                     setCreateInviteModal={setCreateInviteModal}
                     setIsInviteButtonDisabled={setIsInviteButtonDisabled}
+                    onClose={handleInviteModalClose} // Передаем функцию для автообновления
                 />
             )}
-    
+
             {userModal && (
                 <UserProfileModal
                     selectedUser={selectedUser}
                     onClose={handleModalClose}
-                    fetchUserList={fetchUserList}
+                    fetchUserList={fetchUserList} // Передаем функцию для автообновления
                 />
             )}
         </div>
