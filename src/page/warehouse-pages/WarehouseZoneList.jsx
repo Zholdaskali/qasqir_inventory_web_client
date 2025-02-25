@@ -19,7 +19,7 @@ const WarehouseZoneList = () => {
         isModalOpen: false,
         openChildZones: {}
     });
-
+ 
     const hasRole = (role) => 
         user?.userRoles?.includes(role) ?? false;
 
@@ -46,7 +46,7 @@ const WarehouseZoneList = () => {
             }));
         }
     };
-
+ 
     useEffect(() => {
         if (warehouse?.id) {
             fetchZones();

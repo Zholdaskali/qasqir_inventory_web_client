@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
 import React, { useState, useEffect, useRef } from 'react';
 import { BiDotsVerticalRounded } from "react-icons/bi";
 import { HiArrowSmDown } from "react-icons/hi"; // Импортируем иконку стрелки
@@ -7,6 +9,8 @@ import ZoneSettingModal from '../../components/modal-components/warehouse-modal/
 import axios from "axios";
 import ContainerOrSubzoneCard from './ContainerOrSubzoneCard';
 import WarehouseContainerSaveModal from './WarehouseContainerSaveModal';
+import Notification from '../../components/notification/Notification';
+import { toast } from 'react-toastify';
 
 const ZoneCard = ({ zone, warehouse, onClose }) => {
     const isChild = Boolean(zone.parentId);
@@ -25,6 +29,13 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
     const [openContainers, setOpenContainers] = useState(false); // Состояние для открытия/закрытия контейнеров
     const menuRef = useRef(null);
     const [isContainerSaveModalOpen, setIsContainerSaveModalOpen] = useState(false);
+    const [isZoneCreated, setIsZoneCreated] = useState(false)
+
+    useEffect(()=>{
+        if (isZoneCreated )
+            toast.success("Успешно")
+            setIsZoneCreated(false)
+    },[isZoneCreated])
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -63,7 +74,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     headers: { "Auth-token": authToken },
                 }
             );
-
+            toast.success("Успешно удалено")
             console.log(response.data.message);
             if (onClose) {
                 onClose(true);
@@ -71,6 +82,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
         } catch (error) {
             const errorMessage = error.response?.data?.message || "Ошибка при удалении зоны";
             console.log(errorMessage);
+            toast.error("Не удалось удалить", errorMessage)
         }
     };
 
@@ -132,6 +144,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                             <button
                                 className="hover:bg-gray-100 rounded"
                                 onClick={handleCreateZone}
+
                             >
                                 <span className="text-xl">+</span>
                             </button>
@@ -260,6 +273,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     setIsWarehouseSaveModalOpen={setIsModalOpen}
                     warehouseId={warehouse.id}
                     parentId={zone.id}
+                    setIsZoneCreated={setIsZoneCreated}
                 />
             )}
             {isSettingModalOpen && (
@@ -281,6 +295,7 @@ const ZoneCard = ({ zone, warehouse, onClose }) => {
                     }}
                 />
             )}
+            <Notification />
         </div>
     );
 };

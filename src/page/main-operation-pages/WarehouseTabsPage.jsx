@@ -38,10 +38,9 @@ const InventoryPage = () => {
                 return <div>Страница для Изделий</div>;
             case "reception":
                 return (
-                    <div className="space-y-12">
+                    <div className="">
                         <IncomingRequestPage />
                     </div>
-
                 );
             case "writeoff":
                 return (
@@ -87,6 +86,7 @@ const InventoryPage = () => {
                                 setActiveTab(tab.page);
                                 setShowInventoryCheck(false); // Сбрасываем флаг при переключении вкладок
                             }}
+                            
                             className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${tab.page === activeTab
                                 ? "bg-main-dull-blue text-white shadow-lg"
                                 : "bg-gray-200 text-gray-800 hover:bg-gray-300"
@@ -97,7 +97,7 @@ const InventoryPage = () => {
                     ))}
                 </div>
             </div>
-            <div className="p-6 border rounded-xl bg-white shadow-md overflow-y-auto max-h-[1000px]">
+            <div className="px-6 pb-10 border rounded-xl bg-white shadow-md overflow-auto h-5/6">
                 {renderContent()}
             </div>
         </div>

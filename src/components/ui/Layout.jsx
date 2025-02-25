@@ -184,7 +184,7 @@ const Layout = ({ setIsAuthenticated }) => {
         </div>
       </aside>
 
-      <main className="flex-1 p-5">
+      <main className="flex justify-center sm:flex-1 p-5">
         <Outlet />
       </main>
     </div>

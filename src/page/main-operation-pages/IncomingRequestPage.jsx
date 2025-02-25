@@ -1,28 +1,29 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-toastify";
-import successIcon from '../../assets/success.svg'; // Импортируйте иконку успеха
+import successIcon from '../../assets/success.svg';
 import Notification from "../../components/notification/Notification";
-
+import { addItem, removeItem, updateItem, setItems } from '../../store/slices/operationSlice/itemsSlice'; // Импортируем actions
 
 const IncomingRequestPage = () => {
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
+    const items = useSelector((state) => state.items.items); // Получаем товары из Redux
+    const dispatch = useDispatch();
 
     const [documentNumber, setDocumentNumber] = useState("");
     const [documentDate, setDocumentDate] = useState("");
     const [supplierId, setSupplierId] = useState("");
     const [tnvedCode, setTnvedCode] = useState("");
-    const [items, setItems] = useState([]);
     const [nomenclatureOptions, setNomenclatureOptions] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
     const [zonesByWarehouse, setZonesByWarehouse] = useState({});
     const [containersByZone, setContainersByZone] = useState({});
     const [suppliers, setSuppliers] = useState([]);
-    const [requestSuccess, setRequestSuccess] = useState(false); // Состояние для успешного создания заявки
+    const [requestSuccess, setRequestSuccess] = useState(false);
 
-    // Загрузка номенклатуры
+    // Загрузка номенклатуры, складов и поставщиков (остается без изменений)
     useEffect(() => {
         const fetchNomenclatureList = async () => {
             try {
@@ -37,7 +38,6 @@ const IncomingRequestPage = () => {
         fetchNomenclatureList();
     }, [authToken]);
 
-    // Загрузка складов
     useEffect(() => {
         const fetchWarehouses = async () => {
             try {
@@ -52,7 +52,6 @@ const IncomingRequestPage = () => {
         fetchWarehouses();
     }, [authToken]);
 
-    // Загрузка поставщиков
     useEffect(() => {
         const fetchSuppliers = async () => {
             try {
@@ -67,33 +66,9 @@ const IncomingRequestPage = () => {
         fetchSuppliers();
     }, [authToken]);
 
-    // Загрузка зон для выбранного склада
-    const fetchZonesForWarehouse = async (warehouseId) => {
-        try {
-            const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`, {
-                headers: { "Auth-token": authToken },
-            });
-            setZonesByWarehouse((prev) => ({ ...prev, [warehouseId]: response.data.body }));
-        } catch (error) {
-            toast.error("Ошибка загрузки зон");
-        }
-    };
-
-    // Загрузка контейнеров для выбранной зоны
-    const fetchContainersForZone = async (zoneId) => {
-        try {
-            const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${zoneId}`, {
-                headers: { "Auth-token": authToken },
-            });
-            setContainersByZone((prev) => ({ ...prev, [zoneId]: response.data.body }));
-        } catch (error) {
-            toast.error("Ошибка загрузки контейнеров");
-        }
-    };
-
     // Добавление товара
     const handleAddItem = () => {
-        setItems([...items, {
+        const newItem = {
             nomenclatureId: "",
             nomenclatureName: "",
             quantity: 1,
@@ -102,19 +77,21 @@ const IncomingRequestPage = () => {
             warehouseZoneId: "",
             containerId: "",
             returnable: false
-        }]);
+        };
+        dispatch(addItem(newItem)); // Используем Redux action
     };
 
+    // Удаление товара
     const handleRemoveItem = (index) => {
-        setItems(items.filter((_, i) => i !== index));
+        dispatch(removeItem(index)); // Используем Redux action
     };
 
+    // Изменение товара
     const handleItemChange = (index, field, value) => {
-        const updatedItems = [...items];
-        updatedItems[index][field] = value;
-        setItems(updatedItems);
+        dispatch(updateItem({ index, field, value })); // Используем Redux action
     };
 
+    // Обработка изменения номенклатуры
     const handleNomenclatureChange = (index, nomenclatureId) => {
         const selectedNomenclature = nomenclatureOptions.find(n => n.id === parseInt(nomenclatureId, 10));
         if (selectedNomenclature) {
@@ -124,6 +101,7 @@ const IncomingRequestPage = () => {
         }
     };
 
+    // Обработка изменения склада
     const handleWarehouseChange = async (index, warehouseId) => {
         handleItemChange(index, "warehouseId", warehouseId);
         handleItemChange(index, "zoneId", "");
@@ -133,6 +111,7 @@ const IncomingRequestPage = () => {
         }
     };
 
+    // Обработка изменения зоны
     const handleZoneChange = async (index, zoneId) => {
         handleItemChange(index, "zoneId", zoneId);
         handleItemChange(index, "containerId", "");
@@ -141,10 +120,12 @@ const IncomingRequestPage = () => {
         }
     };
 
+    // Обработка изменения контейнера
     const handleContainerChange = (index, containerId) => {
         handleItemChange(index, "containerId", containerId);
     };
 
+    // Отправка формы
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -168,9 +149,10 @@ const IncomingRequestPage = () => {
                 headers: { "Auth-token": authToken },
             });
             toast.success(response?.data?.message || "Заявка успешно создана");
-            setRequestSuccess(true); // Показываем сообщение об успехе
+            setRequestSuccess(true);
             setTimeout(() => {
-                setRequestSuccess(false); // Скрываем сообщение через 2 секунды
+                setRequestSuccess(false);
+                dispatch(setItems([])); // Очищаем список товаров после успешного создания заявки
             }, 2000);
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при создании заявки");
@@ -179,7 +161,6 @@ const IncomingRequestPage = () => {
 
     return (
         <div className="p-8 max-w-4xl mx-auto bg-main-light-gray rounded-xl shadow-lg space-y-6">
-            {/* Сообщение об успешном создании заявки */}
             {requestSuccess && (
                 <div className="absolute h-screen w-full top-1/3 left-0 text-black">
                     <div className='flex justify-center items-center w-full'>
@@ -197,11 +178,22 @@ const IncomingRequestPage = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                     <label className="block text-main-dull-blue">Номер документа</label>
-                    <input className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} required />
+                    <input
+                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                        value={documentNumber}
+                        onChange={(e) => setDocumentNumber(e.target.value)}
+                        required
+                    />
                 </div>
                 <div>
                     <label className="block text-main-dull-blue">Дата документа</label>
-                    <input type="date" className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={documentDate} onChange={(e) => setDocumentDate(e.target.value)} required />
+                    <input
+                        type="date"
+                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                        value={documentDate}
+                        onChange={(e) => setDocumentDate(e.target.value)}
+                        required
+                    />
                 </div>
                 <div>
                     <label className="block text-main-dull-blue">Поставщик</label>
@@ -219,10 +211,6 @@ const IncomingRequestPage = () => {
                         ))}
                     </select>
                 </div>
-                {/* <div>
-                    <label className="block text-main-dull-blue">Код ТН ВЭД</label>
-                    <input className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={tnvedCode} onChange={(e) => setTnvedCode(e.target.value)} required />
-                </div> */}
 
                 <h3 className="text-lg font-semibold text-main-dull-gray">Товары</h3>
                 {items.map((item, index) => (
@@ -250,7 +238,13 @@ const IncomingRequestPage = () => {
 
                         <div>
                             <label className="block text-main-dull-blue">Количество</label>
-                            <input type="number" className="w-full border border-main-dull-blue rounded-lg px-4 py-2" value={item.quantity} onChange={(e) => handleItemChange(index, "quantity", e.target.value)} required />
+                            <input
+                                type="number"
+                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
+                                value={item.quantity}
+                                onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                                required
+                            />
                         </div>
 
                         <div>
@@ -283,9 +277,9 @@ const IncomingRequestPage = () => {
                                     {zonesByWarehouse[item.warehouseId]?.map((zone) => (
                                         <option key={zone.id} value={zone.id}>
                                             <span className="font-semibold">{zone.name}</span>
-                                        <span className="text-sm text-gray-500 ml-2">
-                                            {` | Длина: ${zone.length} | Высота: ${zone.height} | Ширина: ${zone.width} | Свободные место: ${zone.capacity}`}
-                                        </span>
+                                            <span className="text-sm text-gray-500 ml-2">
+                                                {` | Длина: ${zone.length} | Высота: ${zone.height} | Ширина: ${zone.width} | Свободные место: ${zone.capacity}`}
+                                            </span>
                                         </option>
                                     ))}
                                 </select>
@@ -303,30 +297,39 @@ const IncomingRequestPage = () => {
                                     <option value="">Не выбрано</option>
                                     {containersByZone[item.zoneId]?.map((container) => (
                                         <option key={container.id} value={container.id}>
-                                        
                                             <span className="font-semibold">{container.serialNumber}</span>
-                                        <span className="text-sm text-gray-500 ml-2">
-                                            {` | Длина: ${container.length} | Высота: ${container.height} | Ширина: ${container.width} | ${container.capacity}`}
-                                        </span>
+                                            <span className="text-sm text-gray-500 ml-2">
+                                                {` | Длина: ${container.length} | Высота: ${container.height} | Ширина: ${container.width} | ${container.capacity}`}
+                                            </span>
                                         </option>
-                                        
                                     ))}
                                 </select>
                             </div>
                         )}
 
-                        <button type="button" onClick={() => handleRemoveItem(index)} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveItem(index)}
+                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                        >
                             Удалить
                         </button>
                     </div>
                 ))}
 
-                <button type="button" onClick={handleAddItem} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition">
+                <button
+                    type="button"
+                    onClick={handleAddItem}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+                >
                     Добавить товар
                 </button>
 
                 <div className="flex justify-end space-x-4">
-                    <button type="submit" className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition">
+                    <button
+                        type="submit"
+                        className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
+                    >
                         Создать заявку
                     </button>
                 </div>

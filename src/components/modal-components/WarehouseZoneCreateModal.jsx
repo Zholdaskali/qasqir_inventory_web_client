@@ -1,9 +1,12 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable react/prop-types */
 import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import Notification from "../notification/Notification";
 
-const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, parentId }) => {
+const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, parentId, setIsZoneCreated }) => {
     const [warehouseZoneName, setWarehouseZoneName] = useState("");
     const [height, setHeight] = useState(0);
     const [length, setLength] = useState(0);
@@ -35,10 +38,10 @@ const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, pa
                     headers: { "Auth-token": authToken } 
                 }
             );
-            toast.success(response.data.message || "Зона успешно добавлена");
+            setIsZoneCreated(true)
             setIsWarehouseSaveModalOpen(false);  // Закрытие модального окна
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при создании зоны");
+            toast.error(error.response?.data?.message);
         }
     };
 
@@ -122,6 +125,7 @@ const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, pa
                     </div>
                 </form>
             </div>
+            <Notification />
         </div>
     );
 };

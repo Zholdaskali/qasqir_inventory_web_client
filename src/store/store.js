@@ -10,6 +10,7 @@ import organizationSlice from './slices/organizationSlice'
 import categoryListSlice from './slices/inventorySlice/categoryListSlice'
 import categorySlice from './slices/inventorySlice/categorySlice'
 import nomenclatureListSlice from './slices/inventorySlice/nomenclatureListSlice'
+import itemsReducer from './slices/operationSlice/itemsSlice'
 
 export const store = configureStore({
     reducer: {
@@ -23,6 +24,7 @@ export const store = configureStore({
         organization: organizationSlice,
         categoryList: categoryListSlice,
         category: categorySlice,
-        nomenclatureList: nomenclatureListSlice
+        nomenclatureList: nomenclatureListSlice,
+        items: itemsReducer,
     }
 });
