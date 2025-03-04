@@ -14,13 +14,19 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
         type: "",
         tnvedCode: "",
         measurement: "",
-        height: 0, // Новое поле
-        length: 0, // Новое поле
-        width: 0, // Новое поле
+        height: 0,
+        length: 0,
+        width: 0,
+        volume: 0,
+        isLargeItem: false, // Новое поле для определения типа товара
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === "checkbox" ? checked : value,
+        });
     };
 
     const handleSave = useCallback(
@@ -42,9 +48,10 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                 tnved_code: formData.tnvedCode,
                 measurement_unit: formData.measurement,
                 created_by: userId,
-                height: formData.height, // Новое поле
-                length: formData.length, // Новое поле
-                width: formData.width, // Новое поле
+                height: formData.isLargeItem ? formData.height : null,
+                length: formData.isLargeItem ? formData.length : null,
+                width: formData.isLargeItem ? formData.width : null,
+                volume: formData.isLargeItem ? null : formData.volume,
             };
 
             try {
@@ -131,44 +138,85 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                         />
                     </div>
                     <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Высота (м)</label>
-                        <input
-                            className="w-full border rounded-lg px-4 py-2"
-                            name="height"
-                            type="number"
-                            value={formData.height}
-                            onChange={handleChange}
-                            placeholder="Введите высоту"
-                            min="0"
-                            step="0.1"
-                        />
+                        <label className="block text-left mb-2 text-main-dull-blue">Тип товара</label>
+                        <div className="flex space-x-4">
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="isLargeItem"
+                                    checked={!formData.isLargeItem}
+                                    onChange={() => setFormData({ ...formData, isLargeItem: false })}
+                                />
+                                <span className="ml-2">Маленький товар</span>
+                            </label>
+                            <label className="flex items-center">
+                                <input
+                                    type="radio"
+                                    name="isLargeItem"
+                                    checked={formData.isLargeItem}
+                                    onChange={() => setFormData({ ...formData, isLargeItem: true })}
+                                />
+                                <span className="ml-2">Большой товар</span>
+                            </label>
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Длина (м)</label>
-                        <input
-                            className="w-full border rounded-lg px-4 py-2"
-                            name="length"
-                            type="number"
-                            value={formData.length}
-                            onChange={handleChange}
-                            placeholder="Введите длину"
-                            min="0"
-                            step="0.1"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Ширина (м)</label>
-                        <input
-                            className="w-full border rounded-lg px-4 py-2"
-                            name="width"
-                            type="number"
-                            value={formData.width}
-                            onChange={handleChange}
-                            placeholder="Введите ширину"
-                            min="0"
-                            step="0.1"
-                        />
-                    </div>
+                    {formData.isLargeItem ? (
+                        <>
+                            <div>
+                                <label className="block text-left mb-2 text-main-dull-blue">Высота (м)</label>
+                                <input
+                                    className="w-full border rounded-lg px-4 py-2"
+                                    name="height"
+                                    type="number"
+                                    value={formData.height}
+                                    onChange={handleChange}
+                                    placeholder="Введите высоту"
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-left mb-2 text-main-dull-blue">Длина (м)</label>
+                                <input
+                                    className="w-full border rounded-lg px-4 py-2"
+                                    name="length"
+                                    type="number"
+                                    value={formData.length}
+                                    onChange={handleChange}
+                                    placeholder="Введите длину"
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-left mb-2 text-main-dull-blue">Ширина (м)</label>
+                                <input
+                                    className="w-full border rounded-lg px-4 py-2"
+                                    name="width"
+                                    type="number"
+                                    value={formData.width}
+                                    onChange={handleChange}
+                                    placeholder="Введите ширину"
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <label className="block text-left mb-2 text-main-dull-blue">Объем (м³)</label>
+                            <input
+                                className="w-full border rounded-lg px-4 py-2"
+                                name="volume"
+                                type="number"
+                                value={formData.volume}
+                                onChange={handleChange}
+                                placeholder="Введите объем"
+                                min="0"
+                                step="0.1"
+                            />
+                        </div>
+                    )}
                     <div className="flex justify-end space-x-4">
                         <button
                             type="button"

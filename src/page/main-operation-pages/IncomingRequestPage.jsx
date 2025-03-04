@@ -18,12 +18,12 @@ const IncomingRequestPage = () => {
     const [tnvedCode, setTnvedCode] = useState("");
     const [nomenclatureOptions, setNomenclatureOptions] = useState([]);
     const [warehouses, setWarehouses] = useState([]);
-    const [zonesByWarehouse, setZonesByWarehouse] = useState({});
-    const [containersByZone, setContainersByZone] = useState({});
+    const [zonesByWarehouse, setZonesByWarehouse] = useState({}); // Зоны по складам
+    const [containersByZone, setContainersByZone] = useState({}); // Контейнеры по зонам
     const [suppliers, setSuppliers] = useState([]);
     const [requestSuccess, setRequestSuccess] = useState(false);
 
-    // Загрузка номенклатуры, складов и поставщиков (остается без изменений)
+    // Загрузка номенклатуры, складов и поставщиков
     useEffect(() => {
         const fetchNomenclatureList = async () => {
             try {
@@ -66,6 +66,38 @@ const IncomingRequestPage = () => {
         fetchSuppliers();
     }, [authToken]);
 
+    // Функция для загрузки зон по ID склада
+    const fetchZonesForWarehouse = async (warehouseId) => {
+        try {
+            const response = await axios.get(
+                `http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`,
+                { headers: { "Auth-token": authToken } }
+            );
+            setZonesByWarehouse(prev => ({
+                ...prev,
+                [warehouseId]: response.data.body,
+            }));
+        } catch (error) {
+            toast.error("Ошибка загрузки зон");
+        }
+    };
+
+    // Функция для загрузки контейнеров по ID зоны
+    const fetchContainersForZone = async (zoneId) => {
+        try {
+            const response = await axios.get(
+                `http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${zoneId}`,
+                { headers: { "Auth-token": authToken } }
+            );
+            setContainersByZone(prev => ({
+                ...prev,
+                [zoneId]: response.data.body,
+            }));
+        } catch (error) {
+            toast.error("Ошибка загрузки контейнеров");
+        }
+    };
+
     // Добавление товара
     const handleAddItem = () => {
         const newItem = {
@@ -74,7 +106,7 @@ const IncomingRequestPage = () => {
             quantity: 1,
             measurementUnit: "",
             warehouseId: "",
-            warehouseZoneId: "",
+            zoneId: "",
             containerId: "",
             returnable: false
         };

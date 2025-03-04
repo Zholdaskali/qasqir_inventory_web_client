@@ -8,7 +8,6 @@ import SupplierSaveModal from "../../components/modal-components/supplier-modal/
 import SupplierSettingModal from "../../components/modal-components/supplier-modal/SupplierSettingModal";
 import Notification from "../../components/notification/Notification";
 
-
 const SupplierList = () => {
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
@@ -18,6 +17,7 @@ const SupplierList = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [localSuppliers, setLocalSuppliers] = useState([]); // Локальное состояние для списка поставщиков
+  const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
 
   const fetchSupplierList = async () => {
     try {
@@ -32,6 +32,8 @@ const SupplierList = () => {
       dispatch(saveSupplierList(response.data.body)); // Сохраняем в Redux
       toast.success("Поставщики успешно загружены");
     } catch (error) {
+      console.error("Ошибка при загрузке поставщиков:", error);
+      toast.error("Ошибка загрузки поставщиков");
     } finally {
       setLoading(false);
     }
@@ -44,6 +46,11 @@ const SupplierList = () => {
   const handleCreateSupplierModal = () => {
     setIsCreateModalOpen(true);
   };
+
+  // Функция для фильтрации поставщиков на основе поискового запроса
+  const filteredSuppliers = localSuppliers.filter((supplier) =>
+    supplier.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
@@ -62,6 +69,15 @@ const SupplierList = () => {
                 <HiRefresh className="w-6 h-6 text-gray-600" />
               </button>
             </div>
+
+            {/* Поле ввода для поиска */}
+            <input
+              type="text"
+              placeholder="Поиск поставщика..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div className="overflow-x-auto">
@@ -77,8 +93,8 @@ const SupplierList = () => {
                 </tr>
               </thead>
               <tbody>
-                {localSuppliers.length > 0 ? (
-                  localSuppliers.map((supplier) => (
+                {filteredSuppliers.length > 0 ? (
+                  filteredSuppliers.map((supplier) => (
                     <tr
                       key={supplier.id}
                       className="bg-white border-b cursor-pointer hover:bg-gray-200"
@@ -120,7 +136,9 @@ const SupplierList = () => {
           </button>
         </div>
       )}
-        <Notification />
+
+      <Notification />
+
       {selectedSupplier && (
         <SupplierSettingModal
           supplier={selectedSupplier}

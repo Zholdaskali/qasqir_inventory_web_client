@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useSelector } from "react-redux";
 
 const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZoneId, onClose }) => {
     const [serialNumber, setSerialNumber] = useState("");
@@ -36,7 +37,7 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
 
             toast.success(response?.data?.message || "Контейнер успешно создан");
             if (onClose) {
-                onClose(true); // Закрыть модальное окно и обновить данные
+                onClose(true);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при создании контейнера");
@@ -45,44 +46,44 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-6 rounded-lg w-96">
-                <h2 className="text-xl font-semibold mb-4">Создание контейнера</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="bg-white p-8 rounded-xl shadow-lg w-96">
+                <h2 className="text-2xl font-semibold text-main-dull-gray text-center mb-6">Создание контейнера</h2>
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Серийный номер</label>
+                        <label className="block text-main-dull-blue font-medium mb-2">Серийный номер</label>
                         <input
                             type="text"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                            className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={serialNumber}
                             onChange={(e) => setSerialNumber(e.target.value)}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Длина (м)</label>
+                        <label className="block text-main-dull-blue font-medium mb-2">Длина (м)</label>
                         <input
                             type="number"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                            className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={length}
                             onChange={(e) => setLength(e.target.value)}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Высота (м)</label>
+                        <label className="block text-main-dull-blue font-medium mb-2">Высота (м)</label>
                         <input
                             type="number"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                            className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={height}
                             onChange={(e) => setHeight(e.target.value)}
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Ширина (м)</label>
+                        <label className="block text-main-dull-blue font-medium mb-2">Ширина (м)</label>
                         <input
                             type="number"
-                            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                            className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={width}
                             onChange={(e) => setWidth(e.target.value)}
                             required
@@ -92,13 +93,13 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                         <button
                             type="button"
                             onClick={() => setIsContainerSaveModalOpen(false)}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
                         >
                             Отмена
                         </button>
                         <button
                             type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
                         >
                             Создать
                         </button>

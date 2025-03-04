@@ -22,6 +22,7 @@ const CategoryList = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
 
   const fetchCategoryList = async () => {
     try {
@@ -64,6 +65,11 @@ const CategoryList = () => {
     }
   };
 
+  // Функция для фильтрации категорий на основе поискового запроса
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
       {loading ? (
@@ -74,19 +80,15 @@ const CategoryList = () => {
             <div className="flex items-center gap-4">
               <h1 className="text-2xl">Категории</h1>
             </div>
-            <div className="flex items-center w-full md:w-2/5 gap-x-4 mt-4 md:mt-0">
-              <input
-                type="search"
-                className="w-full px-4 py-2 rounded-lg border shadow-inner"
-                placeholder="Поиск"
-              />
-              <img
-                src={filterIcon}
-                alt="filter"
-                className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue"
-              />
-              <IoIosNotificationsOutline size={40} className="hidden sm:block" />
-            </div>
+
+            {/* Поле ввода для поиска */}
+            <input
+              type="text"
+              placeholder="Поиск категории..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div className="overflow-x-auto">
@@ -103,8 +105,8 @@ const CategoryList = () => {
                 </tr>
               </thead>
               <tbody>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((category) => (
                     <tr
                       key={category.id}
                       className="bg-white border-b cursor-pointer hover:bg-gray-200"

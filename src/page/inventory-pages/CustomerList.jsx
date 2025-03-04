@@ -8,7 +8,6 @@ import CustomerSaveModal from "../../components/modal-components/customer-modal/
 import CustomerSettingModal from "../../components/modal-components/customer-modal/CustomerSettingModal";
 import Notification from "../../components/notification/Notification";
 
-
 const CustomerList = () => {
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
@@ -18,6 +17,7 @@ const CustomerList = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [localSuppliers, setLocalSuppliers] = useState([]); // Локальное состояние для списка поставщиков
+  const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
 
   const fetchSupplierList = async () => {
     try {
@@ -32,6 +32,8 @@ const CustomerList = () => {
       dispatch(saveSupplierList(response.data.body)); // Сохраняем в Redux
       toast.success("Поставщики успешно загружены");
     } catch (error) {
+      console.error("Ошибка при загрузке поставщиков:", error);
+      toast.error("Ошибка загрузки поставщиков");
     } finally {
       setLoading(false);
     }
@@ -45,6 +47,11 @@ const CustomerList = () => {
     setIsCreateModalOpen(true);
   };
 
+  // Функция для фильтрации заказчиков на основе поискового запроса
+  const filteredSuppliers = localSuppliers.filter((supplier) =>
+    supplier.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
       {loading ? (
@@ -53,7 +60,7 @@ const CustomerList = () => {
         <div className="flex flex-col gap-y-5 overflow-auto">
           <div className="flex flex-col md:flex-row items-center justify-between border-b pb-4">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl">Заказщики</h1>
+              <h1 className="text-2xl">Заказчики</h1>
               <button
                 onClick={fetchSupplierList}
                 className="p-2 rounded-full hover:bg-gray-100"
@@ -62,6 +69,15 @@ const CustomerList = () => {
                 <HiRefresh className="w-6 h-6 text-gray-600" />
               </button>
             </div>
+
+            {/* Поле ввода для поиска */}
+            <input
+              type="text"
+              placeholder="Поиск заказчика..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div className="overflow-x-auto">
@@ -77,8 +93,8 @@ const CustomerList = () => {
                 </tr>
               </thead>
               <tbody>
-                {localSuppliers.length > 0 ? (
-                  localSuppliers.map((supplier) => (
+                {filteredSuppliers.length > 0 ? (
+                  filteredSuppliers.map((supplier) => (
                     <tr
                       key={supplier.id}
                       className="bg-white border-b cursor-pointer hover:bg-gray-200"
@@ -120,7 +136,9 @@ const CustomerList = () => {
           </button>
         </div>
       )}
-        <Notification />
+
+      <Notification />
+
       {selectedSupplier && (
         <CustomerSettingModal
           supplier={selectedSupplier}

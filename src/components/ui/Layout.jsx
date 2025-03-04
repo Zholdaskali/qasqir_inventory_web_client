@@ -160,7 +160,8 @@ const Layout = ({ setIsAuthenticated }) => {
               {operationLogsList && (
                 <div className="flex flex-col pl-6 gap-1">
                   <NavLink to="/warehouse-tabs">Операции</NavLink>
-                  <NavLink to="/transaction-list">Отчетность</NavLink>
+                  <NavLink to="/transaction-list">Транзакции</NavLink>
+                  <NavLink to="/inventory-item-list">Товары</NavLink>
                 </div>
               )}
             </>

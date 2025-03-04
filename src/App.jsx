@@ -38,6 +38,7 @@ import InviteList from './page/super-admin-pages/InviteList'
 import EditOrganizationProfile from './page/organization-pages/EditOrganizationProfile'
 import WarehouseTabsPage from './page/main-operation-pages/WarehouseTabsPage'
 import TransactionList from './page/inventory-pages/TransactionList'
+import InventoryItemsList from './page/inventory-pages/InventoryItemsList'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -71,6 +72,8 @@ function App() {
                   <Route path='warehouse-structure' element={<WarehouseZoneList />} />
                   <Route path="nomenclature/:categoryId" element={<NomenclatureList />} />
                   <Route path='category-list' element={<CategoryList />} />
+                  <Route path='inventory-item-list' element={<InventoryItemsList />} />
+                  
                 </>
               )}
               {hasRole("warehouse_manager") && (

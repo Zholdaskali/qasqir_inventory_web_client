@@ -48,6 +48,7 @@ const DocumentGenerator = () => {
                 documentName,
                 documentContent,
                 createdBy: userId,
+                
             };
 
             const documentResponse = await axios.post(

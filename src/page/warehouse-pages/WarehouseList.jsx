@@ -15,6 +15,7 @@ const WarehouseList = () => {
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isWarehouseButtonDisabled, setWarehouseButtonDisabled] = useState(false);
     const [isWarehouseSaveModalOpen, setIsWarehouseSaveModalOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
 
     const authToken = useSelector((state) => state.token.token);
     const dispatch = useDispatch();
@@ -24,15 +25,28 @@ const WarehouseList = () => {
             const response = await axios.get(API_GET_WAREHOUSE_LIST, {
                 headers: { "Auth-token": authToken },
             });
-            setWarehouses(response.data.body);
-            dispatch(saveWarehouseList(response.data.body));
+
+            // Проверяем, что данные пришли и являются массивом
+            if (response.data && Array.isArray(response.data.body)) {
+                // Преобразуем warehouseCapacity в число для каждого склада
+                const validatedData = response.data.body.map((warehouse) => ({
+                    ...warehouse,
+                    warehouseCapacity: parseFloat(warehouse.warehouseCapacity) || 0, // Если не число, используем 0
+                }));
+                setWarehouses(validatedData);
+                dispatch(saveWarehouseList(validatedData));
+            } else {
+                toast.error("Некорректные данные от сервера");
+            }
         } catch (error) {
             toast.error("Ошибка загрузки складов");
         }
     };
 
     useEffect(() => {
-        fetchWarehouseList();
+        if (authToken) {
+            fetchWarehouseList();
+        }
     }, [authToken]);
 
     const handleModalClose = () => {
@@ -55,6 +69,11 @@ const WarehouseList = () => {
         setIsWarehouseSaveModalOpen(true);
     };
 
+    // Функция для фильтрации складов на основе поискового запроса
+    const filteredWarehouses = warehouses.filter((warehouse) =>
+        warehouse.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     return (
         <div className="w-full h-full px-5 py-5 rounded-xl overflow-auto">
             <div className="flex flex-col gap-y-5 overflow-auto">
@@ -62,58 +81,73 @@ const WarehouseList = () => {
                     <div className="flex items-center gap-4">
                         <h1 className="text-2xl w-full">Склады</h1>
                     </div>
+                    {/* Поле ввода для поиска */}
+                    <input
+                        type="text"
+                        placeholder="Поиск склада..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 item-center">
-                    {warehouses.length > 0 ? (
-                        warehouses.map((warehouse) => (
-                            <div
-                                key={warehouse.id}
-                                className="bg-white shadow-xl rounded-lg p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition duration-300"
-                                onClick={() => handleWarehouseClick(warehouse)}
-                            >
-                                <div className="flex justify-between items-center gap-4">
-                                    <h2 className="text-2xl font-bold text-gray-1000 mb-2">
-                                        {warehouse.name}
-                                    </h2>
-                                    <div className="flex items-center gap-2 w-1/3">
-                                        <div className="w-full h-2 bg-gray-200 rounded-full mt-4">
-                                            <div
-                                                className="h-full rounded-full"
-                                                style={{
-                                                    width: `${(warehouse.warehouseCapacity || 0).toFixed(4)}%`,
-                                                    backgroundColor:
-                                                        warehouse.warehouseCapacity < 50
-                                                            ? "red"
-                                                            : warehouse.warehouseCapacity < 80
-                                                            ? "orange"
-                                                            : "green",
-                                                }}
-                                            ></div>
+                    {filteredWarehouses.length > 0 ? (
+                        filteredWarehouses.map((warehouse) => {
+                            const capacity = warehouse.warehouseCapacity || 0; // Убедимся, что capacity — число
+                            return (
+                                <div
+                                    key={warehouse.id}
+                                    className="bg-white shadow-xl rounded-lg p-6 border border-gray-200 cursor-pointer hover:shadow-lg transition duration-300"
+                                    onClick={() => handleWarehouseClick(warehouse)}
+                                >
+                                    <div className="flex justify-between items-center gap-4">
+                                        <h2 className="text-2xl font-bold text-gray-1000 mb-2">
+                                            {warehouse.name}
+                                        </h2>
+                                        <div className="flex items-center gap-2 w-1/3">
+                                            <div className="w-full h-2 bg-gray-200 rounded-full mt-4">
+                                                <div
+                                                    className="h-full rounded-full"
+                                                    style={{
+                                                        width: `${capacity.toFixed(4)}%`,
+                                                        backgroundColor:
+                                                            capacity < 50
+                                                                ? "red"
+                                                                : capacity < 80
+                                                                ? "orange"
+                                                                : "green",
+                                                    }}
+                                                ></div>
+                                            </div>
+                                            <p className="text-gray-600 text-sm mt-2">
+                                                {capacity.toFixed(2)}%
+                                            </p>
                                         </div>
-                                        <p className="text-gray-600 text-sm mt-2">
-                                            {(warehouse.warehouseCapacity || 0).toFixed(2)}%
-                                        </p>
                                     </div>
+                                    <p className="text-gray-600">
+                                        Локация: {warehouse.location || "Не указано"}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        Дата создания:{" "}
+                                        {warehouse.createdAt
+                                            ? new Date(warehouse.createdAt).toLocaleDateString()
+                                            : "Не указано"}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        Дата обновления:{" "}
+                                        {warehouse.updatedAt
+                                            ? new Date(warehouse.updatedAt).toLocaleDateString()
+                                            : "Не указано"}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        Зон на складе: {warehouse.zonesCount || "0"}
+                                    </p>
                                 </div>
-                                <p className="text-gray-600">
-                                    Локация: {warehouse.location || "Не указано"}
-                                </p>
-                                <p className="text-gray-600">
-                                    Дата создания:{" "}
-                                    {new Date(warehouse.createdAt).toLocaleDateString()}
-                                </p>
-                                <p className="text-gray-600">
-                                    Дата обновления:{" "}
-                                    {new Date(warehouse.updatedAt).toLocaleDateString()}
-                                </p>
-                                <p className="text-gray-600">
-                                    Зон на складе: {warehouse.zonesCount || "0"}
-                                </p>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
-                        <p className="text-gray-600">Загрузка складов...</p>
+                        <p className="text-gray-600">Склады не найдены</p>
                     )}
                 </div>
             </div>

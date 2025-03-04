@@ -19,7 +19,9 @@ const WarehouseZoneList = () => {
         isModalOpen: false,
         openChildZones: {}
     });
- 
+
+    const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
+
     const hasRole = (role) => 
         user?.userRoles?.includes(role) ?? false;
 
@@ -36,7 +38,6 @@ const WarehouseZoneList = () => {
                 zones: response.data.body,
                 loading: false
             }));
-            console.log(response.data.body)
         } catch (error) {
             console.error("Error loading zones:", error);
             setState(prev => ({
@@ -46,7 +47,7 @@ const WarehouseZoneList = () => {
             }));
         }
     };
- 
+
     useEffect(() => {
         if (warehouse?.id) {
             fetchZones();
@@ -78,6 +79,21 @@ const WarehouseZoneList = () => {
             }
         }));
     };
+
+    const handleZoneCreated = () => {
+        setState(prev => ({ ...prev, isModalOpen: false })); // Закрываем модальное окно
+        fetchZones(); // Обновляем список зон
+    };
+
+    // Функция для фильтрации зон на основе поискового запроса
+    const filterZones = (zones, query) => {
+        return zones.filter(zone =>
+            zone.name.toLowerCase().includes(query.toLowerCase())
+        );
+    };
+
+    const filteredZones = filterZones(state.zones, searchQuery);
+    const rootZones = buildZoneTree(filteredZones);
 
     if (!warehouse) {
         return (
@@ -119,8 +135,6 @@ const WarehouseZoneList = () => {
             </div>
         );
     }
-
-    const rootZones = buildZoneTree(state.zones);
 
     const renderZoneCard = (zone, isChild = false) => (
         <div key={zone.id} 
@@ -177,15 +191,26 @@ const WarehouseZoneList = () => {
                             </div>
                         </div>
     
-                        <button
-                            onClick={fetchZones}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
-                                    rounded-lg hover:bg-gray-50 transition-colors"
-                            title="Обновить"
-                        >
-                            <HiRefresh className="w-5 h-5 text-gray-600" />
-                            <span>Обновить</span>
-                        </button>
+                        <div className="flex items-center gap-4">
+                            {/* Поле ввода для поиска */}
+                            <input
+                                type="text"
+                                placeholder="Поиск зоны..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+    
+                            <button
+                                onClick={fetchZones}
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 
+                                        rounded-lg hover:bg-gray-50 transition-colors"
+                                title="Обновить"
+                            >
+                                <HiRefresh className="w-5 h-5 text-gray-600" />
+                                <span>Обновить</span>
+                            </button>
+                        </div>
                     </div>
     
                     {/* Блок с зонами, добавляем overflow-auto */}
@@ -210,11 +235,11 @@ const WarehouseZoneList = () => {
                         setState(prev => ({ ...prev, isModalOpen: isOpen }))}
                     warehouseId={warehouse.id}
                     parentId={null}
+                    setIsZoneCreated={handleZoneCreated}
                 />
             )}
         </div>
     );
-    
 };
 
 export default WarehouseZoneList;

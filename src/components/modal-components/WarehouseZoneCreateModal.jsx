@@ -38,8 +38,11 @@ const WarehouseZoneCreateModal = ({ setIsWarehouseSaveModalOpen, warehouseId, pa
                     headers: { "Auth-token": authToken } 
                 }
             );
-            setIsZoneCreated(true)
-            setIsWarehouseSaveModalOpen(false);  // Закрытие модального окна
+
+            // Уведомляем родительский компонент о создании зоны
+            setIsZoneCreated(true);
+            // Закрываем модальное окно
+            setIsWarehouseSaveModalOpen(false);
         } catch (error) {
             toast.error(error.response?.data?.message);
         }

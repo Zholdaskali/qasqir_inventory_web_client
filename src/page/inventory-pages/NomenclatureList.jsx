@@ -14,11 +14,12 @@ const NomenclatureList = () => {
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
   const nomenclatures = useSelector((state) => state.nomenclatureList);
-  
+
   const [loading, setLoading] = useState(true);
   const [selectedNomenclature, setSelectedNomenclature] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [localNomenclatures, setLocalNomenclatures] = useState([]); // Локальное состояние для списка номенклатур
+  const [localNomenclatures, setLocalNomenclatures] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchNomenclatureList = async () => {
     try {
@@ -28,9 +29,9 @@ const NomenclatureList = () => {
         {
           headers: { "Auth-token": authToken },
         }
-      );  
-      setLocalNomenclatures(response.data.body); // Записываем в локальный state
-      dispatch(saveNomenclatureList(response.data.body)); // Сохраняем в Redux
+      );
+      setLocalNomenclatures(response.data.body);
+      dispatch(saveNomenclatureList(response.data.body));
       toast.success("Номенклатуры успешно загружены");
     } catch (error) {
       toast.error("Ошибка загрузки номенклатур");
@@ -46,6 +47,10 @@ const NomenclatureList = () => {
   const handleCreateNomenclatureModal = () => {
     setIsCreateModalOpen(true);
   };
+
+  const filteredNomenclatures = localNomenclatures.filter((nomenclature) =>
+    nomenclature.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
@@ -64,6 +69,13 @@ const NomenclatureList = () => {
                 <HiRefresh className="w-6 h-6 text-gray-600" />
               </button>
             </div>
+            <input
+              type="text"
+              placeholder="Поиск номенклатуры..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           <div className="overflow-x-auto">
@@ -76,9 +88,10 @@ const NomenclatureList = () => {
                   <th className="text-left px-2">Код</th>
                   <th className="text-left px-2">Тип</th>
                   <th className="text-left px-2">Единица измерения</th>
-                  <th className="text-left px-2">Высота (м)</th> {/* Новая колонка */}
-                  <th className="text-left px-2">Длина (м)</th> {/* Новая колонка */}
-                  <th className="text-left px-2">Ширина (м)</th> {/* Новая колонка */}
+                  <th className="text-left px-2">Объем (м³)</th>
+                  <th className="text-left px-2">Высота (м)</th>
+                  <th className="text-left px-2">Длина (м)</th>
+                  <th className="text-left px-2">Ширина (м)</th>
                   <th className="text-left px-2">Создатель</th>
                   <th className="text-left px-2">Дата создания</th>
                   <th className="text-left px-2">Последнее изменение</th>
@@ -86,8 +99,8 @@ const NomenclatureList = () => {
                 </tr>
               </thead>
               <tbody>
-                {localNomenclatures.length > 0 ? (
-                  localNomenclatures.map((nomenclature) => (
+                {filteredNomenclatures.length > 0 ? (
+                  filteredNomenclatures.map((nomenclature) => (
                     <tr
                       key={nomenclature.id}
                       className="bg-white border-b cursor-pointer hover:bg-gray-200"
@@ -98,9 +111,21 @@ const NomenclatureList = () => {
                       <td className="py-3 px-2">{nomenclature.code}</td>
                       <td className="py-3 px-2">{nomenclature.type}</td>
                       <td className="py-3 px-2">{nomenclature.measurement}</td>
-                      <td className="py-3 px-2">{nomenclature.height}</td> {/* Новая колонка */}
-                      <td className="py-3 px-2">{nomenclature.length}</td> {/* Новая колонка */}
-                      <td className="py-3 px-2">{nomenclature.width}</td> {/* Новая колонка */}
+                      {/* Отображение объема или габаритов */}
+                      <td className="py-3 px-2">
+                        {nomenclature.volume
+                          ? nomenclature.volume
+                          : "Не указано"}
+                      </td>
+                      <td className="py-3 px-2">
+                        {nomenclature.height || "Не указано"}
+                      </td>
+                      <td className="py-3 px-2">
+                        {nomenclature.length || "Не указано"}
+                      </td>
+                      <td className="py-3 px-2">
+                        {nomenclature.width || "Не указано"}
+                      </td>
                       <td className="py-3 px-2">{nomenclature.createdBy}</td>
                       <td className="py-3 px-2">{nomenclature.createdAt}</td>
                       <td className="py-3 px-2">{nomenclature.updatedAt}</td>
@@ -119,7 +144,7 @@ const NomenclatureList = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="13" className="text-center py-4"> {/* Обновите colSpan */}
+                    <td colSpan="14" className="text-center py-4">
                       Данные отсутствуют
                     </td>
                   </tr>
