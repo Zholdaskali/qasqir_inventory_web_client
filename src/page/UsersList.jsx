@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
-
 import { API_GET_USERS } from "../api/API";
 import { saveUserList } from "../store/slices/userListSlice";
-
 import avatar from "../assets/placeholders/avatar.png";
 import filterIcon from "../assets/icons/filter.svg";
 import { IoIosNotificationsOutline } from "react-icons/io";
@@ -20,15 +18,12 @@ const UsersList = () => {
 
     const [userModal, setUserModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-
     const [createInviteModal, setCreateInviteModal] = useState(false);
     const [isInviteButtonDisabled, setIsInviteButtonDisabled] = useState(false);
 
     const fetchUserList = async () => {
         try {
-            const response = await axios.get(API_GET_USERS, {
-                headers: { "Auth-token": authToken },
-            });
+            const response = await axios.get(API_GET_USERS, { headers: { "Auth-token": authToken } });
             dispatch(saveUserList(response.data.body));
             toast.success("Успешно");
         } catch (error) {
@@ -50,114 +45,103 @@ const UsersList = () => {
     };
 
     const handleModalClose = (isDeleted) => {
-        if (isDeleted) fetchUserList(); // Обновляем список пользователей, если пользователь был удален
+        if (isDeleted) fetchUserList();
         setUserModal(false);
     };
 
     const handleInviteModalClose = () => {
         setCreateInviteModal(false);
-        fetchUserList(); // Обновляем список пользователей после создания приглашения
+        fetchUserList();
     };
 
     return (
-        <div className="h-screen w-full flex flex-col overflow-y-auto p-4">
-            <div className="flex flex-col md:flex-row w-full items-start md:items-center justify-between border-b py-5 gap-4">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-2xl">Пользователи</h1>
-                </div>
-                <div className="flex flex-col md:flex-row items-center w-full md:w-2/5 gap-4">
+        <div className="min-h-screen w-full flex flex-col overflow-y-auto p-3 bg-gray-50">
+            {/* Шапка */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b py-3 gap-2">
+                <h1 className="text-xl font-semibold">Пользователи</h1>
+                <div className="flex items-center w-full md:w-auto gap-2">
                     <input
                         type="search"
-                        className="shadow-inner w-full px-6 py-2 rounded-lg border"
+                        className="shadow-inner w-full md:w-64 px-3 py-1 rounded-md border text-sm"
                         placeholder="Поиск"
                     />
-                    <div className="flex items-center gap-4">
-                        <img
-                            src={filterIcon}
-                            alt="filter"
-                            className="w-10 h-10 rounded-xl p-2 bg-main-dull-blue"
-                        />
-                        <div className="w-0.5 bg-main-dull-gray h-8 bg-opacity-65"></div>
-                        <IoIosNotificationsOutline size={50} />
+                    <div className="flex items-center gap-2">
+                        <img src={filterIcon} alt="filter" className="w-8 h-8 p-1 bg-main-dull-blue rounded-md" />
+                        <div className="w-px bg-main-dull-gray h-6 opacity-65" />
+                        <IoIosNotificationsOutline size={32} />
                     </div>
                 </div>
             </div>
 
             {/* Таблица */}
-            <div className="flex-1 overflow-hidden mt-4">
-                <div className="h-full overflow-auto rounded-xl">
-                    <table className="table-auto w-full border-separate border-spacing-y-4">
-                        <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 sticky top-0 z-10">
-                            <tr className="h-14">
-                                <th></th>
-                                <th className="text-start whitespace-nowrap px-4">ID пользователя</th>
-                                <th className="text-start whitespace-nowrap px-4">Имя пользователя</th>
-                                <th className="text-start whitespace-nowrap px-4">Email пользователя</th>
-                                <th className="text-start whitespace-nowrap px-4">Номер телефона</th>
-                                <th className="text-start whitespace-nowrap px-4">Подтверждения email</th>
-                                <th className="text-start whitespace-nowrap px-4">Дата регистрации</th>
-                                <th className="text-start whitespace-nowrap px-4">Роль</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white">
-                            {users.map((userItem) => (
-                                <tr
-                                    key={userItem.userId}
-                                    className={`${userItem.email === user.email
+            <div className="flex-1 mt-3 overflow-x-auto rounded-xl bg-white shadow-sm">
+                <table className="table-auto w-full border-collapse">
+                    <thead className="text-gray-500 bg-gray-50 sticky top-0 z-10">
+                        <tr className="h-10">
+                            <th className="px-2 w-12"></th>
+                            <th className="text-start px-2 whitespace-nowrap">ID</th>
+                            <th className="text-start px-2 whitespace-nowrap">Имя</th>
+                            <th className="text-start px-2 whitespace-nowrap">Email</th>
+                            <th className="text-start px-2 whitespace-nowrap">Телефон</th>
+                            <th className="text-start px-2 whitespace-nowrap">Email подтвержден</th>
+                            <th className="text-start px-2 whitespace-nowrap">Регистрация</th>
+                            <th className="text-start px-2 whitespace-nowrap">Роль</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map((userItem) => (
+                            <tr
+                                key={userItem.userId}
+                                className={`${
+                                    userItem.email === user.email
                                         ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
                                         : "bg-white hover:bg-gray-50"
-                                        } border-b transition cursor-pointer`}
-                                    onClick={() => handleUserModal(userItem)}
-                                >
-                                    <td className="p-5">
-                                        <img
-                                            className="rounded-full w-10 h-10"
-                                            src={userItem.imagePath || avatar}
-                                            alt=""
+                                } border-t transition cursor-pointer`}
+                                onClick={() => handleUserModal(userItem)}
+                            >
+                                <td className="p-2">
+                                    <img
+                                        className="rounded-full w-8 h-8"
+                                        src={userItem.imagePath || avatar}
+                                        alt=""
+                                    />
+                                </td>
+                                <td className="py-2 px-2 text-sm">{userItem.userId}</td>
+                                <td className="py-2 px-2 text-sm">{userItem.userName}</td>
+                                <td className="py-2 px-2 text-sm">{userItem.email}</td>
+                                <td className="py-2 px-2 text-sm">{userItem.userNumber}</td>
+                                <td className="py-2 px-2">
+                                    <div
+                                        className={`${
+                                            userItem.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
+                                        } inline-flex items-center px-1 rounded-full text-xs`}
+                                    >
+                                        <div
+                                            className={`${
+                                                userItem.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"
+                                            } h-2 w-2 rounded-full mr-1`}
                                         />
-                                    </td>
-                                    <td className="py-4 px-4">{userItem.userId}</td>
-                                    <td className="py-4 px-4">{userItem.userName}</td>
-                                    <td className="py-4 px-4">{userItem.email}</td>
-                                    <td className="py-4 px-4">{userItem.userNumber}</td>
-                                    <td className="py-4 px-4">
-                                        <div className="flex items-center justify-start">
-                                            <div
-                                                className={`${userItem.emailVerified
-                                                    ? "bg-[#E3F3E9]"
-                                                    : "bg-[#FFF2EA]"
-                                                    } flex items-center px-2 rounded-full`}
-                                            >
-                                                <div
-                                                    className={`${userItem.emailVerified
-                                                        ? "bg-[#11B066]"
-                                                        : "bg-[#E84D43]"
-                                                        } h-3 w-3 rounded-full`}
-                                                ></div>
-                                                <p
-                                                    className={`${userItem.emailVerified
-                                                        ? "text-[#11B066]"
-                                                        : "text-[#E84D43]"
-                                                        } px-2 py-1`}
-                                                >
-                                                    {userItem.emailVerified ? "Подтверждено" : "Не подтверждено"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-4 px-4">{userItem.registrationDate}</td>
-                                    <td className="py-4 px-4">{userItem.userRoles.join(", ")}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                        <span
+                                            className={`${
+                                                userItem.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"
+                                            }`}
+                                        >
+                                            {userItem.emailVerified ? "Да" : "Нет"}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="py-2 px-2 text-sm">{userItem.registrationDate}</td>
+                                <td className="py-2 px-2 text-sm">{userItem.userRoles.join(", ")}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
 
             {/* Кнопка добавления */}
             <button
-                className={`bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white ${
-                    isInviteButtonDisabled ? "opacity-50 cursor-not-allowed" : ""
+                className={`fixed bottom-6 right-6 w-10 h-10 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center ${
+                    isInviteButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
                 }`}
                 onClick={handleCreateInviteModal}
                 disabled={isInviteButtonDisabled}
@@ -170,7 +154,7 @@ const UsersList = () => {
                     authToken={authToken}
                     setCreateInviteModal={setCreateInviteModal}
                     setIsInviteButtonDisabled={setIsInviteButtonDisabled}
-                    onClose={handleInviteModalClose} // Передаем функцию для автообновления
+                    onClose={handleInviteModalClose}
                 />
             )}
 
@@ -178,7 +162,7 @@ const UsersList = () => {
                 <UserProfileModal
                     selectedUser={selectedUser}
                     onClose={handleModalClose}
-                    fetchUserList={fetchUserList} // Передаем функцию для автообновления
+                    fetchUserList={fetchUserList}
                 />
             )}
         </div>

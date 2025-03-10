@@ -3,43 +3,48 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-const InProgressInventoryPage = ({ onContinueInventory }) => {
+const InCompleteInventoryPage = () => {
     const authToken = useSelector((state) => state.token.token);
-    const [inProgressInventories, setInProgressInventories] = useState([]);
+    const [completedInventories, setCompletedInventories] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchInProgressInventories = async () => {
+        const fetchCompletedInventories = async () => {
             try {
                 setLoading(true);
                 const response = await axios.get(
-                    "http://localhost:8081/api/v1/storekeeper/inventory-check/in-progress",
+                    "http://localhost:8081/api/v1/storekeeper/inventory-check/completed",
                     {
                         headers: { "Auth-token": authToken },
                     }
                 );
-                setInProgressInventories(response.data.body);
-                console.log(response.data.message || "Список незавершенных инвентаризаций успешно загружен");
+                setCompletedInventories(response.data.body);
+                console.log(response.data.message || "Список завершенных инвентаризаций успешно загружен");
             } catch (error) {
-                console.error("Ошибка загрузки списка незавершенных инвентаризаций");
+                console.error("Ошибка загрузки списка завершенных инвентаризаций");
             } finally {
                 setLoading(false);
             }
         };
-        fetchInProgressInventories();
+        fetchCompletedInventories();
     }, [authToken]);
+
+    const handleDetails = (auditId) => {
+        navigate(`/inventory-result/${auditId}`);
+    };
 
     return (
         <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
             <h2 className="text-2xl font-semibold text-main-dull-gray text-center">
-                Незавершенные инвентаризации
+                Завершенные инвентаризации
             </h2>
 
             {loading ? (
                 <div className="text-center text-lg">Загрузка...</div>
             ) : (
                 <div className="space-y-6">
-                    {inProgressInventories.length > 0 ? (
+                    {completedInventories.length > 0 ? (
                         <table className="w-full border-separate border-spacing-y-4 min-w-max">
                             <thead className="text-gray-500 bg-gray-100 h-12">
                                 <tr className="text-sm">
@@ -53,7 +58,7 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {inProgressInventories.map((inventory) => (
+                                {completedInventories.map((inventory) => (
                                     <tr
                                         key={inventory.inventoryId}
                                         className="bg-white border-b cursor-pointer hover:bg-gray-200"
@@ -68,10 +73,10 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
                                         <td className="py-3 px-2">{new Date(inventory.createdAt).toLocaleString()}</td>
                                         <td className="py-3 px-2">
                                             <button
-                                                onClick={() => onContinueInventory(inventory.inventoryId)}
+                                                onClick={() => handleDetails(inventory.inventoryId)}
                                                 className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
                                             >
-                                                Продолжить
+                                                Детали
                                             </button>
                                         </td>
                                     </tr>
@@ -79,7 +84,7 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="text-center text-lg">Нет незавершенных инвентаризаций</div>
+                        <div className="text-center text-lg">Нет завершенных инвентаризаций</div>
                     )}
                 </div>
             )}
@@ -87,4 +92,4 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
     );
 };
 
-export default InProgressInventoryPage;
+export default InCompleteInventoryPage;

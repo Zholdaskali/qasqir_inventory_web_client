@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
+import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from "react-redux";
+
 
 const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZoneId, onClose }) => {
     const [serialNumber, setSerialNumber] = useState("");
@@ -9,6 +8,21 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
     const [height, setHeight] = useState("");
     const [width, setWidth] = useState("");
     const authToken = useSelector((state) => state.token.token);
+    const modalRef = useRef(null);
+
+    // Закрытие модального окна при клике вне его области
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modalRef.current && !modalRef.current.contains(event.target)) {
+                setIsContainerSaveModalOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [setIsContainerSaveModalOpen]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,8 +59,8 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-            <div className="bg-white p-8 rounded-xl shadow-lg w-96">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div ref={modalRef} className="bg-white p-8 rounded-xl shadow-lg w-96">
                 <h2 className="text-2xl font-semibold text-main-dull-gray text-center mb-6">Создание контейнера</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>

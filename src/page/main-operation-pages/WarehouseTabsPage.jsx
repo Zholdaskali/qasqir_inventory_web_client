@@ -4,58 +4,52 @@ import ReturnRequestPage from "./ReturnRequestPage";
 import WriteOffRequestPage from "./WriteOffRequestPage";
 import TransferRequestPage from "./TransferRequestPage.jsx";
 import InventoryCheckPage from "./InventoryCheckPage.jsx";
-import InventoryCheckList from "../inventory-pages/InventoryCheckList.jsx";
 import InProgressInventoryPage from "./InProgressInventoryPage.jsx";
 import DocumentGenerator from "./DocumentGenerator.jsx";
-import { div } from "framer-motion/client";
+import InventoryCheckTabs from "./InventoryCheckTabs.jsx";
+import FileListPage from "./FileListPage.jsx";
 
 const tabs = [
     { name: "ПОСТУПЛЕНИЕ", page: "reception" },
+    { name: "ПЕРЕМЕЩЕНИЕ", page: "transfers" },
+    { name: "ИНВЕНТАРИЗАЦИЯ", page: "implementation" },
     { name: "СПИСАНИЕ", page: "writeoff" },
-    { name: "ИНВЕНТАРИЗАЦИЯ", page: "inventory_check" },
     { name: "ИМПОРТИРОВАНИЕ", page: "inventory" },
     { name: "ПРОДАЖА", page: "products" },
-    { name: "ПЕРЕМЕЩЕНИЕ", page: "transfers" },
     { name: "ВОЗВРАТ", page: "returns" },
-    { name: "ПРОИЗВОДСТВО И ПЕРЕДАЧА", page: "implementation" }
+    { name: "ПРОИЗВОДСТВО И ПЕРЕДАЧА", page: "inventory_check" },
 ];
 
 const InventoryPage = () => {
     const [activeTab, setActiveTab] = useState(tabs[0].page);
-    const [selectedInventoryId, setSelectedInventoryId] = useState(null); 
-    const [showInventoryCheck, setShowInventoryCheck] = useState(false); 
+    const [selectedInventoryId, setSelectedInventoryId] = useState(null);
+    const [showInventoryCheck, setShowInventoryCheck] = useState(false);
 
     const handleContinueInventory = (inventoryId) => {
-        setSelectedInventoryId(inventoryId); 
-        setShowInventoryCheck(true); 
+        setSelectedInventoryId(inventoryId);
+        setShowInventoryCheck(true);
     };
 
     const renderContent = () => {
         switch (activeTab) {
             case "inventory":
-                return <div>Страница для Остатков</div>;
+                return <div className="h-full">Страница для Остатков</div>;
             case "products":
-                return <div>Страница для Изделий</div>;
+                return <FileListPage />;
             case "reception":
-                return (
-                    <div className="">
-                        <IncomingRequestPage />
-                    </div>
-                );
+                return <IncomingRequestPage />;
             case "writeoff":
                 return (
-
-                    <div className="space-y-12">
+                    <div className="space-y-4 h-full">
                         <DocumentGenerator />
-                        <WriteOffRequestPage />;
+                        <WriteOffRequestPage />
                     </div>
                 );
-
             case "transfers":
                 return <TransferRequestPage />;
             case "inventory_check":
                 return (
-                    <div className="space-y-12">
+                    <div className="space-y-4 h-full">
                         {showInventoryCheck ? (
                             <InventoryCheckPage inventoryId={selectedInventoryId} />
                         ) : (
@@ -69,35 +63,38 @@ const InventoryPage = () => {
             case "returns":
                 return <ReturnRequestPage />;
             case "implementation":
-                return <div>Страница для Реализации</div>;
+                return <InventoryCheckTabs />;
             default:
-                return <div>Выберите вкладку</div>;
+                return <div className="h-full text-gray-600">Выберите вкладку</div>;
         }
     };
 
     return (
-        <div className="p-6">
-            <div className="mb-6 p-6 border rounded-xl bg-white shadow-md">
-                <div className="flex flex-wrap gap-4">
+        <div className="min-h-screen w-full flex flex-col bg-gray-50">
+            {/* Вкладки */}
+            <div className="flex-shrink-0 p-4 border-b bg-white shadow-sm">
+                <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
                     {tabs.map((tab) => (
                         <button
                             key={tab.page}
                             onClick={() => {
                                 setActiveTab(tab.page);
-                                setShowInventoryCheck(false); // Сбрасываем флаг при переключении вкладок
+                                setShowInventoryCheck(false);
                             }}
-                            
-                            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${tab.page === activeTab
-                                ? "bg-main-dull-blue text-white shadow-lg"
-                                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                                }`}
+                            className={`px-4 py-1 rounded-md text-sm font-medium transition-all ${
+                                tab.page === activeTab
+                                    ? "bg-main-dull-blue text-white shadow-md"
+                                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            }`}
                         >
                             {tab.name}
                         </button>
                     ))}
                 </div>
             </div>
-            <div className="px-6 pb-10 border rounded-xl bg-white shadow-md overflow-auto h-5/6">
+
+            {/* Контент */}
+            <div className="flex-grow p-4 overflow-auto">
                 {renderContent()}
             </div>
         </div>

@@ -39,6 +39,7 @@ import EditOrganizationProfile from './page/organization-pages/EditOrganizationP
 import WarehouseTabsPage from './page/main-operation-pages/WarehouseTabsPage'
 import TransactionList from './page/inventory-pages/TransactionList'
 import InventoryItemsList from './page/inventory-pages/InventoryItemsList'
+import InventoryResultPage from './page/main-operation-pages/InventoryResultPage'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -87,6 +88,7 @@ function App() {
                   <Route path='supplier-list' element={<SupplierList />} />
                   <Route path='customer-list' element={<CustomerList />} />
                   <Route path='transaction-list' element={<TransactionList />} />
+                  <Route path="/inventory-result/:auditId" element={<InventoryResultPage />} />
                 </>
               )}
               <Route path='edit-profile' element={<EditProfile />} />

@@ -2,9 +2,8 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { HiRefresh } from "react-icons/hi";
 
-const InventoryCheckList = () => {
+const InventoryCheckProgressList = () => {
     const authToken = useSelector((state) => state.token.token);
     const [loading, setLoading] = useState(true);
     const [inventories, setInventories] = useState([]);
@@ -18,7 +17,7 @@ const InventoryCheckList = () => {
                     headers: { "Auth-token": authToken },
                 }
             );
-            setInventories(response.data.body); // Сохраняем список инвентаризаций
+            setInventories(response.data.body);
             toast.success(response.data.message || "Список инвентаризаций успешно загружен");
         } catch (error) {
             toast.error("Ошибка загрузки списка инвентаризаций");
@@ -38,16 +37,7 @@ const InventoryCheckList = () => {
             ) : (
                 <div className="flex flex-col gap-y-5 overflow-auto">
                     <div className="flex flex-col md:flex-row items-center justify-between border-b pb-4">
-                        <div className="flex items-center gap-4">
-                            <h1 className="text-2xl">Инвентаризации</h1>
-                            <button
-                                onClick={fetchInventoryList}
-                                className="p-2 rounded-full hover:bg-gray-100"
-                                title="Обновить"
-                            >
-                                <HiRefresh className="w-6 h-6 text-gray-600" />
-                            </button>
-                        </div>
+                        <h1 className="text-2xl">Инвентаризации</h1>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -74,7 +64,7 @@ const InventoryCheckList = () => {
                                                 {inventory.warehouseName} (ID: {inventory.warehouseId})
                                             </td>
                                             <td className="py-3 px-2">{inventory.auditDate}</td>
-                                            <td className="py-3 px-2">{inventory.status}</td>
+                                            <td className="py-3 px-2 ">{inventory.status}</td>
                                             <td className="py-3 px-2">{inventory.createdBy}</td>
                                             <td className="py-3 px-2">{new Date(inventory.createdAt).toLocaleString()}</td>
                                         </tr>
@@ -95,4 +85,4 @@ const InventoryCheckList = () => {
     );
 };
 
-export default InventoryCheckList;
+export default InventoryCheckProgressList;

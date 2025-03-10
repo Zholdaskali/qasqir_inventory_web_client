@@ -19,44 +19,41 @@ const ContainerOrSubzoneCard = ({ item, type, onDelete, onSetting }) => {
     }, []);
 
     return (
-        <div className="p-3 rounded-lg bg-white shadow-md mb-2 relative">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h4 className="font-medium">{item.serialNumber || `${type.toUpperCase()} NAME`}</h4>
-                    <p className="text-sm text-gray-600">{type.toUpperCase()}ID #{item.id}</p>
-                    <p className="text-sm text-gray-500">Свободный объем: {item.capacity || "Не указано"}</p>
-                </div>
-                <div className="relative" ref={menuRef}>
-                    <button
-                        className="hover:bg-gray-100 rounded"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    >
-                        <BiDotsVerticalRounded />
-                    </button>
-
-                    {isMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg">
-                            <button
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    onSetting(item);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                                Настройки
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    onDelete(item.id);
-                                }}
-                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                                Удалить
-                            </button>
-                        </div>
-                    )}
-                </div>
+        <div className="p-2 rounded-lg bg-white shadow-sm flex justify-between items-center text-sm">
+            <div>
+                <span className="font-medium">{item.serialNumber || `${type.toUpperCase()} NAME`}</span>
+                <span className="text-gray-600 ml-2">ID #{item.id}</span>
+                <span className="text-gray-500 ml-2">Емкость: {item.capacity || "Не указано"} м³</span>
+            </div>
+            <div className="relative" ref={menuRef}>
+                <button
+                    className="hover:bg-gray-100 rounded p-1 z-50"
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                    <BiDotsVerticalRounded size={16} />
+                </button>
+                {isMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-32 bg-white shadow-lg rounded-lg z-50">
+                        <button
+                            onClick={() => {
+                                setIsMenuOpen(false);
+                                onSetting?.(item);
+                            }}
+                            className="block w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                            Настройки
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsMenuOpen(false);
+                                onDelete(item.id);
+                            }}
+                            className="block w-full text-left px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                            Удалить
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

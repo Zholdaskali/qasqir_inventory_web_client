@@ -2,39 +2,23 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import successIcon from '../../assets/success.svg'; // Импортируйте иконку успеха
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const TransferRequestPage = () => {
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
 
-    const [documentNumber, setDocumentNumber] = useState("");
-    const [documentDate, setDocumentDate] = useState("");
-    const [supplierId, setSupplierId] = useState("");
-    const [customerId, setCustomerId] = useState("");
-    const [items, setItems] = useState([]);
-    const [nomenclatureOptions, setNomenclatureOptions] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [warehouses, setWarehouses] = useState([]);
-    const [zonesByWarehouse, setZonesByWarehouse] = useState({});
-    const [containersByZone, setContainersByZone] = useState({});
-    const [suppliers, setSuppliers] = useState([]);
-    const [customers, setCustomers] = useState([]);
-    const [requestSuccess, setRequestSuccess] = useState(false); // Состояние для успешного создания заявки
-
-    // Загрузка номенклатуры
-    useEffect(() => {
-        const fetchNomenclatureList = async () => {
-            try {
-                const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/nomenclatures", {
-                    headers: { "Auth-token": authToken },
-                });
-                setNomenclatureOptions(response.data.body);
-            } catch (error) {
-                toast.error("Ошибка загрузки номенклатуры");
-            }
-        };
-        fetchNomenclatureList();
-    }, [authToken]);
+    const [fromWarehouse, setFromWarehouse] = useState("");
+    const [toWarehouse, setToWarehouse] = useState("");
+    const [fromZones, setFromZones] = useState([]);
+    const [toZones, setToZones] = useState([]);
+    const [selectedFromZones, setSelectedFromZones] = useState([]);
+    const [transferItems, setTransferItems] = useState([]);
+    const [isFromWarehouseDropdownOpen, setIsFromWarehouseDropdownOpen] = useState(false);
+    const [isToWarehouseDropdownOpen, setIsToWarehouseDropdownOpen] = useState(false);
 
     // Загрузка складов
     useEffect(() => {
@@ -43,382 +27,372 @@ const TransferRequestPage = () => {
                 const response = await axios.get("http://localhost:8081/api/v1/employee/warehouses", {
                     headers: { "Auth-token": authToken },
                 });
-                setWarehouses(response.data.body);
+                setWarehouses(response.data.body || []);
             } catch (error) {
                 toast.error("Ошибка загрузки складов");
+                setWarehouses([]);
             }
         };
         fetchWarehouses();
     }, [authToken]);
 
-    // Загрузка поставщиков
-    useEffect(() => {
-        const fetchSuppliers = async () => {
-            try {
-                const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/suppliers", {
-                    headers: { "Auth-token": authToken },
-                });
-                setSuppliers(response.data.body);
-            } catch (error) {
-                toast.error("Ошибка загрузки поставщиков");
-            }
-        };
-        fetchSuppliers();
-    }, [authToken]);
-
-    // Загрузка клиентов
-    useEffect(() => {
-        const fetchCustomers = async () => {
-            try {
-                const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/customers", {
-                    headers: { "Auth-token": authToken },
-                });
-                setCustomers(response.data.body);
-            } catch (error) {
-                toast.error("Ошибка загрузки клиентов");
-            }
-        };
-        fetchCustomers();
-    }, [authToken]);
-
-    // Загрузка зон для выбранного склада
-    const fetchZonesForWarehouse = async (warehouseId) => {
+    // Загрузка зон для склада-источника
+    const fetchFromZonesForWarehouse = async (warehouseId) => {
         try {
             const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`, {
                 headers: { "Auth-token": authToken },
             });
-            setZonesByWarehouse((prev) => ({ ...prev, [warehouseId]: response.data.body }));
+            setFromZones(response.data.body || []);
         } catch (error) {
-            toast.error("Ошибка загрузки зон");
+            toast.error("Ошибка загрузки зон склада-источника");
+            setFromZones([]);
         }
     };
 
-    // Загрузка контейнеров для выбранной зоны
-    const fetchContainersForZone = async (zoneId) => {
+    // Загрузка зон для склада-назначения
+    const fetchToZonesForWarehouse = async (warehouseId) => {
         try {
-            const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/zones/${zoneId}/containers`, {
+            const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`, {
                 headers: { "Auth-token": authToken },
             });
-            setContainersByZone((prev) => ({ ...prev, [zoneId]: response.data.body }));
+            setToZones(response.data.body || []);
         } catch (error) {
-            toast.error("Ошибка загрузки контейнеров");
+            toast.error("Ошибка загрузки зон склада-назначения");
+            setToZones([]);
         }
     };
 
-    // Добавление товара
-    const handleAddItem = () => {
-        setItems([...items, { 
-            nomenclatureId: "", 
-            quantity: 1, 
-            fromWarehouseZoneId: "", 
-            toWarehouseZoneId: "", 
-            containerId: "" 
-        }]);
-    };
-
-    // Удаление товара
-    const handleRemoveItem = (index) => {
-        setItems(items.filter((_, i) => i !== index));
-    };
-
-    // Изменение данных товара
-    const handleItemChange = (index, field, value) => {
-        const updatedItems = [...items];
-        updatedItems[index][field] = value;
-        setItems(updatedItems);
-    };
-
-    // Обработка изменения номенклатуры
-    const handleNomenclatureChange = (index, nomenclatureId) => {
-        handleItemChange(index, "nomenclatureId", nomenclatureId);
-    };
-
-    // Обработка изменения склада (для зоны отправки)
-    const handleFromWarehouseChange = async (index, warehouseId) => {
-        handleItemChange(index, "fromWarehouseZoneId", "");
-        if (warehouseId) {
-            await fetchZonesForWarehouse(warehouseId);
-        }
-    };
-
-    // Обработка изменения склада (для зоны получения)
-    const handleToWarehouseChange = async (index, warehouseId) => {
-        handleItemChange(index, "toWarehouseZoneId", "");
-        if (warehouseId) {
-            await fetchZonesForWarehouse(warehouseId);
-        }
-    };
-
-    // Обработка изменения зоны (для зоны отправки)
-    const handleFromZoneChange = async (index, zoneId) => {
-        handleItemChange(index, "fromWarehouseZoneId", zoneId);
-    };
-
-    // Обработка изменения зоны (для зоны получения)
-    const handleToZoneChange = async (index, zoneId) => {
-        handleItemChange(index, "toWarehouseZoneId", zoneId);
-    };
-
-    // Обработка изменения контейнера
-    const handleContainerChange = (index, containerId) => {
-        handleItemChange(index, "containerId", containerId);
-    };
-
-    // Отправка заявки на перемещение
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // Загрузка товаров для выбранной зоны
+    const fetchItemsForZone = async (zoneId) => {
         try {
+            setLoading(true);
+            const response = await axios.get(`http://localhost:8081/api/v1/user/inventory/items/${zoneId}`, {
+                headers: { "Auth-token": authToken },
+            });
+            const newItems = (response.data.body || []).map((item) => ({
+                nomenclatureId: item.nomenclatureId,
+                nomenclatureName: item.nomenclatureName,
+                measurementUnit: item.measurementUnit,
+                code: item.code,
+                quantity: item.quantity,
+                fromWarehouseZoneId: parseInt(zoneId, 10),
+                toWarehouseZoneId: null,
+                containerId: null,
+            }));
+            setTransferItems((prevItems) => [...prevItems, ...newItems]);
+            toast.success(`Товары из зоны ${zoneId} успешно добавлены`);
+        } catch (error) {
+            toast.error(`Ошибка загрузки товаров для зоны ${zoneId}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Обработка выбора склада-источника
+    const handleFromWarehouseSelect = async (warehouseId) => {
+        setFromWarehouse(warehouseId);
+        setSelectedFromZones([]);
+        setTransferItems([]);
+        setIsFromWarehouseDropdownOpen(false);
+        if (warehouseId) {
+            await fetchFromZonesForWarehouse(warehouseId);
+        } else {
+            setFromZones([]);
+        }
+    };
+
+    // Обработка выбора склада-назначения
+    const handleToWarehouseSelect = async (warehouseId) => {
+        setToWarehouse(warehouseId);
+        setIsToWarehouseDropdownOpen(false);
+        if (warehouseId) {
+            await fetchToZonesForWarehouse(warehouseId);
+        } else {
+            setToZones([]);
+        }
+    };
+
+    // Обработка выбора зон через чекбоксы
+    const handleZoneToggle = (zoneId) => {
+        const zoneIdStr = String(zoneId);
+        if (selectedFromZones.includes(zoneIdStr)) {
+            setSelectedFromZones((prevZones) => prevZones.filter((id) => id !== zoneIdStr));
+            setTransferItems((prevItems) => prevItems.filter((item) => item.fromWarehouseZoneId !== zoneId));
+        } else {
+            setSelectedFromZones((prevZones) => [...prevZones, zoneIdStr]);
+            fetchItemsForZone(zoneIdStr);
+        }
+    };
+
+    // Удаление зоны и связанных товаров
+    const handleRemoveZone = (zoneId) => {
+        setSelectedFromZones((prevZones) => prevZones.filter((id) => id !== zoneId));
+        setTransferItems((prevItems) => prevItems.filter((item) => item.fromWarehouseZoneId !== parseInt(zoneId, 10)));
+    };
+
+    // Обработка изменения целевой зоны
+    const handleToZoneChange = (index, value) => {
+        const newItems = [...transferItems];
+        newItems[index].toWarehouseZoneId = parseInt(value, 10);
+        setTransferItems(newItems);
+    };
+
+    // Обработка изменения количества
+    const handleQuantityChange = (index, value) => {
+        const newItems = [...transferItems];
+        newItems[index].quantity = parseFloat(value);
+        setTransferItems(newItems);
+    };
+
+    // Обработка отправки перемещения
+    const handleSubmitTransfer = async () => {
+        if (transferItems.length === 0) {
+            toast.error("Нет данных для отправки");
+            return;
+        }
+        try {
+            setLoading(true);
             const payload = {
                 documentType: "TRANSFER",
-                documentNumber,
-                documentDate,
-                supplierId: parseInt(supplierId, 10),
-                customerId: parseInt(customerId, 10),
-                tnvedCode: "TRANSFER", // Фиксированное значение
-                items: items.map(item => ({
-                    nomenclatureId: parseInt(item.nomenclatureId, 10),
-                    quantity: parseFloat(item.quantity),
-                    fromWarehouseZoneId: parseInt(item.fromWarehouseZoneId, 10),
-                    toWarehouseZoneId: parseInt(item.toWarehouseZoneId, 10),
-                    containerId: item.containerId ? parseInt(item.containerId, 10) : null,
+                documentNumber: Date.now(),
+                documentDate: new Date().toISOString().split('T')[0],
+                supplierId: 0,
+                customerId: 0,
+                fromWarehouseId: parseInt(fromWarehouse, 10),
+                toWarehouseId: parseInt(toWarehouse, 10),
+                items: transferItems.map((item) => ({
+                    nomenclatureId: item.nomenclatureId,
+                    quantity: item.quantity,
+                    toWarehouseZoneId: item.toWarehouseZoneId,
+                    fromWarehouseZoneId: item.fromWarehouseZoneId,
+                    containerId: item.containerId,
                 })),
                 createdBy: userId,
             };
-            console.log("Отправляемый payload:", JSON.stringify(payload, null, 2));
-            const response = await axios.post("http://localhost:8081/api/v1/storekeeper/transfer", payload, {
-                headers: { "Auth-token": authToken },
-            });
-            toast.success(response?.data?.message || "Заявка на перемещение успешно создана");
-            setRequestSuccess(true); // Показываем сообщение об успехе
-            setTimeout(() => {
-                setRequestSuccess(false); // Скрываем сообщение через 2 секунды
-            }, 2000);
+            const response = await axios.post(
+                "http://localhost:8081/api/v1/storekeeper/transfer",
+                payload,
+                {
+                    headers: { "Auth-token": authToken },
+                }
+            );
+            toast.success(response.data.message || "Перемещение успешно завершено");
+            setTransferItems([]);
+            setSelectedFromZones([]);
+            setFromWarehouse("");
+            setToWarehouse("");
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при создании заявки на перемещение");
+            toast.error(error.response?.data?.message || "Ошибка при завершении перемещения");
+            console.error("Ошибка:", error.response?.data);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="p-8 max-w-4xl mx-auto bg-main-light-gray rounded-xl shadow-lg space-y-6">
-            {/* Сообщение об успешном создании заявки */}
-            {requestSuccess && (
-                <div className="absolute h-screen w-full top-1/3 left-0 text-black">
-                    <div className='flex justify-center items-center w-full'>
-                        <div className='bg-white w-2/5 md:w-1/5 px-4 py-8 md:px-2 rounded-xl'>
-                            <div className='flex flex-col items-center gap-y-8 md:gap-y-16'>
-                                <img src={successIcon} className='w-1/2 md:w-1/3' alt="Успех" />
-                                <h2>Заявка на перемещение успешно создана</h2>
-                            </div>
+        <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
+            <ToastContainer position="top-center" />
+            <div className="flex flex-col gap-y-5">
+                <h1 className="text-2xl font-bold text-gray-800">Перемещение товаров</h1>
+
+                <div className="flex flex-col md:flex-row gap-4">
+                    {/* Выбор склада-источника */}
+                    <div className="w-full md:w-1/2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Склад-источник
+                        </label>
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsFromWarehouseDropdownOpen(!isFromWarehouseDropdownOpen)}
+                                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${loading ? "cursor-not-allowed opacity-50" : ""}`}
+                                disabled={loading}
+                            >
+                                {fromWarehouse
+                                    ? warehouses.find((w) => w.id === parseInt(fromWarehouse))?.name || "Выберите склад"
+                                    : "Выберите склад"}
+                            </button>
+                            {isFromWarehouseDropdownOpen && (
+                                <ul className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                    {warehouses.length > 0 ? (
+                                        warehouses.map((warehouse) => (
+                                            <li
+                                                key={warehouse.id}
+                                                onClick={() => handleFromWarehouseSelect(warehouse.id)}
+                                                className="p-2 hover:bg-blue-100 cursor-pointer text-gray-700"
+                                            >
+                                                {warehouse.name}
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="p-2 text-gray-500">Склады отсутствуют</li>
+                                    )}
+                                </ul>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Выбор склада-назначения */}
+                    <div className="w-full md:w-1/2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Склад-назначение
+                        </label>
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsToWarehouseDropdownOpen(!isToWarehouseDropdownOpen)}
+                                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${loading ? "cursor-not-allowed opacity-50" : ""}`}
+                                disabled={loading}
+                            >
+                                {toWarehouse
+                                    ? warehouses.find((w) => w.id === parseInt(toWarehouse))?.name || "Выберите склад"
+                                    : "Выберите склад"}
+                            </button>
+                            {isToWarehouseDropdownOpen && (
+                                <ul className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                                    {warehouses.length > 0 ? (
+                                        warehouses.map((warehouse) => (
+                                            <li
+                                                key={warehouse.id}
+                                                onClick={() => handleToWarehouseSelect(warehouse.id)}
+                                                className="p-2 hover:bg-blue-100 cursor-pointer text-gray-700"
+                                            >
+                                                {warehouse.name}
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="p-2 text-gray-500">Склады отсутствуют</li>
+                                    )}
+                                </ul>
+                            )}
                         </div>
                     </div>
                 </div>
-            )}
 
-            <h2 className="text-2xl font-semibold text-main-dull-gray text-center">Создание заявки на перемещение</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                    <label className="block text-main-dull-blue">Номер документа</label>
-                    <input
-                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                        value={documentNumber}
-                        onChange={(e) => setDocumentNumber(e.target.value)}
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-main-dull-blue">Дата документа</label>
-                    <input
-                        type="date"
-                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                        value={documentDate}
-                        onChange={(e) => setDocumentDate(e.target.value)}
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-main-dull-blue">Поставщик</label>
-                    <select
-                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                        value={supplierId}
-                        onChange={(e) => setSupplierId(e.target.value)}
-                        required
-                    >
-                        <option value="">Выберите поставщика</option>
-                        {suppliers.map((supplier) => (
-                            <option key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block text-main-dull-blue">Клиент</label>
-                    <select
-                        className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                        value={customerId}
-                        onChange={(e) => setCustomerId(e.target.value)}
-                        required
-                    >
-                        <option value="">Выберите клиента</option>
-                        {customers.map((customer) => (
-                            <option key={customer.id} value={customer.id}>
-                                {customer.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <h3 className="text-lg font-semibold text-main-dull-gray">Товары</h3>
-                {items.map((item, index) => (
-                    <div key={index} className="border border-main-dull-blue p-4 rounded-lg space-y-4">
-                        <h4 className="text-md font-medium text-main-dull-blue">Товар #{index + 1}</h4>
-
-                        <div>
-                            <label className="block text-main-dull-blue">Выберите номенклатуру</label>
-                            <select
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.nomenclatureId}
-                                onChange={(e) => handleNomenclatureChange(index, e.target.value)}
-                                required
-                            >
-                                <option value="">Выберите номенклатуру</option>
-                                {nomenclatureOptions.map((nomenclature) => (
-                                    <option key={nomenclature.id} value={nomenclature.id}>
-                                        {nomenclature.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-main-dull-blue">Количество</label>
-                            <input
-                                type="number"
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.quantity}
-                                onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-main-dull-blue">Склад отправки</label>
-                            <select
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.fromWarehouseZoneId}
-                                onChange={(e) => handleFromWarehouseChange(index, e.target.value)}
-                                required
-                            >
-                                <option value="">Выберите склад</option>
-                                {warehouses.map((warehouse) => (
-                                    <option key={warehouse.id} value={warehouse.id}>
-                                        {warehouse.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {item.fromWarehouseZoneId && (
-                            <div>
-                                <label className="block text-main-dull-blue">Зона отправки</label>
-                                <select
-                                    className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                    value={item.fromWarehouseZoneId}
-                                    onChange={(e) => handleFromZoneChange(index, e.target.value)}
-                                    required
+                {/* Выбор зон склада-источника */}
+                <div className="w-full">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Выберите зоны склада-источника
+                    </label>
+                    <div className="p-2 border rounded-lg max-h-32 overflow-y-auto bg-white shadow-sm">
+                        {fromZones.length > 0 ? (
+                            fromZones.map((zone) => (
+                                <div
+                                    key={zone.id}
+                                    className="flex items-center py-1 px-2 hover:bg-gray-100 rounded"
                                 >
-                                    <option value="">Выберите зону</option>
-                                    {zonesByWarehouse[item.fromWarehouseZoneId]?.map((zone) => (
-                                        <option key={zone.id} value={zone.id}>
-                                            {zone.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                                    <input  
+                                        type="checkbox"
+                                        id={`zone-${zone.id}`}
+                                        checked={selectedFromZones.includes(String(zone.id))}
+                                        onChange={() => handleZoneToggle(zone.id)}
+                                        disabled={!fromWarehouse || loading}
+                                        className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <label
+                                        htmlFor={`zone-${zone.id}`}
+                                        className="ml-2 text-sm text-gray-700 cursor-pointer"
+                                    >
+                                        {zone.name}
+                                    </label>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-500">Зоны отсутствуют</p>
                         )}
-
-                        <div>
-                            <label className="block text-main-dull-blue">Склад получения</label>
-                            <select
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.toWarehouseZoneId}
-                                onChange={(e) => handleToWarehouseChange(index, e.target.value)}
-                                required
-                            >
-                                <option value="">Выберите склад</option>
-                                {warehouses.map((warehouse) => (
-                                    <option key={warehouse.id} value={warehouse.id}>
-                                        {warehouse.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {item.toWarehouseZoneId && (
-                            <div>
-                                <label className="block text-main-dull-blue">Зона получения</label>
-                                <select
-                                    className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                    value={item.toWarehouseZoneId}
-                                    onChange={(e) => handleToZoneChange(index, e.target.value)}
-                                    required
-                                >
-                                    <option value="">Выберите зону</option>
-                                    {zonesByWarehouse[item.toWarehouseZoneId]?.map((zone) => (
-                                        <option key={zone.id} value={zone.id}>
-                                            {zone.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        )}
-
-                        <div>
-                            <label className="block text-main-dull-blue">Контейнер (необязательно)</label>
-                            <select
-                                className="w-full border border-main-dull-blue rounded-lg px-4 py-2"
-                                value={item.containerId}
-                                onChange={(e) => handleContainerChange(index, e.target.value)}
-                            >
-                                <option value="">Не выбрано</option>
-                                {containersByZone[item.fromWarehouseZoneId]?.map((container) => (
-                                    <option key={container.id} value={container.id}>
-                                        {container.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => handleRemoveItem(index)}
-                            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-                        >
-                            Удалить
-                        </button>
                     </div>
-                ))}
+                </div>
 
-                <button
-                    type="button"
-                    onClick={handleAddItem}
-                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-                >
-                    Добавить товар
-                </button>
+                {/* Выбранные зоны */}
+                <div>
+                    <h3 className="text-lg font-medium text-gray-700">Выбранные зоны:</h3>
+                    {selectedFromZones.length > 0 ? (
+                        <ul className="flex flex-wrap gap-2 mt-2">
+                            {selectedFromZones.map((zoneId) => (
+                                <li
+                                    key={zoneId}
+                                    className="flex items-center gap-2 bg-blue-100 text-blue-800 p-2 rounded-full text-sm"
+                                >
+                                    {fromZones.find((z) => z.id === parseInt(zoneId))?.name || zoneId}
+                                    <button
+                                        onClick={() => handleRemoveZone(zoneId)}
+                                        className="text-red-500 hover:text-red-700 font-bold"
+                                    >
+                                        ✕
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-500">Зоны не выбраны</p>
+                    )}
+                </div>
 
-                <div className="flex justify-end space-x-4">
+                {/* Товары для перемещения */}
+                {loading ? (
+                    <div className="text-center text-lg text-gray-600">Загрузка...</div>
+                ) : transferItems.length > 0 ? (
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-separate border-spacing-y-4 min-w-max">
+                            <thead className="text-gray-500 bg-gray-100 h-12">
+                                <tr className="text-sm">
+                                    <th className="text-left px-2">Номенклатура</th>
+                                    <th className="text-left px-2">Ед. измерения</th>
+                                    <th className="text-left px-2">Код</th>
+                                    <th className="text-left px-2">Из зоны</th>
+                                    <th className="text-left px-2">В зону</th>
+                                    <th className="text-left px-2">Количество</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {transferItems.map((item, index) => (
+                                    <tr key={index} className="bg-white border-b hover:bg-gray-50">
+                                        <td className="py-3 px-2">{item.nomenclatureName}</td>
+                                        <td className="py-3 px-2">{item.measurementUnit}</td>
+                                        <td className="py-3 px-2">{item.code}</td>
+                                        <td className="py-3 px-2">
+                                            {fromZones.find((z) => z.id === item.fromWarehouseZoneId)?.name || item.fromWarehouseZoneId}
+                                        </td>
+                                        <td className="py-3 px-2">
+                                            <select
+                                                value={item.toWarehouseZoneId || ""}
+                                                onChange={(e) => handleToZoneChange(index, e.target.value)}
+                                                className="p-1 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="">Выберите зону</option>
+                                                {toZones.map((zone) => (
+                                                    <option key={zone.id} value={zone.id}>
+                                                        {zone.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td className="py-3 px-2">
+                                            <input
+                                                type="number"
+                                                value={item.quantity}
+                                                onChange={(e) => handleQuantityChange(index, e.target.value)}
+                                                className="p-1 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="text-center py-4 text-gray-500">Товары отсутствуют</div>
+                )}
+
+                {/* Кнопка отправки */}
+                {transferItems.length > 0 && (
                     <button
-                        type="submit"
-                        className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
+                        onClick={handleSubmitTransfer}
+                        className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors w-48"
+                        disabled={loading}
                     >
-                        Создать заявку на перемещение
+                        Завершить перемещение
                     </button>
-                </div>
-            </form>
+                )}
+            </div>
         </div>
     );
 };

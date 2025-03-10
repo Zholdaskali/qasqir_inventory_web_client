@@ -2,23 +2,27 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Notification from "../../components/notification/Notification";
-import { IoIosNotificationsOutline } from "react-icons/io";
 
 const InventoryItemsList = () => {
     const authToken = useSelector((state) => state.token.token);
-    const [inventoryItems, setInventoryItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [items, setItems] = useState([]);
 
     const fetchInventoryItems = async () => {
         try {
-            const response = await axios.get(`http://localhost:8081/api/v1/user/inventory/items`, {
-                headers: { "Auth-token": authToken },
-            });
-            setInventoryItems(response.data.body);
-            console.log(response.data.body)
-            toast.success("Инвентарь загружен");
+            setLoading(true);
+            const response = await axios.get(
+                "http://localhost:8081/api/v1/user/inventory/items",
+                {
+                    headers: { "Auth-token": authToken },
+                }
+            );
+            setItems(response.data.body);
+            toast.success(response.data.message || "Список элементов инвентаризации успешно загружен");
         } catch (error) {
-            toast.error("Ошибка загрузки инвентаря");
+            toast.error("Ошибка загрузки списка элементов инвентаризации");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -27,43 +31,62 @@ const InventoryItemsList = () => {
     }, []);
 
     return (
-        <div className="h-screen w-full flex flex-col overflow-y-auto p-4">
-            <div className="flex flex-col md:flex-row w-full items-start md:items-center justify-between border-b py-5 gap-4">
-                <h1 className="text-2xl">Инвентарь</h1>
-            </div>
+        <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto">
+            {loading ? (
+                <div className="text-center text-lg">Загрузка...</div>
+            ) : (
+                <div className="flex flex-col gap-y-5 overflow-auto">
+                    <div className="flex flex-col md:flex-row items-center justify-between border-b pb-4">
+                        <h1 className="text-2xl">Элементы инвентаризации</h1>
+                    </div>
 
-            {/* Таблица */}
-            <div className="flex-1 overflow-hidden mt-4">
-                <div className="h-full overflow-auto rounded-xl">
-                    <table className="table-auto w-full border-separate border-spacing-y-4">
-                        <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 sticky top-0 z-10">
-                            <tr className="h-14">
-                                <th className="text-start px-4">ID инвентаря</th>
-                                <th className="text-start px-4">Номенклатура</th>
-                                <th className="text-start px-4">Ед. изм.</th>
-                                <th className="text-start px-4">Код</th>
-                                <th className="text-start px-4">Количество</th>
-                                <th className="text-start px-4">Склад</th>
-                                <th className="text-start px-4">Контейнер</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white">
-                            {inventoryItems.map((item) => (
-                                <tr key={item.inventoryId} className="bg-white hover:bg-gray-50 border-b transition">
-                                    <td className="py-4 px-4">{item.inventoryId}</td>
-                                    <td className="py-4 px-4">{item.nomenclatureName}</td>
-                                    <td className="py-4 px-4">{item.measurementUnit}</td>
-                                    <td className="py-4 px-4">{item.code}</td>
-                                    <td className="py-4 px-4">{item.quantity}</td>
-                                    <td className="py-4 px-4">{item.warehouseName}</td>
-                                    <td className="py-4 px-4">{item.containerName}</td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-separate border-spacing-y-4 min-w-max">
+                            <thead className="text-gray-500 bg-gray-100 h-12">
+                                <tr className="text-sm">
+                                    <th className="text-left px-2">ID</th>
+                                    <th className="text-left px-2">Номенклатура</th>
+                                    <th className="text-left px-2">Количество</th>
+                                    <th className="text-left px-2">Ед. измерения</th>
+                                    <th className="text-left px-2">Код</th>
+                                    <th className="text-left px-2">Склад</th>
+                                    <th className="text-left px-2">Контейнер</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {items.length > 0 ? (
+                                    items.map((item) => (
+                                        <tr
+                                            key={item.id}
+                                            className="bg-white border-b cursor-pointer hover:bg-gray-200"
+                                        >
+                                            <td className="py-3 px-2">{item.id}</td>
+                                            <td className="py-3 px-2">
+                                                {item.nomenclatureName} (ID: {item.nomenclatureId})
+                                            </td>
+                                            <td className="py-3 px-2">{item.quantity}</td>
+                                            <td className="py-3 px-2">{item.measurementUnit}</td>
+                                            <td className="py-3 px-2">{item.code}</td>
+                                            <td className="py-3 px-2">
+                                                {item.warehouseName} (ID: {item.warehouseId})
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                {item.containerName} (ID: {item.containerId})
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="text-center py-4">
+                                            Данные отсутствуют
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <Notification />
-            </div>
+            )}
         </div>
     );
 };
