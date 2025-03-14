@@ -40,6 +40,8 @@ import WarehouseTabsPage from './page/main-operation-pages/WarehouseTabsPage'
 import TransactionList from './page/inventory-pages/TransactionList'
 import InventoryItemsList from './page/inventory-pages/InventoryItemsList'
 import InventoryResultPage from './page/main-operation-pages/InventoryResultPage'
+import TicketTabsPage from './page/main-operation-pages/TicketTabsPage'
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -65,6 +67,7 @@ function App() {
                   <Route path='users-list' element={<UsersList />} />
                   <Route path='invite-list' element={<InviteList />} />
                   <Route path='edit-organization-profile' element={<EditOrganizationProfile />} />
+                  <Route path='ticket-tabs' element={<TicketTabsPage />} />
                 </>
               )}
               {(hasRole("employee")) && (

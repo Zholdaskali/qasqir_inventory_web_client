@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import Select from "react-select";
 import { useForm, Controller } from "react-hook-form";
 import { addItem, removeItem, updateItem, setItems } from '../../store/slices/operationSlice/itemsSlice';
-import { FaPlus, FaTrash, FaCheckCircle, FaSpinner } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaCheckCircle, FaSpinner, FaEye } from 'react-icons/fa';
 
 const IncomingRequestPage = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -29,18 +29,17 @@ const IncomingRequestPage = () => {
   const [suppliers, setSuppliers] = useState([]);
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [nomenclaturesLoaded, setNomenclaturesLoaded] = useState(false);
 
-  // Кэширование данных
+  // Загрузка складов и поставщиков при монтировании
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        const [nomenclatureRes, warehousesRes, suppliersRes] = await Promise.all([
-          axios.get("http://localhost:8081/api/v1/warehouse-manager/nomenclatures", { headers: { "Auth-token": authToken } }),
+        const [warehousesRes, suppliersRes] = await Promise.all([
           axios.get("http://localhost:8081/api/v1/employee/warehouses", { headers: { "Auth-token": authToken } }),
           axios.get("http://localhost:8081/api/v1/warehouse-manager/suppliers", { headers: { "Auth-token": authToken } })
         ]);
-        setNomenclatureOptions(nomenclatureRes.data.body);
         setWarehouses(warehousesRes.data.body);
         setSuppliers(suppliersRes.data.body);
       } catch (error) {
@@ -52,8 +51,26 @@ const IncomingRequestPage = () => {
     fetchInitialData();
   }, [authToken]);
 
+  // Функция загрузки номенклатур по кнопке
+  const fetchNomenclatures = async () => {
+    if (nomenclaturesLoaded) return; // Не загружаем повторно
+    setIsLoading(true);
+    try {
+      const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/nomenclatures", {
+        headers: { "Auth-token": authToken },
+      });
+      setNomenclatureOptions(response.data.body);
+      setNomenclaturesLoaded(true);
+      toast.success("Номенклатуры успешно загружены");
+    } catch (error) {
+      toast.error("Ошибка загрузки номенклатур");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchZonesForWarehouse = useCallback(async (warehouseId) => {
-    if (zonesByWarehouse[warehouseId]) return; // Кэширование
+    if (zonesByWarehouse[warehouseId]) return;
     try {
       const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`, 
         { headers: { "Auth-token": authToken } });
@@ -64,7 +81,7 @@ const IncomingRequestPage = () => {
   }, [authToken, zonesByWarehouse]);
 
   const fetchContainersForZone = useCallback(async (zoneId) => {
-    if (containersByZone[zoneId]) return; // Кэширование
+    if (containersByZone[zoneId]) return;
     try {
       const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${zoneId}`, 
         { headers: { "Auth-token": authToken } });
@@ -256,34 +273,35 @@ const IncomingRequestPage = () => {
               />
               {errors.supplierId && <p className="text-red-500 text-xs">{errors.supplierId.message}</p>}
             </div>
-            <div>
-              <label className="block text-sm text-main-dull-blue font-medium mb-1">Код ТН ВЭД</label>
-              <input
-                {...register("tnvedCode")}
-                className="w-full border border-main-dull-blue rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-main-purp-dark transition"
-                placeholder="Необязательно"
-                disabled={isLoading}
-              />
-            </div>
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-md font-semibold text-main-dull-gray">Список товаров</h3>
-            <button
-              type="button"
-              onClick={handleAddItem}
-              className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
-              disabled={isLoading}
-            >
-              <FaPlus className="mr-1" /> Добавить
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={fetchNomenclatures}
+                className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                disabled={isLoading || nomenclaturesLoaded}
+              >
+                <FaEye className="mr-1" /> {nomenclaturesLoaded ? "Номенклатуры загружены" : "Просмотреть номенклатуры"}
+              </button>
+              <button
+                type="button"
+                onClick={handleAddItem}
+                className="flex items-center px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition"
+                disabled={isLoading || !nomenclaturesLoaded}
+              >
+                <FaPlus className="mr-1" /> Добавить
+              </button>
+            </div>
           </div>
 
           {items.length === 0 ? (
             <div className="text-center py-4 bg-white rounded-lg shadow-md text-sm text-main-dull-gray">
-              Добавьте товары для оприходования
+              {nomenclaturesLoaded ? "Добавьте товары для оприходования" : "Загрузите номенклатуры, чтобы добавить товары"}
             </div>
           ) : (
             items.map((item, index) => (

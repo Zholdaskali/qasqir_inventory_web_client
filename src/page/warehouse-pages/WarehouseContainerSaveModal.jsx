@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from "react-redux";
-
+import axios from "axios";
+import { toast } from 'react-toastify';
 
 const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZoneId, onClose }) => {
     const [serialNumber, setSerialNumber] = useState("");
@@ -17,7 +18,6 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                 setIsContainerSaveModalOpen(false);
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -27,19 +27,38 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Логирование входных данных для отладки
+        console.log("Input values:", { serialNumber, length, height, width, warehouseZoneId, authToken });
+
+        // Проверка на заполненность и корректность данных
         if (!serialNumber || !length || !height || !width) {
             toast.error("Заполните все поля");
             return;
         }
 
+        const parsedLength = parseFloat(length);
+        const parsedHeight = parseFloat(height);
+        const parsedWidth = parseFloat(width);
+
+        if (isNaN(parsedLength) || isNaN(parsedHeight) || isNaN(parsedWidth) || parsedLength <= 0 || parsedHeight <= 0 || parsedWidth <= 0) {
+            toast.error("Размеры должны быть положительными числами");
+            return;
+        }
+
+        // Рассчитываем capacity как произведение размеров
+        const capacity = parsedLength * parsedHeight * parsedWidth;
+
         try {
             const payload = {
                 warehouseZoneId,
                 serialNumber,
-                length: parseFloat(length),
-                height: parseFloat(height),
-                width: parseFloat(width),
+                capacity,
+                length: parsedLength,
+                height: parsedHeight,
+                width: parsedWidth,
             };
+
+            console.log("Отправляемый payload:", payload); // Логируем данные перед отправкой
 
             const response = await axios.post(
                 "http://localhost:8081/api/v1/warehouse-manager/warehouse/container",
@@ -49,11 +68,18 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                 }
             );
 
+            console.log("Response from server:", response.data); // Логируем ответ сервера
             toast.success(response?.data?.message || "Контейнер успешно создан");
+            setIsContainerSaveModalOpen(false);
             if (onClose) {
-                onClose(true);
+                onClose();
             }
         } catch (error) {
+            console.error("Ошибка при создании контейнера:", {
+                message: error.message,
+                response: error.response?.data,
+                status: error.response?.status,
+            });
             toast.error(error.response?.data?.message || "Ошибка при создании контейнера");
         }
     };
@@ -77,6 +103,7 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                         <label className="block text-main-dull-blue font-medium mb-2">Длина (м)</label>
                         <input
                             type="number"
+                            step="0.1"
                             className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={length}
                             onChange={(e) => setLength(e.target.value)}
@@ -87,6 +114,7 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                         <label className="block text-main-dull-blue font-medium mb-2">Высота (м)</label>
                         <input
                             type="number"
+                            step="0.1"
                             className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={height}
                             onChange={(e) => setHeight(e.target.value)}
@@ -97,6 +125,7 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
                         <label className="block text-main-dull-blue font-medium mb-2">Ширина (м)</label>
                         <input
                             type="number"
+                            step="0.1"
                             className="w-full border border-main-dull-blue rounded-lg px-4 py-2 focus:border-main-blue focus:ring-2 focus:ring-main-blue transition-colors duration-200"
                             value={width}
                             onChange={(e) => setWidth(e.target.value)}

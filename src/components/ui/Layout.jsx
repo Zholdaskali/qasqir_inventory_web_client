@@ -13,6 +13,7 @@ import { VscOrganization } from "react-icons/vsc";
 import { GrUser } from "react-icons/gr";
 import { ImCart, ImBook, ImTab } from "react-icons/im";
 import { IoBarChartSharp } from "react-icons/io5";
+import { HiTicket } from "react-icons/hi2";
 
 // Redux actions
 import { clearUser } from "../../store/slices/userSlice";
@@ -127,6 +128,9 @@ const Layout = ({ setIsAuthenticated }) => {
                                     <NavLink to="/invite-list">Приглашения</NavLink>
                                 </div>
                             )}
+                            <NavLink to="/ticket-tabs" className="flex items-center gap-2 text-sm">
+                                <HiTicket size={27}/> <p>Заявки</p>
+                            </NavLink>
                         </>
                     )}
 

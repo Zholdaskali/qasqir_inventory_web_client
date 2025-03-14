@@ -1,23 +1,23 @@
 import React, { useState } from "react";
 import IncomingRequestPage from "./IncomingRequestPage";
 import ReturnRequestPage from "./ReturnRequestPage";
-import WriteOffRequestPage from "./WriteOffRequestPage";
+import WriteOffTicketsPage from "./WriteOffTicketsPage"; // Предполагаю, что это нужный компонент
 import TransferRequestPage from "./TransferRequestPage.jsx";
 import InventoryCheckPage from "./InventoryCheckPage.jsx";
 import InProgressInventoryPage from "./InProgressInventoryPage.jsx";
 import DocumentGenerator from "./DocumentGenerator.jsx";
 import InventoryCheckTabs from "./InventoryCheckTabs.jsx";
 import FileListPage from "./FileListPage.jsx";
+import WriteOffTabs from "./WriteOffTabs.jsx"
 
 const tabs = [
-    { name: "ПОСТУПЛЕНИЕ", page: "reception" },
-    { name: "ПЕРЕМЕЩЕНИЕ", page: "transfers" },
-    { name: "ИНВЕНТАРИЗАЦИЯ", page: "implementation" },
-    { name: "СПИСАНИЕ", page: "writeoff" },
-    { name: "ИМПОРТИРОВАНИЕ", page: "inventory" },
-    { name: "ПРОДАЖА", page: "products" },
-    { name: "ВОЗВРАТ", page: "returns" },
-    { name: "ПРОИЗВОДСТВО И ПЕРЕДАЧА", page: "inventory_check" },
+    { name: "Списание", page: "writeoff" },
+    { name: "Поступление", page: "reception" },
+    { name: "Перемещение", page: "transfers" },
+    { name: "Инвентаризация", page: "implementation" },
+    { name: "Продажа", page: "products" },
+    { name: "Возврат", page: "returns" },
+    { name: "Производство и передача", page: "inventory_check" },
 ];
 
 const InventoryPage = () => {
@@ -32,8 +32,6 @@ const InventoryPage = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case "inventory":
-                return <div className="h-full">Страница для Остатков</div>;
             case "products":
                 return <FileListPage />;
             case "reception":
@@ -41,8 +39,7 @@ const InventoryPage = () => {
             case "writeoff":
                 return (
                     <div className="space-y-4 h-full">
-                        <DocumentGenerator />
-                        <WriteOffRequestPage />
+                        <WriteOffTabs /> {/* Заменяем WriteOffTabs на WriteOffTicketsPage */}
                     </div>
                 );
             case "transfers":

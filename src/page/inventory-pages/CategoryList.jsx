@@ -9,9 +9,8 @@ import { saveCategoryList } from "../../store/slices/inventorySlice/categoryList
 import CategorySaveModal from "../../components/modal-components/category-modal/CategorySaveModal";
 import CategorySettingsModal from "../../components/modal-components/category-modal/CategorySettingsModal";
 
-import filterIcon from "../../assets/icons/filter.svg";
-import { IoIosNotificationsOutline } from "react-icons/io";
 import { FiSettings } from "react-icons/fi";
+import { HiOutlineArrowRight } from "react-icons/hi";
 
 const CategoryList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -22,7 +21,7 @@ const CategoryList = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
+  const [searchQuery, setSearchQuery] = useState("");
 
   const fetchCategoryList = async () => {
     try {
@@ -45,12 +44,12 @@ const CategoryList = () => {
   }, []);
 
   const handleCreateCategoryModal = () => {
-    setSelectedCategory(null); // Очищаем выбор категории
+    setSelectedCategory(null);
     setIsModalOpen(true);
   };
 
   const handleSettingsClick = (category) => {
-    setSelectedCategory(category); // Выбираем категорию для редактирования
+    setSelectedCategory(category);
     setIsModalOpen(true);
   };
 
@@ -61,11 +60,10 @@ const CategoryList = () => {
   const handleModalClose = (shouldRefresh) => {
     setIsModalOpen(false);
     if (shouldRefresh) {
-      fetchCategoryList(); // Обновляем список категорий, если нужно
+      fetchCategoryList();
     }
   };
 
-  // Функция для фильтрации категорий на основе поискового запроса
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -103,17 +101,25 @@ const CategoryList = () => {
                   <th className="text-left px-2">Дата изменения</th>
                   <th className="text-left px-2">Настройки</th>
                 </tr>
+                <tr>
+                  <th colSpan="7" className="text-left px-2 text-sm text-gray-400">
+                    Нажмите на строку, чтобы перейти к списку номенклатуры
+                  </th>
+                </tr>
               </thead>
               <tbody>
                 {filteredCategories.length > 0 ? (
                   filteredCategories.map((category) => (
                     <tr
                       key={category.id}
-                      className="bg-white border-b cursor-pointer hover:bg-gray-200"
+                      className="bg-white border-b cursor-pointer hover:bg-gray-50 group"
                       onClick={() => handleCategoryClick(category.id)}
                     >
                       <td className="py-3 px-2">{category.id}</td>
-                      <td className="py-3 px-2">{category.name}</td>
+                      <td className="py-3 px-2 flex items-center gap-2">
+                        {category.name}
+                        <HiOutlineArrowRight className="w-4 h-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </td>
                       <td className="py-3 px-2">{category.createdBy}</td>
                       <td className="py-3 px-2">{category.updatedBy}</td>
                       <td className="py-3 px-2">{category.createdAt}</td>
@@ -143,7 +149,7 @@ const CategoryList = () => {
           </div>
 
           <button
-            className="bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white"
+            className="bg-blue-500 fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white hover:bg-blue-600 transition-colors"
             onClick={handleCreateCategoryModal}
           >
             +
@@ -154,12 +160,12 @@ const CategoryList = () => {
       {isModalOpen && (
         selectedCategory ? (
           <CategorySettingsModal
-            onClose={handleModalClose} // Передаем функцию для автообновления
+            onClose={handleModalClose}
             category={selectedCategory}
           />
         ) : (
           <CategorySaveModal
-            onClose={handleModalClose} // Передаем функцию для автообновления
+            onClose={handleModalClose}
           />
         )
       )}

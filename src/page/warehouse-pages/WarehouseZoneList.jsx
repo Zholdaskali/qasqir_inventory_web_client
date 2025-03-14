@@ -6,6 +6,8 @@ import { useLocation } from "react-router-dom";
 import WarehouseZoneSaveModal from '../../components/modal-components/WarehouseZoneCreateModal';
 import { HiOutlineCube, HiRefresh, HiPlus } from "react-icons/hi";
 import { toast } from 'react-toastify';
+import Notification from "../../components/notification/Notification";
+
 
 const WarehouseZoneList = () => {
     const location = useLocation();
@@ -99,9 +101,9 @@ const WarehouseZoneList = () => {
                         </div>
                     )}
 
-                    {/* Сетка шкафов */}
+                    {/* Вертикальный список шкафов */}
                     {!loading && !error && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="flex flex-col gap-4">
                             {filteredCabinets.length > 0 ? (
                                 filteredCabinets.map(cabinet => (
                                     <div
@@ -117,7 +119,7 @@ const WarehouseZoneList = () => {
                                     </div>
                                 ))
                             ) : (
-                                <div className="col-span-full text-center py-4 text-gray-500">
+                                <div className="text-center py-4 text-gray-500">
                                     Шкафов не найдено
                                 </div>
                             )}
@@ -144,6 +146,7 @@ const WarehouseZoneList = () => {
                     />
                 )}
             </div>
+            <Notification />
         </div>
     );
 };

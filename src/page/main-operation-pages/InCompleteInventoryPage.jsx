@@ -9,6 +9,12 @@ const InCompleteInventoryPage = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
+    // Добавляем состояние для дат (по умолчанию текущий месяц)
+    const [startDate, setStartDate] = useState(
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
+    );
+    const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+
     useEffect(() => {
         const fetchCompletedInventories = async () => {
             try {
@@ -17,18 +23,22 @@ const InCompleteInventoryPage = () => {
                     "http://localhost:8081/api/v1/storekeeper/inventory-check/completed",
                     {
                         headers: { "Auth-token": authToken },
+                        params: {
+                            startDate: startDate, // Передаем начальную дату
+                            endDate: endDate,     // Передаем конечную дату
+                        },
                     }
                 );
                 setCompletedInventories(response.data.body);
                 console.log(response.data.message || "Список завершенных инвентаризаций успешно загружен");
             } catch (error) {
-                console.error("Ошибка загрузки списка завершенных инвентаризаций");
+                console.error("Ошибка загрузки списка завершенных инвентаризаций", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchCompletedInventories();
-    }, [authToken]);
+    }, [authToken, startDate, endDate]); // Добавляем startDate и endDate в зависимости
 
     const handleDetails = (auditId) => {
         navigate(`/inventory-result/${auditId}`);
@@ -39,6 +49,28 @@ const InCompleteInventoryPage = () => {
             <h2 className="text-2xl font-semibold text-main-dull-gray text-center">
                 Завершенные инвентаризации
             </h2>
+
+            {/* Добавляем элементы управления датами */}
+            <div className="flex justify-center space-x-4 my-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Начальная дата:</label>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700">Конечная дата:</label>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                    />
+                </div>
+            </div>
 
             {loading ? (
                 <div className="text-center text-lg">Загрузка...</div>
