@@ -4,44 +4,43 @@ import { Navigate } from 'react-router-dom'
 import './App.css'
 
 // pages
-import PassRecover from './page/PassRecover'
-import SignInPage from './page/SignInPage'
+import PassRecover from './page/main-pages/PassRecover'
+import SignInPage from './page/main-pages/SignInPage'
 import Layout from './components/ui/Layout'
-import NotFound from './page/NotFound'
+import NotFound from './page/main-pages/NotFound'
 
 // Super admin pages
-import CreateAdmin from './page/super-admin-pages/CreateAdmin'
-import UsersList from './page/UsersList'
-import ActionLogs from './page/super-admin-pages/logs/ActionLogs'
-import ExceptionLogs from './page/super-admin-pages/logs/ExceptionLogs'
-import LoginLogs from './page/super-admin-pages/logs/LoginLogs'
+import CreateAdmin from './page/layout-pages/users/setting-user/CreateAdmin'
+import ActionLogs from './page/layout-pages/logs/ActionLogs'
+import ExceptionLogs from './page/layout-pages/logs/ExceptionLogs'
+import LoginLogs from './page/layout-pages/logs/LoginLogs'
+import UsersList from './page/layout-pages/users/UsersList'
 
 // User profile
-import SettingsPage from './page/profile-pages/SettingsPage'
-import EditProfile from './page/profile-pages/EditProfile'
-import NomenclatureList from './page/inventory-pages/NomenclatureList'
-import CategoryList from './page/inventory-pages/CategoryList'
+import SettingsPage from './page/layout-pages/profile-pages/SettingsPage'
+import EditProfile from './page/layout-pages/profile-pages/EditProfile'
+import CategoryList from './page/layout-pages/inventory-pages/CategoryList'
+import NomenclatureList from "./page/layout-pages/inventory-pages/NomenclatureList"
 
 // Organization 
-import OrganizationProfile from './page/organization-pages/OrganizationProfile'
+import OrganizationProfile from './page/layout-pages/organization-pages/OrganizationProfile'
 
 // Warehouse-manager pagex1
-import WarehouseList from './page/warehouse-pages/WarehouseList'
-import WarehouseZoneList from './page/warehouse-pages/WarehouseZoneList'
-import DashboardPage from './page/DashboardPage'
+import WarehouseList from './page/layout-pages/warehouse-pages/WarehouseList'
+import WarehouseZoneList from './page/layout-pages/warehouse-pages/WarehouseZoneList'
+import DashboardPage from './page/layout-pages/dashboard/DashboardPage'
 
 // Storekeeper
-import SupplierList from './page/inventory-pages/SupplierList'
-import CustomerList from './page/inventory-pages/CustomerList'
+import SupplierList from './page/layout-pages/inventory-pages/SupplierList'
+import CustomerList from './page/layout-pages/inventory-pages/CustomerList'
 import { useSelector } from 'react-redux'
-import InviteList from './page/super-admin-pages/InviteList'
-import EditOrganizationProfile from './page/organization-pages/EditOrganizationProfile'
-import WarehouseTabsPage from './page/main-operation-pages/WarehouseTabsPage'
-import TransactionList from './page/inventory-pages/TransactionList'
-import InventoryItemsList from './page/inventory-pages/InventoryItemsList'
-import InventoryResultPage from './page/main-operation-pages/InventoryResultPage'
-import TicketTabsPage from './page/main-operation-pages/TicketTabsPage'
-
+import InviteList from './page/layout-pages/users/setting-user/InviteList'
+import EditOrganizationProfile from './page/layout-pages/organization-pages/EditOrganizationProfile'
+import WarehouseTabsPage from './page/layout-pages/operation/WarehouseOperationTabsPage'
+import InventoryItemsList from './page/layout-pages/operation/InventoryItemsList'
+import TicketTabsPage from './page/main-operation-pages/write-off/WriteOffTicketTabsPage'
+import InventoryResultPage from './page/main-operation-pages/inventory-check/InventoryResultPage'
+import TransactionList from './page/layout-pages/operation/TransactionList'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
