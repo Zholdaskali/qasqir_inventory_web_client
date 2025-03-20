@@ -30,10 +30,9 @@ const SupplierList = () => {
       );
       setLocalSuppliers(response.data.body); // Записываем в локальный state
       dispatch(saveSupplierList(response.data.body)); // Сохраняем в Redux
-      toast.success("Поставщики успешно загружены");
+      toast.success(response.data.message || "Успешно");
     } catch (error) {
-      console.error("Ошибка при загрузке поставщиков:", error);
-      toast.error("Ошибка загрузки поставщиков");
+      error.response?.data?.message
     } finally {
       setLoading(false);
     }
@@ -129,7 +128,7 @@ const SupplierList = () => {
           </div>
 
           <button
-            className="bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white"
+            className="fixed bottom-6 right-6 w-10 h-10 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center"
             onClick={handleCreateSupplierModal}
           >
             +

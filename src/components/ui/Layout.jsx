@@ -12,6 +12,7 @@ import { IoIosArrowForward } from "react-icons/io";
 import { VscOrganization } from "react-icons/vsc";
 import { GrUser } from "react-icons/gr";
 import { ImCart, ImBook, ImTab } from "react-icons/im";
+import { IoSettings } from "react-icons/io5";
 import { IoBarChartSharp } from "react-icons/io5";
 import { HiTicket } from "react-icons/hi2";
 
@@ -82,9 +83,8 @@ const Layout = ({ setIsAuthenticated }) => {
 
             {/* Боковая панель */}
             <aside
-                className={`bg-white min-w-[200px] h-full p-3 text-black flex flex-col justify-between transition-transform transform ${
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 md:relative fixed top-0 left-0 z-40 shadow-lg`}
+                className={`bg-white min-w-[200px] h-full p-3 text-black flex flex-col justify-between transition-transform transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    } md:translate-x-0 md:relative fixed top-0 left-0 z-40 shadow-lg`}
             >
                 <div className="flex flex-col gap-4">
                     <img src="/logo.svg" alt="Logo" className="w-20 h-20" />
@@ -96,40 +96,14 @@ const Layout = ({ setIsAuthenticated }) => {
 
                     {hasRole("admin") && (
                         <>
-                            <button
-                                onClick={() => setAuditLogsList(!auditLogsList)}
-                                className="flex items-center justify-between w-full text-sm"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <ImBook size={24} /> <p>Аудит</p>
-                                </div>
-                                <IoIosArrowForward className={auditLogsList ? "rotate-90" : ""} />
-                            </button>
-                            {auditLogsList && (
-                                <div className="flex flex-col pl-4 gap-1 text-sm">
-                                    <NavLink to="logs/action-logs">Действия</NavLink>
-                                    <NavLink to="logs/exception-logs">Ошибки</NavLink>
-                                    <NavLink to="logs/login-logs">Входы</NavLink>
-                                </div>
-                            )}
-
-                            <button
-                                onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                className="flex items-center justify-between w-full text-sm"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <FaUsers size={24} /> <p>Сотрудники</p>
-                                </div>
-                                <IoIosArrowForward className={userMenuOpen ? "rotate-90" : ""} />
-                            </button>
-                            {userMenuOpen && (
-                                <div className="flex flex-col pl-4 gap-1 text-sm">
-                                    <NavLink to="/users-list">Список сотрудников</NavLink>
-                                    <NavLink to="/invite-list">Приглашения</NavLink>
-                                </div>
-                            )}
+                            <NavLink to="/log-tabs" className="flex items-center gap-2 text-sm">
+                                <ImBook size={24} /> <p>Аудит</p>
+                            </NavLink>
+                            <NavLink to="/user-tabs" className="flex items-center gap-2 text-sm">
+                                <FaUsers size={24} /> <p>Пользователи</p>
+                            </NavLink>
                             <NavLink to="/ticket-tabs" className="flex items-center gap-2 text-sm">
-                                <HiTicket size={27}/> <p>Заявки</p>
+                                <HiTicket size={27} /> <p>Заявки</p>
                             </NavLink>
                         </>
                     )}
@@ -139,23 +113,6 @@ const Layout = ({ setIsAuthenticated }) => {
                             <NavLink to="/warehouse-list" className="flex items-center gap-2 text-sm">
                                 <FaWarehouse size={24} /> <p>Склады</p>
                             </NavLink>
-
-                            <button
-                                onClick={() => setInventoryLogsList(!inventoryLogsList)}
-                                className="flex items-center justify-between w-full text-sm"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <ImCart size={24} /> <p>Инвентарь</p>
-                                </div>
-                                <IoIosArrowForward className={inventoryLogsList ? "rotate-90" : ""} />
-                            </button>
-                            {inventoryLogsList && (
-                                <div className="flex flex-col pl-4 gap-1 text-sm">
-                                    <NavLink to="/category-list">Складской каталог</NavLink>
-                                    <NavLink to="/supplier-list">Поставщики</NavLink>
-                                    <NavLink to="/customer-list">Заказчики</NavLink>
-                                </div>
-                            )}
 
                             <button
                                 onClick={() => setOperationLogsList(!operationLogsList)}
@@ -171,6 +128,22 @@ const Layout = ({ setIsAuthenticated }) => {
                                     <NavLink to="/warehouse-tabs">Операции</NavLink>
                                     <NavLink to="/transaction-list">Транзакции</NavLink>
                                     <NavLink to="/inventory-item-list">Товары</NavLink>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setInventoryLogsList(!inventoryLogsList)}
+                                className="flex items-center justify-between w-full text-sm"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <IoSettings size={24} /> <p>Настройки</p>
+                                </div>
+                                <IoIosArrowForward className={inventoryLogsList ? "rotate-90" : ""} />
+                            </button>
+                            {inventoryLogsList && (
+                                <div className="flex flex-col pl-4 gap-1 text-sm">
+                                    <NavLink to="/category-list">Складской каталог</NavLink>
+                                    <NavLink to="/supplier-list">Поставщики</NavLink>
+                                    <NavLink to="/customer-list">Заказчики</NavLink>
                                 </div>
                             )}
                         </>

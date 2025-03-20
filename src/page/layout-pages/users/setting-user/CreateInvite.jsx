@@ -5,7 +5,7 @@ import successIcon from '../assets/success.svg'
 
 import inviteIllustration from '../assets/illustrations/invite.svg'
 import { toast } from "react-toastify";
-import { API_CREATE_INVITE } from "../api/API"
+import { API_CREATE_INVITE } from "../../../../api/API"
 
 const CreateInvite = () => {
 

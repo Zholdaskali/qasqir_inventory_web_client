@@ -17,6 +17,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     const [inventoryItems, setInventoryItems] = useState([]);
     const [inventoryId, setInventoryId] = useState(initialInventoryId || null);
     const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     // Загрузка складов
     useEffect(() => {
@@ -34,7 +35,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         fetchWarehouses();
     }, [authToken]);
 
-    // Загрузка зон для выбранного склада
+    // Загрузка зон для выбранного склада после начала инвентаризации
     const fetchZonesForWarehouse = async (warehouseId) => {
         try {
             const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouses/${warehouseId}/zones`, {
@@ -47,7 +48,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         }
     };
 
-    // Загрузка товаров для выбранной зоны
     const fetchItemsForZone = async (zoneId) => {
         try {
             setLoading(true);
@@ -72,7 +72,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         }
     };
 
-    // Начало инвентаризации
     const handleStartInventory = async () => {
         if (!selectedWarehouse) {
             toast.error("Выберите склад для начала инвентаризации");
@@ -91,7 +90,9 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                     headers: { "Auth-token": authToken },
                 }
             );
-            setInventoryId(response.data.body?.inventoryId || response.data.inventoryId);
+            const newInventoryId = response.data.body?.inventoryId || response.data.inventoryId;
+            setInventoryId(newInventoryId);
+            await fetchZonesForWarehouse(selectedWarehouse); // Загружаем зоны после начала
             toast.success(response.data.message || "Инвентаризация успешно начата");
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при начале инвентаризации");
@@ -100,7 +101,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         }
     };
 
-    // Обработка завершения инвентаризации
     const handleSubmitInventory = async () => {
         if (inventoryItems.length === 0) {
             toast.error("Нет данных для отправки");
@@ -110,6 +110,10 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             toast.error("Инвентаризация еще не начата");
             return;
         }
+        setShowConfirmDialog(true); // Показываем диалог подтверждения
+    };
+
+    const confirmSubmitInventory = async () => {
         try {
             setLoading(true);
             const payload = inventoryItems.map((item) => ({
@@ -129,27 +133,25 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             setSelectedZones([]);
             setSelectedWarehouse("");
             setInventoryId(null);
+            setZones([]);
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при завершении инвентаризации");
         } finally {
             setLoading(false);
+            setShowConfirmDialog(false);
         }
     };
 
-    // Обработка выбора склада
     const handleWarehouseSelect = async (warehouseId) => {
         setSelectedWarehouse(warehouseId);
         setSelectedZones([]);
         setInventoryItems([]);
         setIsWarehouseDropdownOpen(false);
-        if (warehouseId) {
-            await fetchZonesForWarehouse(warehouseId);
-        } else {
-            setZones([]);
+        if (!inventoryId) {
+            setZones([]); // Очищаем зоны, если инвентаризация еще не начата
         }
     };
 
-    // Обработка выбора зон через чекбоксы
     const handleZoneToggle = (zoneId) => {
         const zoneIdStr = String(zoneId);
         if (selectedZones.includes(zoneIdStr)) {
@@ -157,26 +159,21 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             setInventoryItems((prevItems) => prevItems.filter((item) => item.warehouseZoneId !== zoneId));
         } else {
             setSelectedZones((prevZones) => [...prevZones, zoneIdStr]);
-            if (inventoryId) {
-                fetchItemsForZone(zoneIdStr);
-            }
+            fetchItemsForZone(zoneIdStr);
         }
     };
 
-    // Удаление зоны и связанных товаров
     const handleRemoveZone = (zoneId) => {
         setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneId));
         setInventoryItems((prevItems) => prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10)));
     };
 
-    // Обработка изменения фактического количества
     const handleQuantityChange = (index, value) => {
         const newItems = [...inventoryItems];
         newItems[index].actualQuantity = parseFloat(value);
         setInventoryItems(newItems);
     };
 
-    // Загрузка данных для продолжения инвентаризации
     useEffect(() => {
         if (initialInventoryId) {
             const fetchInventoryData = async () => {
@@ -209,7 +206,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                 <h1 className="text-2xl font-bold text-gray-800">Инвентаризация</h1>
 
                 <div className="flex flex-col md:flex-row gap-4">
-                    {/* Кастомный выпадающий список для складов */}
                     <div className="w-full md:w-1/2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Выберите склад
@@ -244,13 +240,12 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                         </div>
                     </div>
 
-                    {/* Выбор зон */}
                     <div className="w-full md:w-1/2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Выберите зоны
                         </label>
                         <div className="p-2 border rounded-lg max-h-32 overflow-y-auto bg-white shadow-sm">
-                            {zones.length > 0 ? (
+                            {inventoryId && zones.length > 0 ? (
                                 zones.map((zone) => (
                                     <div
                                         key={zone.id}
@@ -261,7 +256,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                                             id={`zone-${zone.id}`}
                                             checked={selectedZones.includes(String(zone.id))}
                                             onChange={() => handleZoneToggle(zone.id)}
-                                            disabled={!selectedWarehouse || loading || !inventoryId}
+                                            disabled={loading}
                                             className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                                         />
                                         <label
@@ -273,7 +268,9 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-sm text-gray-500">Зоны отсутствуют</p>
+                                <p className="text-sm text-gray-500">
+                                    {inventoryId ? "Зоны отсутствуют" : "Начните инвентаризацию для выбора зон"}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -363,6 +360,35 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                     >
                         Завершить инвентаризацию
                     </button>
+                )}
+
+                {/* Диалог подтверждения */}
+                {showConfirmDialog && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                            <h3 className="text-lg font-medium text-gray-800 mb-4">
+                                Подтверждение завершения инвентаризации
+                            </h3>
+                            <p className="text-gray-600 mb-6">
+                                Вы уверены, что хотите завершить инвентаризацию? Все данные будут сохранены.
+                            </p>
+                            <div className="flex justify-end gap-4">
+                                <button
+                                    onClick={() => setShowConfirmDialog(false)}
+                                    className="p-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    onClick={confirmSubmitInventory}
+                                    className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    disabled={loading}
+                                >
+                                    {loading ? "Сохранение..." : "Подтвердить"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

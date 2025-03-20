@@ -15,6 +15,8 @@ import ActionLogs from './page/layout-pages/logs/ActionLogs'
 import ExceptionLogs from './page/layout-pages/logs/ExceptionLogs'
 import LoginLogs from './page/layout-pages/logs/LoginLogs'
 import UsersList from './page/layout-pages/users/UsersList'
+import LogTabs from './page/layout-pages/logs/LogTabs'
+import UserTabs from './page/layout-pages/users/UserTabs'
 
 // User profile
 import SettingsPage from './page/layout-pages/profile-pages/SettingsPage'
@@ -27,20 +29,21 @@ import OrganizationProfile from './page/layout-pages/organization-pages/Organiza
 
 // Warehouse-manager pagex1
 import WarehouseList from './page/layout-pages/warehouse-pages/WarehouseList'
-import WarehouseZoneList from './page/layout-pages/warehouse-pages/WarehouseZoneList'
+import WarehouseZoneList from './page/layout-pages/warehouse-pages/warehouse-structure/WarehouseZoneList'
 import DashboardPage from './page/layout-pages/dashboard/DashboardPage'
 
 // Storekeeper
 import SupplierList from './page/layout-pages/inventory-pages/SupplierList'
 import CustomerList from './page/layout-pages/inventory-pages/CustomerList'
 import { useSelector } from 'react-redux'
-import InviteList from './page/layout-pages/users/setting-user/InviteList'
+import InviteList from './page/layout-pages/users/InviteList'
 import EditOrganizationProfile from './page/layout-pages/organization-pages/EditOrganizationProfile'
 import WarehouseTabsPage from './page/layout-pages/operation/WarehouseOperationTabsPage'
 import InventoryItemsList from './page/layout-pages/operation/InventoryItemsList'
 import TicketTabsPage from './page/main-operation-pages/write-off/WriteOffTicketTabsPage'
 import InventoryResultPage from './page/main-operation-pages/inventory-check/InventoryResultPage'
 import TransactionList from './page/layout-pages/operation/TransactionList'
+
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -60,6 +63,7 @@ function App() {
               {hasRole("admin") && (
                 <>
                   <Route path='logs/action-logs' element={<ActionLogs />} />
+                  <Route path='log-tabs' element={<LogTabs />} />
                   <Route path='logs/exception-logs' element={<ExceptionLogs />} />
                   <Route path='logs/login-logs' element={<LoginLogs />} />
                   <Route path='create-company' element={<CreateAdmin />} />
@@ -67,6 +71,7 @@ function App() {
                   <Route path='invite-list' element={<InviteList />} />
                   <Route path='edit-organization-profile' element={<EditOrganizationProfile />} />
                   <Route path='ticket-tabs' element={<TicketTabsPage />} />
+                  <Route path='user-tabs' element={<UserTabs />} />
                 </>
               )}
               {(hasRole("employee")) && (

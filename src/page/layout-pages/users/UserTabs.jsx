@@ -1,25 +1,21 @@
 import React, { useState } from "react";
-import WriteOffTicketsPage from "./WriteOffTicketsPage";
-import CreateWriteOffPage from "./CreateWriteOffPage";
-import BatchWriteOffPage from "./BatchWriteOffPage";
+import UsersList from "./UsersList";
+import InviteList from "./InviteList";
 
 const tabs = [
-    { name: "СПИСОК ЗАЯВОК", page: "ticket-list" },
-    { name: "СПИСОК ГРУППОВОЙ ЗАЯВКИ", page: "ticket-batch-add" },
-    { name: "ПОДАТЬ ЗАЯЗКУ", page: "ticket-add" },
+    { name: "Пользователи системы", page: "user-list" },
+    { name: "Приглашения в систему", page: "invite-list" },
 ];
 
-const WriteOffTabs = () => {
+const UserTabs = () => {
     const [activeTab, setActiveTab] = useState(tabs[0].page);
 
     const renderContent = () => {
         switch (activeTab) {
-            case "ticket-list":
-                return <WriteOffTicketsPage />;
-            case "ticket-add":
-                return <CreateWriteOffPage/>;
-            case "ticket-batch-add":
-                return <BatchWriteOffPage />;
+            case "user-list":
+                return <UsersList />;
+            case "invite-list":
+                return <InviteList/>;
             default:
                 return <div className="h-full text-gray-600">Выберите вкладку</div>;
         }
@@ -54,4 +50,4 @@ const WriteOffTabs = () => {
     );
 };
 
-export default WriteOffTabs;
+export default UserTabs;

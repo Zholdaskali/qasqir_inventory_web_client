@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { HiRefresh, HiDownload } from "react-icons/hi";
-import * as XLSX from "xlsx";
+import Notification from "../../../components/notification/Notification";
 
 const TransactionList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -22,10 +22,12 @@ const TransactionList = () => {
           params: { startDate, endDate },
         }
       );
-      const sortedDocuments = (Array.isArray(response.data.body) ? response.data.body : []).map(doc => ({
-        ...doc,
-        transactions: doc.transactions.sort((a, b) => new Date(b.date) - new Date(a.date))
-      }));
+      const sortedDocuments = (Array.isArray(response.data.body) ? response.data.body : [])
+        .map(doc => ({
+          ...doc,
+          transactions: doc.transactions.sort((a, b) => new Date(b.date) - new Date(a.date)) // Сортировка транзакций по убыванию
+        }))
+        .sort((a, b) => new Date(b.document.documentDate) - new Date(a.document.documentDate)); // Сортировка документов по убыванию
       setDocuments(sortedDocuments);
       toast.success("Документы с транзакциями успешно загружены");
     } catch (error) {
@@ -51,53 +53,87 @@ const TransactionList = () => {
         `http://localhost:8081/api/v1/storekeeper/document/${documentId}/download`,
         {
           headers: { "Auth-token": authToken },
-          responseType: 'blob',
+          responseType: "blob",
         }
       );
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+
+      const contentType = response.headers["content-type"];
+      if (!contentType || !contentType.includes("application/pdf")) {
+        throw new Error("Сервер не вернул PDF-файл");
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `document_${documentId}.pdf`);
+      link.setAttribute("download", `document_${documentId}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.remove();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       toast.success("Документ успешно скачан");
     } catch (error) {
       toast.error("Ошибка при скачивании документа");
-      console.error("Ошибка скачивания:", error);
+      console.error("Ошибка скачивания PDF:", error.message || error);
     }
   };
 
-  const exportDocumentToExcel = (document) => {
+  const exportDocumentToCSV = (docWithTransactions) => {
     try {
-      if (!document || !document.transactions || !Array.isArray(document.transactions)) {
-        throw new Error("Некорректные данные документа");
+      const document = docWithTransactions.document; // Извлекаем объект document
+      const transactions = docWithTransactions.transactions; // Извлекаем массив transactions
+
+      // Проверка входных данных
+      if (!document || !transactions || !Array.isArray(transactions)) {
+        throw new Error("Некорректные данные документа или транзакции отсутствуют");
       }
 
-      const excelData = document.transactions.map(transaction => ({
-        "Номер документа": document.documentNumber || "N/A",
-        "Тип документа": document.documentType || "N/A",
-        "Дата документа": document.documentDate ? new Date(document.documentDate).toLocaleString() : "N/A",
-        "Статус": document.status || "N/A",
-        "Поставщик": document.supplier?.name || "N/A",
-        "Клиент": document.customer?.name || "N/A",
-        "ID транзакции": transaction.id || "N/A",
-        "Тип транзакции": transaction.transactionType || "N/A",
-        "Номенклатура": transaction.nomenclatureName || "N/A",
-        "Количество": transaction.quantity || "N/A",
-        "Дата транзакции": transaction.date ? new Date(transaction.date).toLocaleString() : "N/A",
-        "Создатель": transaction.createdBy || "N/A",
-        "Дата создания": transaction.createdAt ? new Date(transaction.createdAt).toLocaleString() : "N/A",
-      }));
+      // Заголовки CSV
+      const headers = [
+        "Номер документа",
+        "Тип документа",
+        "Дата документа",
+        "Статус",
+        "Поставщик",
+        "Клиент",
+        "ID транзакции",
+        "Тип транзакции",
+        "Номенклатура",
+        "Количество",
+        "Дата транзакции",
+        "Создатель",
+        "Дата создания",
+      ];
 
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-      XLSX.writeFile(workbook, `document_${document.documentNumber || 'unknown'}.xlsx`);
-      toast.success(`Экспорт документа #${document.documentNumber || 'unknown'} выполнен успешно`);
+      // Формирование строк с безопасной обработкой данных
+      const rows = transactions.map((transaction) => [
+        `"${document.documentNumber || "N/A"}"`,
+        `"${document.documentType || "N/A"}"`,
+        document.documentDate ? `"${new Date(document.documentDate).toLocaleString()}"` : '"N/A"',
+        `"${document.status || "N/A"}"`,
+        `"${document.supplier?.name || "N/A"}"`,
+        `"${document.customer?.name || "N/A"}"`,
+        `"${transaction.id || "N/A"}"`,
+        `"${transaction.transactionType || "N/A"}"`,
+        `"${transaction.nomenclatureName || "N/A"}"`,
+        transaction.quantity != null ? transaction.quantity.toString() : "N/A",
+        transaction.date ? `"${new Date(transaction.date).toLocaleString()}"` : '"N/A"',
+        `"${transaction.createdBy || "N/A"}"`,
+        transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
+      ]);
+
+      // Создание CSV-контента
+      const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a"); // Используем глобальный document
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `document_${document.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`Экспорт документа #${document.documentNumber || "unknown"} выполнен успешно`);
     } catch (error) {
-      toast.error("Ошибка при экспорте в Excel");
-      console.error("Ошибка экспорта:", error);
+      toast.error("Ошибка при экспорте в CSV: " + (error.message || "Неизвестная ошибка"));
+      console.error("Ошибка экспорта CSV:", error);
     }
   };
 
@@ -114,7 +150,7 @@ const TransactionList = () => {
     switch (type) {
       case "INCOMING": return { className: "bg-blue-100 text-blue-600", label: "Поступление" };
       case "TRANSFER": return { className: "bg-purple-100 text-purple-600", label: "Перемещение" };
-      case "WRITE_OFF": return { className: "bg-red-100 text-red-600", label: "Списание" };
+      case "WRITE-OFF": return { className: "bg-red-100 text-red-600", label: "Списание" };
       case "RETURN": return { className: "bg-orange-100 text-orange-600", label: "Возврат" };
       case "PRODUCTION": return { className: "bg-indigo-100 text-indigo-600", label: "Производство" };
       case "SALES": return { className: "bg-green-100 text-green-600", label: "Продажа" };
@@ -185,10 +221,10 @@ const TransactionList = () => {
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">
-                          <span className="font-medium">Поставщик:</span> {document.supplier.name}
+                          <span className="font-medium">Поставщик:</span> {document.supplier?.name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-600">
-                          <span className="font-medium">Клиент:</span> {document.customer.name}
+                          <span className="font-medium">Клиент:</span> {document.customer?.name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Создан:</span>{" "}
@@ -211,10 +247,10 @@ const TransactionList = () => {
                           <HiDownload className="w-6 h-6 text-gray-600" />
                         </button>
                         <button
-                          onClick={() => exportDocumentToExcel(document)}
+                          onClick={() => exportDocumentToCSV(docWithTransactions)}
                           className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
                         >
-                          Экспорт в Excel
+                          Экспорт в CSV
                         </button>
                       </div>
                     </div>
@@ -279,6 +315,7 @@ const TransactionList = () => {
           )}
         </div>
       )}
+      <Notification />
     </div>
   );
 };

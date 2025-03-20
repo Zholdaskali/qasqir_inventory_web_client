@@ -1,159 +1,137 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { saveActionLogs } from "../../../store/slices/logSlices/actionLogSlice";
 import { API_GET_ACTION_LOGS } from "../../../api/API";
-
 import Notification from "../../../components/notification/Notification";
-
-import filterIcon from '../../../assets/icons/filter.svg'
-import { IoIosNotificationsOutline } from "react-icons/io";
 import { CiCalendarDate } from "react-icons/ci";
 
 const ActionLogs = () => {
-
   const date = new Date();
   const currentDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 
   const [startDate, setStartDate] = useState(currentDate);
   const [endDate, setEndDate] = useState(currentDate);
-  const [error, setError] = useState(null);
 
   const actionLogs = useSelector((state) => state.actionLogs);
   const authToken = useSelector((state) => state.token.token);
   const dispatch = useDispatch();
 
-  const [fields, setFields] = useState([]);
-
   const fetchActionLogs = async () => {
-    setError(null);
     try {
-      const response = await axios.get(
-        API_GET_ACTION_LOGS,
-        {
-          params: { startDate, endDate },
-          headers: { "Auth-token": authToken },
-        }
-      );
-
+      const response = await axios.get(API_GET_ACTION_LOGS, {
+        params: { startDate, endDate },
+        headers: { "Auth-token": authToken },
+      });
       const data = response.data.body;
-
-      if (data?.length > 0) {
-        const fieldNames = Object.keys(data[0]);
-        setFields(fieldNames);
-
-        const sortedData = data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-        dispatch(saveActionLogs(sortedData));
-      } else {
-        dispatch(saveActionLogs([]));
-      }
-
+      const sortedData = data?.length > 0 ? data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) : [];
+      dispatch(saveActionLogs(sortedData));
       toast.success("Успешно", { toastId: "fetchSuccess" });
     } catch (error) {
       toast.error(error.response?.data?.message);
     }
   };
 
-  const downloadLogsAsTxt = () => {
-    if (actionLogs.length === 0) {
-      alert("Нет данных для скачивания");
+  // Функция для экспорта логов в CSV
+  const exportToCSV = () => {
+    if (!actionLogs.length) {
+      toast.error("Нет данных для экспорта");
       return;
     }
 
-    const columnHeaders = "Дата | Id пользователя | Действие | Эндпоинт";
+    const headers = ["Дата", "Пользователь", "Действие", "Эндпоинт"];
+    const rows = actionLogs.map((log) => [
+      `"${log.timestamp}"`,
+      `"${log.userEmail}"`,
+      `"${log.action}"`,
+      `"${log.endpoint}"`,
+    ]);
 
-    const logsContent = [
-      columnHeaders,
-      ...actionLogs.map((log) => `${log.timestamp} | ${log.userId} | ${log.action} | ${log.endpoint}`)
-    ].join("\n")
-
-    const fileName = `action_logs_from_${startDate}_to_${endDate}.txt`;
-
-    const blob = new Blob([logsContent], { type: "text/plain;charset=utf-8" });
-
-    const url = URL.createObjectURL(blob);
-
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(row => row.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `action_logs_from_${startDate}_to_${endDate}.csv`);
+    document.body.appendChild(link);
     link.click();
-
-    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+    toast.success("Логи экспортированы в CSV");
   };
 
   return (
-    <div className="h-[90vh] w-full flex flex-col justify-center items-center p-4 md:p-6 lg:p-8">
+    <div className="h-[90vh] w-full flex flex-col p-4">
       {/* Заголовок и фильтры */}
-      <div className="flex flex-col md:flex-row w-full justify-between items-center border-b py-5 gap-4">
-        <h1 className="text-2xl w-full md:w-1/4">Действия</h1>
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full md:w-3/4">
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-3 gap-3">
+        <h1 className="text-xl font-semibold">Действия</h1>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {/* Кнопки */}
+          <div className="flex gap-2 items-end">
             <button
               onClick={fetchActionLogs}
-              className="bg-main-dull-gray px-4 md:px-8 text-sm py-2 md:py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+              className="bg-blue-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-blue-700 transition-all duration-200"
             >
               Вывести
             </button>
             <button
-              onClick={downloadLogsAsTxt}
-              className="bg-main-dull-gray px-4 md:px-8 text-sm py-2 md:py-3.5 text-white rounded-lg shadow-xl hover:bg-main-dull-blue w-full md:w-auto"
+              onClick={exportToCSV}
+              className="bg-green-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-green-700 transition-all duration-200"
             >
-              Скачать
+              Экспорт в CSV
             </button>
           </div>
-          <div className="flex flex-col md:flex-row gap-4 w-full md:w-1/2">
-            <div className="w-full md:w-1/2">
-              <label htmlFor="start-date" className="flex items-center gap-x-2">
-                <CiCalendarDate />
-                <p>Начальная дата</p>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex-1">
+              <label className="flex items-center gap-1 text-sm">
+                <CiCalendarDate /> Начало
               </label>
               <input
                 type="date"
-                id="start-date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border px-4 py-2 rounded-lg w-full"
+                className="border px-2 py-1 rounded-md w-full text-sm"
               />
             </div>
-            <div className="w-full md:w-1/2">
-              <label htmlFor="end-date">Конечная дата</label>
+            <div className="flex-1">
+              <label className="flex items-center gap-1 text-sm">
+                <CiCalendarDate /> Конец
+              </label>
               <input
                 type="date"
-                id="end-date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border px-4 py-2 rounded-lg w-full"
+                className="border px-2 py-1 rounded-md w-full text-sm"
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Таблица с логами */}
-      <div className="overflow-auto h-[70vh] w-full mt-7 p-5 rounded-xl scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-        <table className="table-auto w-full border-separate border-spacing-y-4">
-          <thead className="text-[#A49E9E] bg-[#FFFFFF] bg-opacity-50 h-14 w-full sticky top-0">
+      {/* Таблица */}
+      <div className="flex-1 overflow-auto mt-4 rounded-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+        <table className="w-full table-auto border-separate border-spacing-y-1">
+          <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
             <tr>
-              <th className="text-start px-2 py-1">Дата</th>
-              <th className="text-start px-2 py-1">Пользователь</th>
-              <th className="text-start px-2 py-1">Действие</th>
-              <th className="text-start px-2 py-1">Эндпоинт</th>
+              <th className="text-left px-3 py-2">Дата</th>
+              <th className="text-left px-3 py-2">Пользователь</th>
+              <th className="text-left px-3 py-2">Действие</th>
+              <th className="text-left px-3 py-2">Эндпоинт</th>
             </tr>
           </thead>
-          <tbody className="bg-white border-b border-full">
+          <tbody className="bg-white text-sm">
             {actionLogs.map((log) => (
               <tr key={log.actionLoId} className="hover:bg-gray-50">
-                <td className="py-4 px-2">{log.timestamp}</td>
-                <td className="px-2 py-1">{log.userEmail}</td>
-                <td className="px-2 py-1">{log.action}</td>
-                <td className="px-2 py-1">{log.endpoint}</td>
+                <td className="px-3 py-2">{log.timestamp}</td>
+                <td className="px-3 py-2">{log.userEmail}</td>
+                <td className="px-3 py-2">{log.action}</td>
+                <td className="px-3 py-2">{log.endpoint}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
       <Notification />
     </div>
   );

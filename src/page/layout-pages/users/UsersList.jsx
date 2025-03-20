@@ -20,7 +20,9 @@ const UsersList = () => {
     const [selectedUser, setSelectedUser] = useState(null);
     const [createInviteModal, setCreateInviteModal] = useState(false);
     const [isInviteButtonDisabled, setIsInviteButtonDisabled] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // Состояние для поискового запроса
 
+    // Функция для загрузки списка пользователей
     const fetchUserList = async () => {
         try {
             const response = await axios.get(API_GET_USERS, { headers: { "Auth-token": authToken } });
@@ -35,23 +37,72 @@ const UsersList = () => {
         fetchUserList();
     }, []);
 
+    // Функция для открытия модального окна с информацией о пользователе
     const handleUserModal = (user) => {
         setSelectedUser(user);
         setUserModal(true);
     };
 
+    // Функция для открытия модального окна создания приглашения
     const handleCreateInviteModal = () => {
         setCreateInviteModal(true);
     };
 
+    // Функция для закрытия модального окна
     const handleModalClose = (isDeleted) => {
         if (isDeleted) fetchUserList();
         setUserModal(false);
     };
 
+    // Функция для закрытия модального окна создания приглашения
     const handleInviteModalClose = () => {
         setCreateInviteModal(false);
         fetchUserList();
+    };
+
+    // Фильтрация пользователей по поисковому запросу
+    const filteredUsers = users.filter((userItem) =>
+        userItem.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        userItem.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        userItem.userNumber.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Функция для экспорта пользователей в CSV
+    const exportToCSV = () => {
+        if (!filteredUsers.length) {
+            toast.error("Нет данных для экспорта");
+            return;
+        }
+
+        const headers = [
+            "ID",
+            "Имя",
+            "Email",
+            "Телефон",
+            "Email подтвержден",
+            "Дата регистрации",
+            "Роли",
+        ];
+
+        const rows = filteredUsers.map((userItem) => [
+            `"${userItem.userId}"`,
+            `"${userItem.userName}"`,
+            `"${userItem.email}"`,
+            `"${userItem.userNumber}"`,
+            `"${userItem.emailVerified ? "ПОДТВЕРЖДЕН" : "НЕ ПОДТВЕРЖДЕН"}"`,
+            `"${userItem.registrationDate}"`,
+            `"${userItem.userRoles.join(", ")}"`,
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(row => row.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "users_list.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Список пользователей экспортирован в CSV");
     };
 
     return (
@@ -59,17 +110,22 @@ const UsersList = () => {
             {/* Шапка */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b py-3 gap-2">
                 <h1 className="text-xl font-semibold">Пользователи</h1>
-                <div className="flex items-center w-full md:w-auto gap-2">
+                <div className="flex items-center gap-2">
+                    {/* Поле для поиска */}
                     <input
-                        type="search"
-                        className="shadow-inner w-full md:w-64 px-3 py-1 rounded-md border text-sm"
-                        placeholder="Поиск"
+                        type="text"
+                        placeholder="Поиск пользователей..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
-                    <div className="flex items-center gap-2">
-                        <img src={filterIcon} alt="filter" className="w-8 h-8 p-1 bg-main-dull-blue rounded-md" />
-                        <div className="w-px bg-main-dull-gray h-6 opacity-65" />
-                        <IoIosNotificationsOutline size={32} />
-                    </div>
+                    {/* Кнопка экспорта */}
+                    <button
+                        onClick={exportToCSV}
+                        className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                    >
+                        Экспорт в CSV
+                    </button>
                 </div>
             </div>
 
@@ -89,51 +145,59 @@ const UsersList = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((userItem) => (
-                            <tr
-                                key={userItem.userId}
-                                className={`${
-                                    userItem.email === user.email
-                                        ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
-                                        : "bg-white hover:bg-gray-50"
-                                } border-t transition cursor-pointer`}
-                                onClick={() => handleUserModal(userItem)}
-                            >
-                                <td className="p-2">
-                                    <img
-                                        className="rounded-full w-8 h-8"
-                                        src={userItem.imagePath || avatar}
-                                        alt=""
-                                    />
-                                </td>
-                                <td className="py-2 px-2 text-sm">{userItem.userId}</td>
-                                <td className="py-2 px-2 text-sm">{userItem.userName}</td>
-                                <td className="py-2 px-2 text-sm">{userItem.email}</td>
-                                <td className="py-2 px-2 text-sm">{userItem.userNumber}</td>
-                                <td className="py-2 px-2">
-                                    <div
-                                        className={`${
-                                            userItem.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
-                                        } inline-flex items-center px-1 rounded-full text-xs`}
-                                    >
+                        {filteredUsers.length > 0 ? (
+                            filteredUsers.map((userItem) => (
+                                <tr
+                                    key={userItem.userId}
+                                    className={`${
+                                        userItem.email === user.email
+                                            ? "bg-[#E3F3E9] hover:bg-[#11b0666e]"
+                                            : "bg-white hover:bg-gray-50"
+                                    } border-t transition cursor-pointer`}
+                                    onClick={() => handleUserModal(userItem)}
+                                >
+                                    <td className="p-2">
+                                        <img
+                                            className="rounded-full w-8 h-8"
+                                            src={userItem.imagePath || avatar}
+                                            alt=""
+                                        />
+                                    </td>
+                                    <td className="py-2 px-2 text-sm">{userItem.userId}</td>
+                                    <td className="py-2 px-2 text-sm">{userItem.userName}</td>
+                                    <td className="py-2 px-2 text-sm">{userItem.email}</td>
+                                    <td className="py-2 px-2 text-sm">{userItem.userNumber}</td>
+                                    <td className="py-2 px-2">
                                         <div
                                             className={`${
-                                                userItem.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"
-                                            } h-2 w-2 rounded-full mr-1`}
-                                        />
-                                        <span
-                                            className={`${
-                                                userItem.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"
-                                            }`}
+                                                userItem.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
+                                            } inline-flex items-center px-1 rounded-full text-xs`}
                                         >
-                                            {userItem.emailVerified ? "Да" : "Нет"}
-                                        </span>
-                                    </div>
+                                            <div
+                                                className={`${
+                                                    userItem.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"
+                                                } h-2 w-2 rounded-full mr-1`}
+                                            />
+                                            <span
+                                                className={`${
+                                                    userItem.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"
+                                                }`}
+                                            >
+                                                {userItem.emailVerified ? "ПОДТВЕРЖДЕН" : "НЕ ПОДТВЕРЖДЕН"}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="py-2 px-2 text-sm">{userItem.registrationDate}</td>
+                                    <td className="py-2 px-2 text-sm">{userItem.userRoles.join(", ")}</td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="8" className="text-center py-4">
+                                    Пользователи не найдены
                                 </td>
-                                <td className="py-2 px-2 text-sm">{userItem.registrationDate}</td>
-                                <td className="py-2 px-2 text-sm">{userItem.userRoles.join(", ")}</td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>

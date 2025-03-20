@@ -6,6 +6,7 @@ import Select from "react-select";
 import { useForm, Controller } from "react-hook-form";
 import { addItem, removeItem, updateItem, setItems } from '../../../store/slices/operationSlice/itemsSlice';
 import { FaPlus, FaTrash, FaCheckCircle, FaSpinner, FaEye } from 'react-icons/fa';
+import Notification from "../../../components/notification/Notification";
 
 const IncomingRequestPage = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -42,8 +43,11 @@ const IncomingRequestPage = () => {
         ]);
         setWarehouses(warehousesRes.data.body);
         setSuppliers(suppliersRes.data.body);
+        toast.success(response.data.message || "Успешно");
       } catch (error) {
-        toast.error("Ошибка загрузки данных");
+        toast.error(
+          error.response?.data?.message
+      );
       } finally {
         setIsLoading(false);
       }
@@ -409,6 +413,7 @@ const IncomingRequestPage = () => {
             )}
           </button>
         </div>
+        <Notification/>
       </form>
     </div>
   );

@@ -1,25 +1,25 @@
 import React, { useState } from "react";
-import WriteOffTicketsPage from "./WriteOffTicketsPage";
-import CreateWriteOffPage from "./CreateWriteOffPage";
-import BatchWriteOffPage from "./BatchWriteOffPage";
+import ActionLogs from "./ActionLogs"
+import ExceptionLogs from "./ExceptionLogs"
+import LoginLogs from "./LoginLogs"
 
 const tabs = [
-    { name: "СПИСОК ЗАЯВОК", page: "ticket-list" },
-    { name: "СПИСОК ГРУППОВОЙ ЗАЯВКИ", page: "ticket-batch-add" },
-    { name: "ПОДАТЬ ЗАЯЗКУ", page: "ticket-add" },
+    { name: "Активности в системе", page: "action-log" },
+    { name: "Ошибки в системе", page: "exception-log" },
+    { name: "Входы в систему", page: "login-log" },
 ];
 
-const WriteOffTabs = () => {
+const LogTabs = () => {
     const [activeTab, setActiveTab] = useState(tabs[0].page);
 
     const renderContent = () => {
         switch (activeTab) {
-            case "ticket-list":
-                return <WriteOffTicketsPage />;
-            case "ticket-add":
-                return <CreateWriteOffPage/>;
-            case "ticket-batch-add":
-                return <BatchWriteOffPage />;
+            case "action-log":
+                return <ActionLogs />;
+            case "exception-log":
+                return <ExceptionLogs/>;
+            case "login-log":
+                return <LoginLogs/>;
             default:
                 return <div className="h-full text-gray-600">Выберите вкладку</div>;
         }
@@ -54,4 +54,4 @@ const WriteOffTabs = () => {
     );
 };
 
-export default WriteOffTabs;
+export default LogTabs;

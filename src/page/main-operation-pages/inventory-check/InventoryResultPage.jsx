@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
-import * as XLSX from "xlsx";
+import { toast } from "react-toastify";
 
 const InventoryResultPage = () => {
     const { auditId } = useParams();
@@ -21,9 +21,10 @@ const InventoryResultPage = () => {
                     }
                 );
                 setResults(response.data.body);
-                console.log(response.data.message || "Результаты инвентаризации успешно загружены");
+                toast.success("Результаты инвентаризации успешно загружены", { toastId: "fetchSuccess" });
             } catch (error) {
-                console.error("Ошибка загрузки результатов инвентаризации");
+                toast.error("Ошибка загрузки результатов инвентаризации");
+                console.error(error);
             } finally {
                 setLoading(false);
             }
@@ -41,7 +42,7 @@ const InventoryResultPage = () => {
                     nomenclatureId: result.nomenclatureId || "",
                     expectedQuantity: 0,
                     actualQuantity: 0,
-                    unit: "шт", // Предполагаем, что единица измерения "шт" (можно изменить)
+                    unit: "шт", // Предполагаем, что единица измерения "шт"
                 };
             }
             acc[key].expectedQuantity += result.expectedQuantity;
@@ -53,49 +54,50 @@ const InventoryResultPage = () => {
         return Object.values(grouped);
     };
 
-    const exportToExcel = () => {
+    // Экспорт в CSV
+    const exportToCSV = () => {
+        if (!results.length) {
+            toast.error("Нет данных для экспорта");
+            return;
+        }
+
         // Группируем данные по номенклатуре
         const groupedData = groupByNomenclature(results);
 
-        // Подготовка данных для таблицы
-        const tableData = groupedData.map((item, index) => ({
-            "№": index + 1,
-            "Артикул": item.nomenclatureId,
-            "Товар": item.nomenclatureName,
-            "Кол-во по учету": item.expectedQuantity,
-            "Факт": item.actualQuantity,
-            "Ед.": item.unit,
-        }));
+        // Заголовки CSV
+        const headers = ["№", "Номенклатура", "Артикул", "Ожидаемое кол-во", "Фактическое кол-во", "Ед."];
+
+        // Данные для CSV
+        const rows = groupedData.map((item, index) => [
+            index + 1,
+            `"${item.nomenclatureName}"`,
+            `"${item.nomenclatureId}"`,
+            item.expectedQuantity,
+            item.actualQuantity,
+            `"${item.unit}"`,
+        ]);
 
         // Подсчет итогов
         const totalExpected = groupedData.reduce((sum, item) => sum + item.expectedQuantity, 0);
         const totalActual = groupedData.reduce((sum, item) => sum + item.actualQuantity, 0);
 
-        // Создание листа с заголовками и данными
-        const worksheet = XLSX.utils.json_to_sheet([]);
+        // Добавляем итоговую строку
+        rows.push(["Итого:", "", "", totalExpected, totalActual]);
 
-        // Добавление заголовков, как на изображении
-        XLSX.utils.sheet_add_aoa(worksheet, [
-            ["ИНВЕНТАРИЗАЦИЯ ТОВАРОВ НА СКЛАДЕ № 1 ОТ 15 МАР 2024 г."],
-            ["ОТВЕТСТВЕННОСТЬ: Табакова 161 с отличием ответственностью «Alloth»"],
-            [],
-            ["№", "Артикул", "Товар", "Кол-во по учету", "Факт", "Ед."],
-        ], { origin: "A1" });
+        // Создаем CSV-контент
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + [headers, ...rows].map(row => row.join(",")).join("\n");
 
-        // Добавление данных таблицы
-        XLSX.utils.sheet_add_json(worksheet, tableData, { skipHeader: true, origin: "A5" });
+        // Создаем ссылку для скачивания
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Inventory_Results_${auditId}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
-        // Добавление итоговой строки
-        const lastRow = groupedData.length + 5; // Учитываем заголовки
-        XLSX.utils.sheet_add_aoa(worksheet, [
-            [],
-            ["Итого:", "", "", totalExpected, totalActual],
-        ], { origin: `A${lastRow}` });
-
-        // Создание книги и сохранение файла
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Инвентаризация");
-        XLSX.writeFile(workbook, `Inventory_Results_${auditId}.xlsx`);
+        toast.success("Данные экспортированы в CSV");
     };
 
     // Группируем данные для отображения в таблице на странице
@@ -103,11 +105,7 @@ const InventoryResultPage = () => {
 
     // Обработчик для кнопки "Назад"
     const handleGoBack = () => {
-        window.history.back(); // Возвращает на предыдущую страницу
-        // Альтернатива: если используете React Router, замените на:
-        // import { useNavigate } from "react-router-dom";
-        // const navigate = useNavigate();
-        // navigate(-1);
+        window.history.back();
     };
 
     return (
@@ -128,10 +126,10 @@ const InventoryResultPage = () => {
                             ← Назад
                         </button>
                         <button
-                            onClick={exportToExcel}
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                            onClick={exportToCSV}
+                            className="bg-green-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-green-700 transition-all duration-200"
                         >
-                            Экспорт в Excel
+                            Экспорт в CSV
                         </button>
                     </div>
                     {groupedResults.length > 0 ? (

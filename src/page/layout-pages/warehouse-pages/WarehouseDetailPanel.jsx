@@ -1,60 +1,59 @@
 import { useEffect, useState } from "react";
-import { YMaps, Map, Placemark } from "react-yandex-maps";
 import { API_DELETE_WAREHOUSE } from "../../../api/API";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 import Notification from "../../../components/notification/Notification";
 import { NavLink } from "react-router-dom";
-import WarehouseZoneList from "./WarehouseZoneList";
-import WarehouseSettingsModal from "../../../components/modal-components/WarehouseSettingModal"; 
-
+import WarehouseZoneList from "./warehouse-structure/WarehouseZoneList";
+import WarehouseSettingsModal from "../../../components/modal-components/WarehouseSettingModal";
 
 const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const [mapState, setMapState] = useState({
-        center: [43.238949, 76.889709], 
+        center: [43.238949, 76.889709], // Начальные координаты (по умолчанию)
         zoom: 15,
     });
-    const [ymaps, setYmaps] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showZoneSettings, setShowZoneSettings] = useState(false); 
+    const [showZoneSettings, setShowZoneSettings] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
-    
+    const [address, setAddress] = useState(""); // Состояние для хранения адреса
 
     const setWarehouse = (updatedWarehouse) => {
         // Например, здесь можно обновить состояние или вызвать API для сохранения изменений
         console.log('Updated warehouse:', updatedWarehouse);
     };
 
-    // Функция геокодинга адреса
-    const geocodeAddress = async (address) => {
-        if (!ymaps || !address) return;
+    // Обновляем центр карты и получаем адрес при изменении координат склада
+    useEffect(() => {
+        if (warehouse?.latitude && warehouse?.longitude) {
+            setMapState({
+                center: [warehouse.latitude, warehouse.longitude], // Устанавливаем центр карты
+                zoom: 15,
+            });
+            setLoading(false); // Загрузка завершена
 
+            // Получаем адрес по координатам через OpenStreetMap Nominatim
+            fetchAddress(warehouse.latitude, warehouse.longitude);
+        }
+    }, [warehouse]);
+
+    // Функция для получения адреса по координатам
+    const fetchAddress = async (latitude, longitude) => {
         try {
-            const result = await ymaps.geocode(address);
-            const firstGeoObject = result.geoObjects.get(0);
-
-            if (firstGeoObject) {
-                const coords = firstGeoObject.geometry.getCoordinates();
-                setMapState({
-                    center: coords,
-                    zoom: 15,
-                });
-                setLoading(false);
-                
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+            );
+            const data = await response.json();
+            if (data.display_name) {
+                setAddress(data.display_name); // Устанавливаем адрес в состояние
+            } else {
+                setAddress("Адрес не найден");
             }
-            
         } catch (error) {
-            console.error("Ошибка геокодинга:", error);
-            setLoading(false);
+            console.error("Ошибка при получении адреса:", error);
+            setAddress("Ошибка при получении адреса");
         }
     };
-
-    useEffect(() => {
-        if (ymaps && warehouse?.location) {
-            geocodeAddress(warehouse.location);
-        }
-    }, [ymaps, warehouse?.location]);
 
     const authToken = useSelector((state) => state.token.token);
 
@@ -81,7 +80,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
         <>
             {/* Оверлей */}
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? "opacity-30" : "opacity-0 pointer-events-none" 
+                className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? "opacity-30" : "opacity-0 pointer-events-none"
                     }`}
                 onClick={onClose}
             />
@@ -141,7 +140,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                     <div>
                                         <h3 className="font-semibold mb-2">Информация о складе</h3>
                                         <div className="space-y-2 text-gray-600">
-                                            <p>Локация: {warehouse?.location || "Не указано"}</p>
+                                            <p>Локация: {address || "Не указано"}</p>
                                             <p>Зон на складе: {warehouse?.zonesCount || 0}</p>
                                             <p>
                                                 Дата создания:{" "}
@@ -171,33 +170,15 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                                     <p className="text-gray-600">Загрузка карты...</p>
                                                 </div>
                                             )}
-                                            <YMaps query={{ apikey: "50973b40-0383-4443-b280-6bc7f3905673" }}>
-                                                <Map
-                                                    defaultState={mapState}
-                                                    state={mapState}
+                                            {!loading && warehouse?.latitude && warehouse?.longitude && (
+                                                <iframe
                                                     width="100%"
                                                     height="100%"
-                                                    className="w-full h-full"
-                                                    onLoad={(ymaps) => setYmaps(ymaps)}
-                                                    modules={["geocode"]}
-                                                >
-                                                    {!loading && (
-                                                        <Placemark
-                                                            geometry={mapState.center}
-                                                            properties={{
-                                                                balloonContentHeader:
-                                                                    warehouse?.name,
-                                                                balloonContentBody:
-                                                                    warehouse?.location,
-                                                                balloonContentFooter: `Заполненность: ${warehouse?.usagePercent}%`,
-                                                            }}
-                                                            options={{
-                                                                preset: "islands#blueWarehouseIcon",
-                                                            }}
-                                                        />
-                                                    )}
-                                                </Map>
-                                            </YMaps>
+                                                    style={{ border: 0 }}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${warehouse.longitude - 0.01}%2C${warehouse.latitude - 0.01}%2C${warehouse.longitude + 0.01}%2C${warehouse.latitude + 0.01}&layer=mapnik&marker=${warehouse.latitude}%2C${warehouse.longitude}`}
+                                                    allowFullScreen
+                                                />
+                                            )}
                                         </div>
                                     </div>
                                 </div>

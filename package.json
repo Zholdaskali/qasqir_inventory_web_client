@@ -10,14 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-google-maps/api": "^2.20.3",
+    "@react-google-maps/api": "^2.20.6",
+    "@react-three/drei": "^10.0.4",
+    "@react-three/fiber": "^9.1.0",
     "@reduxjs/toolkit": "^2.3.0",
-    "axios": "^1.7.7",
+    "axios": "^1.8.3",
     "flowbite-react": "^0.10.2",
     "framer-motion": "^11.11.13",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.0",
     "leaflet": "^1.9.4",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -28,10 +31,13 @@
     "react-router-dom": "^6.27.0",
     "react-select": "^5.10.1",
     "react-toastify": "^10.0.6",
+    "react-tooltip": "^5.28.0",
     "react-virtualized": "^9.22.6",
     "react-window": "^1.8.11",
     "react-yandex-maps": "^4.6.0",
     "redux-devtools-extension": "^2.13.9",
+    "three": "^0.174.0",
+    "troika-three-text": "^0.52.3",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

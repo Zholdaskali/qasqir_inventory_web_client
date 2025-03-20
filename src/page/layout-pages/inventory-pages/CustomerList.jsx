@@ -30,10 +30,10 @@ const CustomerList = () => {
       );
       setLocalSuppliers(response.data.body); // Записываем в локальный state
       dispatch(saveSupplierList(response.data.body)); // Сохраняем в Redux
-      toast.success("Поставщики успешно загружены");
+      toast.success(response.data.message || "Успешно");
     } catch (error) {
       console.error("Ошибка при загрузке поставщиков:", error);
-      toast.error("Ошибка загрузки поставщиков");
+      error.response?.data?.message
     } finally {
       setLoading(false);
     }
@@ -80,16 +80,16 @@ const CustomerList = () => {
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full border-separate border-spacing-y-4 min-w-max">
-              <thead className="text-gray-500 bg-gray-100 h-12">
+          <div className="flex-1 overflow-auto mt-4 rounded-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+            <table className="w-full table-auto border-separate border-spacing-y-1">
+              <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
                 <tr className="text-sm">
-                  <th className="text-left px-2">ID</th>
-                  <th className="text-left px-2">Имя</th>
-                  <th className="text-left px-2">Контактная информация</th>
-                  <th className="text-left px-2">Дата создания</th>
-                  <th className="text-left px-2">Последнее изменение</th>
-                  <th className="text-left px-2">Действия</th>
+                  <th className="text-left px-3 py-2">ID</th>
+                  <th className="text-left px-3 py-2">Имя</th>
+                  <th className="text-left px-3 py-2">Контактная информация</th>
+                  <th className="text-left px-3 py-2">Дата создания</th>
+                  <th className="text-left px-3 py-2">Последнее изменение</th>
+                  <th className="text-left px-3 py-2">Действия</th>
                 </tr>
               </thead>
               <tbody>
@@ -129,7 +129,7 @@ const CustomerList = () => {
           </div>
 
           <button
-            className="bg-main-dull-blue fixed bottom-12 right-12 w-12 h-12 rounded-full shadow-xl font-bold text-white"
+            className="fixed bottom-6 right-6 w-10 h-10 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center"
             onClick={handleCreateSupplierModal}
           >
             +
