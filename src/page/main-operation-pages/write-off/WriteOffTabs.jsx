@@ -5,7 +5,7 @@ import BatchWriteOffPage from "./BatchWriteOffPage";
 
 const tabs = [
     { name: "СПИСОК ЗАЯВОК", page: "ticket-list" },
-    { name: "СПИСОК ГРУППОВОЙ ЗАЯВКИ", page: "ticket-batch-add" },
+    { name: "ПОДАТЬ ГРУППОВУЮ ЗАЯВКУ", page: "ticket-batch-add" },
     { name: "ПОДАТЬ ЗАЯЗКУ", page: "ticket-add" },
 ];
 

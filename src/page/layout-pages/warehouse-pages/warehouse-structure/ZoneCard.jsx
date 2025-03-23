@@ -174,7 +174,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
                 {openContainers[shelf.id] && (
                     <div className="mt-2 pl-6">
                         {containers[shelf.id]?.length > 0 || shelf.containers?.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-2">
+                            <div className="grid grid-cols-2 gap-2">
                                 {(containers[shelf.id] || shelf.containers || []).map(container => (
                                     <ContainerCard
                                         key={container.id}

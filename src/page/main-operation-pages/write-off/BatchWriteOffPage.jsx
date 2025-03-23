@@ -144,7 +144,7 @@ const BatchWriteOffPage = () => {
         <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto bg-gray-50">
             <ToastContainer position="top-center" autoClose={3000} />
             <div className="flex flex-col gap-y-6">
-                <h1 className="text-2xl font-bold text-gray-800">Групповое списание товаров</h1>
+                <h1 className="text-2xl font-bold text-gray-800">Групповая заявка на списание товаров</h1>
 
                 <div className="bg-white p-6 rounded-lg shadow-sm">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

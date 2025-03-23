@@ -67,6 +67,60 @@ const AdminWriteOffApprovalPage = () => {
         }
     };
 
+    // Функция для экспорта в CSV
+    const exportToCSV = (tickets, status) => {
+        const headers = [
+            "ID Заявки",
+            "Статус",
+            "Тип",
+            "Автор",
+            "Дата создания",
+            "Одобрил",
+            "Дата одобрения",
+            "Комментарий",
+            "№ Документа",
+            "Тип документа",
+            "Дата документа",
+            "Поставщик",
+            "Клиент",
+            "ID Инвентаря",
+            "Количество",
+            "Зона склада",
+            "Серийный №",
+        ];
+
+        const rows = tickets.map((ticket) => [
+            ticket.id,
+            ticket.status,
+            ticket.type,
+            `${ticket.createdByName} (ID: ${ticket.createdBy})`,
+            new Date(ticket.createdAt).toLocaleString(),
+            ticket.managerName ? `${ticket.managerName} (ID: ${ticket.managerId})` : "—",
+            ticket.managedAt ? new Date(ticket.managedAt).toLocaleString() : "—",
+            ticket.comment || "Нет",
+            ticket.document.documentNumber,
+            ticket.document.documentType,
+            ticket.document.documentDate,
+            ticket.document.supplier,
+            ticket.document.customer,
+            ticket.inventory.id,
+            ticket.quantity,
+            ticket.inventory.warehouseZoneId,
+            ticket.inventory.containerSerial,
+        ]);
+
+        const csvContent = [
+            headers.join(","),
+            ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `tickets_${status.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+    };
+
     const getStatusStyles = (status) => {
         switch (status) {
             case "ACTIVE":
@@ -95,7 +149,7 @@ const AdminWriteOffApprovalPage = () => {
                     bg: "bg-[#F2F2F2]",
                     dot: "bg-[#666666]",
                     text: "text-[#666666]",
-                    label: "НЕ РАСПОЗНАН СТАТУС ЗАЯВКИ ОБРАТИТЕСЬ С ЕРКЕБУЛАНУ",
+                    label: "НЕИЗВЕСТНО",
                 };
         }
     };
@@ -203,9 +257,19 @@ const AdminWriteOffApprovalPage = () => {
                     <div className="space-y-8">
                         {/* Ожидающие заявки */}
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                                Ожидающие одобрения
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">
+                                    Ожидающие одобрения
+                                </h2>
+                                {activeTickets.length > 0 && (
+                                    <button
+                                        onClick={() => exportToCSV(activeTickets, "ACTIVE")}
+                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors duration-200"
+                                    >
+                                        Экспорт в CSV
+                                    </button>
+                                )}
+                            </div>
                             {activeTickets.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {activeTickets.map(renderTicketCard)}
@@ -221,9 +285,19 @@ const AdminWriteOffApprovalPage = () => {
 
                         {/* Одобренные заявки */}
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                                Одобренные заявки
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">
+                                    Одобренные заявки
+                                </h2>
+                                {allowedTickets.length > 0 && (
+                                    <button
+                                        onClick={() => exportToCSV(allowedTickets, "ALLOWED")}
+                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors duration-200"
+                                    >
+                                        Экспорт в CSV
+                                    </button>
+                                )}
+                            </div>
                             {allowedTickets.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {allowedTickets.map(renderTicketCard)}
@@ -239,9 +313,19 @@ const AdminWriteOffApprovalPage = () => {
 
                         {/* Выполненные заявки */}
                         <div>
-                            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-                                Выполненные заявки
-                            </h2>
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-xl font-semibold text-gray-700">
+                                    Выполненные заявки
+                                </h2>
+                                {completedTickets.length > 0 && (
+                                    <button
+                                        onClick={() => exportToCSV(completedTickets, "COMPLETED")}
+                                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors duration-200"
+                                    >
+                                        Экспорт в CSV
+                                    </button>
+                                )}
+                            </div>
                             {completedTickets.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {completedTickets.map(renderTicketCard)}

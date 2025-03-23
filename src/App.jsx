@@ -23,7 +23,7 @@ import SettingsPage from './page/layout-pages/profile-pages/SettingsPage'
 import EditProfile from './page/layout-pages/profile-pages/EditProfile'
 import CategoryList from './page/layout-pages/inventory-pages/CategoryList'
 import NomenclatureList from "./page/layout-pages/inventory-pages/NomenclatureList"
-
+import WarehouseItemsPage from './page/layout-pages/warehouse-pages/warehouse-inventory/WarehouseItemsPage'
 // Organization 
 import OrganizationProfile from './page/layout-pages/organization-pages/OrganizationProfile'
 
@@ -100,6 +100,7 @@ function App() {
               )}
               <Route path='edit-profile' element={<EditProfile />} />
               <Route path='organization-profile' element={<OrganizationProfile />} />
+              <Route path="/warehouse-items/:warehouseId" element={<WarehouseItemsPage />} />
             </Route>
 
           </>
