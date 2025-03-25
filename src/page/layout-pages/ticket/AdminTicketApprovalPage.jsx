@@ -1,73 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
-import { toast } from "react-toastify";
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { CiCalendarDate } from "react-icons/ci"; // Импорт иконки
 
-const AdminWriteOffApprovalPage = () => {
+const AdminTicketApprovalPage = ({ ticketType }) => {
     const authToken = useSelector((state) => state.token.token);
     const adminId = useSelector((state) => state.user.userId);
     const [loading, setLoading] = useState(false);
     const [tickets, setTickets] = useState([]);
 
-    useEffect(() => {
-        const fetchTickets = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get(
-                    "http://localhost:8081/api/v1/warehouse-manager/ticket/write-off",
-                    { headers: { "Auth-token": authToken } }
-                );
-                console.log("Ответ API по заявкам:", response.data);
-                setTickets(Array.isArray(response.data.body) ? response.data.body : []);
-            } catch (error) {
-                toast.error("Ошибка при загрузке заявок");
-                console.error("Ошибка загрузки заявок:", error);
-                setTickets([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchTickets();
-    }, [authToken]);
+    // Установка начальных дат: сегодня и 3 дня назад
+    const today = new Date();
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(today.getDate() - 3);
 
-    const handleApproveWriteOff = async (ticketId) => {
+    const [startDate, setStartDate] = useState(threeDaysAgo.toISOString().slice(0, 10)); // Формат YYYY-MM-DD
+    const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10)); // Формат YYYY-MM-DD
+
+    const fetchTickets = useCallback(async () => {
+        if (!authToken) return;
         try {
             setLoading(true);
-            const payload = {
-                ticketId: ticketId,
-                managed_id: adminId,
-            };
+            const response = await axios.get(
+                `http://localhost:8081/api/v1/warehouse-manager/ticket/${ticketType}`,
+                {
+                    headers: { "Auth-token": authToken },
+                    params: {
+                        startDate: startDate || undefined,
+                        endDate: endDate || undefined,
+                    },
+                }
+            );
+            console.log(`Ответ API по заявкам (${ticketType}):`, response.data);
+            setTickets(Array.isArray(response.data.body) ? response.data.body : []);
+        } catch (error) {
+            toast.error(`Ошибка при загрузке заявок (${ticketType})`);
+            console.error(`Ошибка загрузки заявок (${ticketType}):`, error);
+            setTickets([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [authToken, ticketType, startDate, endDate]);
+
+    useEffect(() => {
+        fetchTickets();
+    }, [fetchTickets]);
+
+    const handleApproveTicket = async (ticketId) => {
+        try {
+            setLoading(true);
+            const payload = { ticketId, managed_id: adminId };
             const response = await axios.put(
-                "http://localhost:8081/api/v1/admin/ticket/write-off/allowed",
+                `http://localhost:8081/api/v1/admin/ticket/allowed`,
                 payload,
                 { headers: { "Auth-token": authToken } }
             );
-            toast.success("Заявка успешно одобрена");
+            toast.success(response?.data?.message || "Заявка успешно одобрена");
             setTickets((prev) =>
-                Array.isArray(prev)
-                    ? prev.map((ticket) =>
-                          ticket.id === ticketId
-                              ? {
-                                    ...ticket,
-                                    status: "ALLOWED",
-                                    managerId: adminId,
-                                    managedAt: new Date().toISOString(),
-                                }
-                              : ticket
-                      )
-                    : []
+                prev.map((ticket) =>
+                    ticket.id === ticketId
+                        ? {
+                              ...ticket,
+                              status: "ALLOWED",
+                              managerId: adminId,
+                              managedAt: new Date().toISOString(),
+                          }
+                        : ticket
+                )
             );
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при одобрении заявки");
-            console.error("Ошибка одобрения заявки:", error);
+            console.error(`Ошибка одобрения заявки (${ticketType}):`, error);
         } finally {
             setLoading(false);
         }
     };
 
-    // Функция для экспорта в CSV
     const exportToCSV = (tickets, status) => {
         const headers = [
             "ID Заявки",
@@ -84,6 +94,7 @@ const AdminWriteOffApprovalPage = () => {
             "Поставщик",
             "Клиент",
             "ID Инвентаря",
+            "Название товара",
             "Количество",
             "Зона склада",
             "Серийный №",
@@ -101,9 +112,10 @@ const AdminWriteOffApprovalPage = () => {
             ticket.document.documentNumber,
             ticket.document.documentType,
             ticket.document.documentDate,
-            ticket.document.supplier,
-            ticket.document.customer,
+            ticket.document.supplier || "—",
+            ticket.document.customer || "—",
             ticket.inventory.id,
+            ticket.inventory.nomenclatureName || "—",
             ticket.quantity,
             ticket.inventory.warehouseZoneId,
             ticket.inventory.containerSerial,
@@ -117,8 +129,10 @@ const AdminWriteOffApprovalPage = () => {
         const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = `tickets_${status.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.download = `${ticketType}_tickets_${status.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
     };
 
     const getStatusStyles = (status) => {
@@ -156,13 +170,16 @@ const AdminWriteOffApprovalPage = () => {
 
     const renderTicketCard = (ticket) => {
         const statusStyles = getStatusStyles(ticket.status);
+        const actionLabel = ticketType === "sales" ? "продажу" : "списание";
         return (
             <div
                 key={ticket.id}
                 className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200"
             >
                 <div className="flex justify-between items-center border-b pb-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-700">Заявка #{ticket.id}</h3>
+                    <h3 className="text-lg font-semibold text-gray-700">
+                        Заявка на {actionLabel} #{ticket.id}
+                    </h3>
                     <div
                         className={`${statusStyles.bg} inline-flex items-center px-2 py-1 rounded-full text-xs`}
                     >
@@ -179,8 +196,12 @@ const AdminWriteOffApprovalPage = () => {
                     <p className="text-xs text-gray-600">
                         Дата: {ticket.document.documentDate}
                     </p>
-                    <p className="text-xs text-gray-600">Поставщик: {ticket.document.supplier}</p>
-                    <p className="text-xs text-gray-600">Клиент: {ticket.document.customer}</p>
+                    <p className="text-xs text-gray-600">
+                        Поставщик: {ticket.document.supplier || "—"}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                        Клиент: {ticket.document.customer || "—"}
+                    </p>
                     <p className="text-xs text-gray-500">
                         Создан: {new Date(ticket.document.createdAt).toLocaleString()} (ID:{" "}
                         {ticket.document.createdBy})
@@ -197,7 +218,8 @@ const AdminWriteOffApprovalPage = () => {
                         Создано: {new Date(ticket.createdAt).toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-600">
-                        Одобрил: {ticket.managerName || "Не одобрено"} (ID: {ticket.managerId || "—"})
+                        Одобрил: {ticket.managerName || "Не одобрено"} (ID:{" "}
+                        {ticket.managerId || "—"})
                     </p>
                     <p className="text-xs text-gray-500">
                         Дата одобрения:{" "}
@@ -211,6 +233,9 @@ const AdminWriteOffApprovalPage = () => {
                 <div className="mb-3">
                     <h4 className="text-sm font-medium text-gray-600">Инвентарь</h4>
                     <p className="text-xs text-gray-800">ID: {ticket.inventory.id}</p>
+                    <p className="text-xs text-gray-600">
+                        Товар: {ticket.inventory.nomenclatureName || "—"}
+                    </p>
                     <p className="text-xs text-gray-600">Количество: {ticket.quantity}</p>
                     <p className="text-xs text-gray-600">
                         Зона склада: {ticket.inventory.warehouseZoneId}
@@ -229,7 +254,7 @@ const AdminWriteOffApprovalPage = () => {
                 {ticket.status === "ACTIVE" && (
                     <div className="flex justify-end">
                         <button
-                            onClick={() => handleApproveWriteOff(ticket.id)}
+                            onClick={() => handleApproveTicket(ticket.id)}
                             className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 text-sm transition-colors duration-200"
                             disabled={loading}
                         >
@@ -245,17 +270,47 @@ const AdminWriteOffApprovalPage = () => {
     const allowedTickets = tickets.filter((ticket) => ticket.status === "ALLOWED");
     const completedTickets = tickets.filter((ticket) => ticket.status === "COMPLETED");
 
+    const actionTitle = ticketType === "sales" ? "продажу" : "списание";
+
     return (
         <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto bg-gray-50">
-            <ToastContainer position="top-center" />
+            <ToastContainer position="top-center" autoClose={3000} />
             <div className="flex flex-col gap-y-6">
-                <h1 className="text-2xl font-bold text-gray-800">Одобрение заявок на списание</h1>
+                <div className="flex justify-between items-center">
+                    <h1 className="text-2xl font-bold text-gray-800">
+                        Одобрение заявок на {actionTitle}
+                    </h1>
+                    {/* Поля для выбора дат справа */}
+                    <div className="flex gap-2 sm:w-auto">
+                        <div className="flex-1">
+                            <label className="flex items-center gap-1 text-sm">
+                                <CiCalendarDate /> Начало
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="border px-2 py-1 rounded-md w-full text-sm"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="flex items-center gap-1 text-sm">
+                                <CiCalendarDate /> Конец
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="border px-2 py-1 rounded-md w-full text-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
 
                 {loading ? (
                     <div className="text-center text-lg text-gray-600">Загрузка...</div>
                 ) : (
                     <div className="space-y-8">
-                        {/* Ожидающие заявки */}
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-semibold text-gray-700">
@@ -283,7 +338,6 @@ const AdminWriteOffApprovalPage = () => {
 
                         <hr className="border-gray-300" />
 
-                        {/* Одобренные заявки */}
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-semibold text-gray-700">
@@ -311,7 +365,6 @@ const AdminWriteOffApprovalPage = () => {
 
                         <hr className="border-gray-300" />
 
-                        {/* Выполненные заявки */}
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <h2 className="text-xl font-semibold text-gray-700">
@@ -343,4 +396,4 @@ const AdminWriteOffApprovalPage = () => {
     );
 };
 
-export default AdminWriteOffApprovalPage;
+export default AdminTicketApprovalPage;

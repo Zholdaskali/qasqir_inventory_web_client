@@ -1,25 +1,21 @@
 import React, { useState } from "react";
-import CreateWriteOffPage from "./CreateWriteOffPage";
-import AdminWriteOffApprovalPage from "./AdminWriteOffApprovalPage";
+import TicketExecutionPage from "./TicketExecutionPage";
+import BatchProcessPage from "./BatchProcessPage";
 
 const tabs = [
-    { name: "СПИСАНИЕ", page: "WRITE-OFF" },
-    { name: "ПРОДАЖА", page: "SALES" },
-    { name: "ПРОИЗВОДСТВО", page: "PRODUCTION" },
+    { name: "СПИСОК ЗАЯВОК", page: "ticket-list" },
+    { name: "ПОДАТЬ ГРУППОВУЮ ЗАЯВКУ", page: "ticket-batch-add" },
 ];
 
-const TicketTabsPage = () => {
+const WriteOffTabs = () => {
     const [activeTab, setActiveTab] = useState(tabs[0].page);
 
     const renderContent = () => {
         switch (activeTab) {
-            case "WRITE-OFF":
-                return <AdminWriteOffApprovalPage />
-                CreateWriteOffPage;
-            case "SALES":
-                return <div className="h-full">Страница для ПРОДАЖА</div>;
-            case "PRODUCTION":
-                return <div className="h-full">Страница для ПРОИЗВОДСТВО</div>;
+            case "ticket-list":
+                return <TicketExecutionPage ticketType="WRITE-OFF"/>;
+            case "ticket-batch-add":
+                return <BatchProcessPage />;
             default:
                 return <div className="h-full text-gray-600">Выберите вкладку</div>;
         }
@@ -54,4 +50,4 @@ const TicketTabsPage = () => {
     );
 };
 
-export default TicketTabsPage;
+export default WriteOffTabs;

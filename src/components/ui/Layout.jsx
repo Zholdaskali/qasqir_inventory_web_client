@@ -6,14 +6,13 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // Icons
-import { FaUsers, FaWarehouse, FaBars, FaTimes } from "react-icons/fa";
+import { FaUsers, FaWarehouse, FaBars, FaTimes, FaTable } from "react-icons/fa"; // Добавили FaTable
 import { MdLogout } from "react-icons/md";
 import { IoIosArrowForward } from "react-icons/io";
 import { VscOrganization } from "react-icons/vsc";
 import { GrUser } from "react-icons/gr";
-import { ImCart, ImBook, ImTab } from "react-icons/im";
-import { IoSettings } from "react-icons/io5";
-import { IoBarChartSharp } from "react-icons/io5";
+import { ImCart, ImBook, ImTab } from "react-icons/im"; // Убрали ImStatsBars
+import { IoSettings, IoBarChartSharp } from "react-icons/io5";
 import { HiTicket } from "react-icons/hi2";
 
 // Redux actions
@@ -83,8 +82,9 @@ const Layout = ({ setIsAuthenticated }) => {
 
             {/* Боковая панель */}
             <aside
-                className={`bg-white min-w-[200px] h-full p-3 text-black flex flex-col justify-between transition-transform transform ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                    } md:translate-x-0 md:relative fixed top-0 left-0 z-40 shadow-lg`}
+                className={`bg-white min-w-[200px] h-full p-3 text-black flex flex-col justify-between transition-transform transform ${
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                } md:translate-x-0 md:relative fixed top-0 left-0 z-40 shadow-lg`}
             >
                 <div className="flex flex-col gap-4">
                     <img src="/logo.svg" alt="Logo" className="w-20 h-20" />
@@ -114,18 +114,20 @@ const Layout = ({ setIsAuthenticated }) => {
                                 <FaWarehouse size={24} /> <p>Склады</p>
                             </NavLink>
 
+                            <NavLink to="/warehouse-tabs" className="flex items-center gap-2 text-sm">
+                                <ImTab size={24} /> <p>Операции</p>
+                            </NavLink>
                             <button
                                 onClick={() => setOperationLogsList(!operationLogsList)}
                                 className="flex items-center justify-between w-full text-sm"
                             >
                                 <div className="flex items-center gap-2">
-                                    <ImTab size={24} /> <p>Операции</p>
+                                    <FaTable size={24} /> <p>Отчетность</p> {/* Заменили на FaTable */}
                                 </div>
                                 <IoIosArrowForward className={operationLogsList ? "rotate-90" : ""} />
                             </button>
                             {operationLogsList && (
                                 <div className="flex flex-col pl-4 gap-1 text-sm">
-                                    <NavLink to="/warehouse-tabs">Операции</NavLink>
                                     <NavLink to="/transaction-list">Транзакции</NavLink>
                                     <NavLink to="/inventory-item-list">Товары</NavLink>
                                 </div>

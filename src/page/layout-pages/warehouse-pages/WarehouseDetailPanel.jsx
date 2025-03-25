@@ -31,7 +31,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
             setLoading(false);
             fetchAddress(warehouse.latitude, warehouse.longitude);
         } else {
-            setLoading(false); // Если warehouse нет, отключаем загрузку
+            setLoading(false);
         }
     }, [warehouse]);
 
@@ -73,11 +73,12 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const user = useSelector((state) => state.user);
     const hasRole = (role) => user?.userRoles?.includes(role);
 
-    // Если warehouse нет, показываем сообщение
     if (!warehouse) {
         return (
             <div
-                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
+                    isOpen ? "translate-x-0" : "translate-x-full opacity-0"
+                }`}
             >
                 <div className="h-full flex flex-col justify-center items-center p-6">
                     <p className="text-gray-600 text-lg">Данные о складе отсутствуют</p>
@@ -95,12 +96,16 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     return (
         <>
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 ${isOpen ? "opacity-30" : "opacity-0 pointer-events-none"}`}
+                className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${
+                    isOpen ? "opacity-30" : "opacity-0 pointer-events-none"
+                }`}
                 onClick={onClose}
             />
 
             <div
-                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
+                    isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+                }`}
             >
                 <div className="h-full flex flex-col">
                     <div className="flex items-center justify-between p-6 border-b">
@@ -113,9 +118,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                         </button>
                     </div>
 
-                    <div
-                        className={`flex-1 overflow-y-auto p-6 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
-                    >
+                    <div className="flex-1 overflow-y-auto p-6">
                         {showZoneSettings ? (
                             <WarehouseZoneList warehouse={warehouse} />
                         ) : (
@@ -186,16 +189,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                         )}
                     </div>
 
-                    <div
-                        className={`p-6 border-t flex gap-x-5 transition-opacity duration-300 ${isOpen ? "opacity-100" : "opacity-0"}`}
-                    >
+                    <div className="p-6 border-t flex gap-x-5">
                         <NavLink
                             to="/warehouse-structure"
                             state={{ warehouse }}
                             className={({ isActive }) =>
-                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${isActive
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-100 hover:bg-gray-200"
+                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${
+                                    isActive ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
                                 }`
                             }
                         >
@@ -206,9 +206,8 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                             to={`/warehouse-items/${warehouse.id}`}
                             state={{ warehouse }}
                             className={({ isActive }) =>
-                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${isActive
-                                    ? "bg-blue-500 text-white"
-                                    : "bg-gray-100 hover:bg-gray-200"
+                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${
+                                    isActive ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
                                 }`
                             }
                         >

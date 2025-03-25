@@ -3,8 +3,7 @@ import IncomingRequestPage from "../../main-operation-pages/incoming/IncomingReq
 import ReturnRequestPage from "../../main-operation-pages/return/ReturnRequestPage.jsx";
 import TransferRequestPage from "../../main-operation-pages/transfer/TransferRequestPage.jsx";
 import InventoryCheckTabs from "../../main-operation-pages/inventory-check/InventoryCheckTabs.jsx";
-import FileListPage from "../../main-operation-pages/document/FileListPage.jsx";
-import WriteOffTabs from "../../main-operation-pages/write-off/WriteOffTabs.jsx";
+import ProcessTabs from "../../main-operation-pages/write-off/ProcessTabs.jsx"
 
 // Группировка вкладок с подсказками
 const tabGroups = [
@@ -14,7 +13,6 @@ const tabGroups = [
     tabs: [
       { name: "Поступление", page: "reception" },
       { name: "Возврат", page: "returns" },
-      { name: "Производство и передача", page: "inventory_check" },
     ],
   },
   {
@@ -23,7 +21,6 @@ const tabGroups = [
     tabs: [
       { name: "Списание", page: "writeoff" },
       { name: "Перемещение", page: "transfers" },
-      { name: "Продажа", page: "products" },
     ],
   },
   {
@@ -45,24 +42,16 @@ const WarehouseOperationTabsPage = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "products":
-        return <FileListPage />;
       case "reception":
         return <IncomingRequestPage />;
       case "writeoff":
         return (
           <div className="space-y-4 h-full">
-            <WriteOffTabs />
+            <ProcessTabs />
           </div>
         );
       case "transfers":
         return <TransferRequestPage />;
-      case "inventory_check":
-        return (
-          <div className="space-y-4 h-full">
-            {/* Здесь можно добавить содержимое для "Производство и передача" */}
-          </div>
-        );
       case "returns":
         return <ReturnRequestPage />;
       case "implementation":

@@ -40,10 +40,9 @@ import InviteList from './page/layout-pages/users/InviteList'
 import EditOrganizationProfile from './page/layout-pages/organization-pages/EditOrganizationProfile'
 import WarehouseTabsPage from './page/layout-pages/operation/WarehouseOperationTabsPage'
 import InventoryItemsList from './page/layout-pages/operation/InventoryItemsList'
-import TicketTabsPage from './page/main-operation-pages/write-off/WriteOffTicketTabsPage'
 import InventoryResultPage from './page/main-operation-pages/inventory-check/InventoryResultPage'
 import TransactionList from './page/layout-pages/operation/TransactionList'
-
+import AdminTicketTabsPage from './page/layout-pages/ticket/AdminTicketTabsPage'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -70,7 +69,7 @@ function App() {
                   <Route path='users-list' element={<UsersList />} />
                   <Route path='invite-list' element={<InviteList />} />
                   <Route path='edit-organization-profile' element={<EditOrganizationProfile />} />
-                  <Route path='ticket-tabs' element={<TicketTabsPage />} />
+                  <Route path='ticket-tabs' element={<AdminTicketTabsPage />} />
                   <Route path='user-tabs' element={<UserTabs />} />
                 </>
               )}
