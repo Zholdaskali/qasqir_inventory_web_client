@@ -25,7 +25,7 @@ const NomenclatureList = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8081/api/v1/warehouse-manager/${categoryId}/nomenclatures`,
+        `http://localhost:8081/api/v1/employee/${categoryId}/nomenclatures`,
         {
           headers: { "Auth-token": authToken },
         }

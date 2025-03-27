@@ -23,7 +23,7 @@ const CustomerList = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:8081/api/v1/warehouse-manager/customers",
+        "http://localhost:8081/api/v1/employee/customers",
         {
           headers: { "Auth-token": authToken },
         }

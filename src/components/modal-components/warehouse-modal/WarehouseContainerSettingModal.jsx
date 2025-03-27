@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useSelector } from 'react-redux'; // Добавлен импорт
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper"; // Добавлен импорт ConfirmationWrapper
 
 const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, container, onClose }) => {
     const [serialNumber, setSerialNumber] = useState(container.serialNumber);
@@ -9,9 +11,7 @@ const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, contai
     const [width, setWidth] = useState(container.width);
     const authToken = useSelector((state) => state.token.token);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
+    const handleSubmit = async () => { // Убрал e.preventDefault(), так как вызывается через ConfirmationWrapper
         if (!serialNumber || !length || !height || !width) {
             toast.error("Заполните все поля");
             return;
@@ -46,7 +46,7 @@ const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, contai
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
             <div className="bg-white p-6 rounded-lg w-96">
                 <h2 className="text-xl font-semibold mb-4">Настройка контейнера</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-4"> {/* Предотвращаем отправку формы */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Серийный номер</label>
                         <input
@@ -95,12 +95,18 @@ const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, contai
                         >
                             Отмена
                         </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        <ConfirmationWrapper
+                            title="Подтверждение сохранения"
+                            message="Вы уверены, что хотите сохранить изменения для этого контейнера?"
+                            onConfirm={handleSubmit}
                         >
-                            Сохранить
-                        </button>
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                                Сохранить
+                            </button>
+                        </ConfirmationWrapper>
                     </div>
                 </form>
             </div>

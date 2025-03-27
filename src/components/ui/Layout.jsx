@@ -6,12 +6,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 // Icons
-import { FaUsers, FaWarehouse, FaBars, FaTimes, FaTable } from "react-icons/fa"; // Добавили FaTable
+import { FaUsers, FaWarehouse, FaBars, FaTimes, FaTable } from "react-icons/fa";
 import { MdLogout } from "react-icons/md";
 import { IoIosArrowForward } from "react-icons/io";
 import { VscOrganization } from "react-icons/vsc";
 import { GrUser } from "react-icons/gr";
-import { ImCart, ImBook, ImTab } from "react-icons/im"; // Убрали ImStatsBars
+import { ImCart, ImBook, ImTab } from "react-icons/im";
 import { IoSettings, IoBarChartSharp } from "react-icons/io5";
 import { HiTicket } from "react-icons/hi2";
 
@@ -71,10 +71,10 @@ const Layout = ({ setIsAuthenticated }) => {
     const hasRole = (role) => user?.userRoles?.includes(role);
 
     return (
-        <div className="flex h-screen">
+        <div className="flex h-screen relative">
             {/* Кнопка переключения для мобильных */}
             <button
-                className="fixed top-2 left-2 z-50 text-2xl text-black md:hidden p-1"
+                className="fixed top-2 left-2 z-40 text-2xl text-black md:hidden p-1"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
             >
                 {sidebarOpen ? <FaTimes /> : <FaBars />}
@@ -84,36 +84,21 @@ const Layout = ({ setIsAuthenticated }) => {
             <aside
                 className={`bg-white min-w-[200px] h-full p-3 text-black flex flex-col justify-between transition-transform transform ${
                     sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } md:translate-x-0 md:relative fixed top-0 left-0 z-40 shadow-lg`}
+                } md:translate-x-0 md:relative fixed top-0 left-0 z-30 shadow-lg`}
             >
                 <div className="flex flex-col gap-4">
                     <img src="/logo.svg" alt="Logo" className="w-20 h-20" />
                     <h1 className="text-main-dull-blue font-medium text-base">QASQIR INVENTORY</h1>
 
-                    <NavLink to="/dashboard" className="flex items-center gap-2 text-sm">
-                        <IoBarChartSharp size={24} /> <p>Аналитика</p>
-                    </NavLink>
-
-                    {hasRole("admin") && (
+                    {/* warehouse_manager: Управление структурой склада, обработка заявок */}
+                    {hasRole("warehouse_manager") && (
                         <>
-                            <NavLink to="/log-tabs" className="flex items-center gap-2 text-sm">
-                                <ImBook size={24} /> <p>Аудит</p>
-                            </NavLink>
-                            <NavLink to="/user-tabs" className="flex items-center gap-2 text-sm">
-                                <FaUsers size={24} /> <p>Пользователи</p>
+                            <NavLink to="/dashboard" className="flex items-center gap-2 text-sm">
+                                <IoBarChartSharp size={24} /> <p>Аналитика</p>
                             </NavLink>
                             <NavLink to="/ticket-tabs" className="flex items-center gap-2 text-sm">
                                 <HiTicket size={27} /> <p>Заявки</p>
                             </NavLink>
-                        </>
-                    )}
-
-                    {hasRole("employee") && (
-                        <>
-                            <NavLink to="/warehouse-list" className="flex items-center gap-2 text-sm">
-                                <FaWarehouse size={24} /> <p>Склады</p>
-                            </NavLink>
-
                             <NavLink to="/warehouse-tabs" className="flex items-center gap-2 text-sm">
                                 <ImTab size={24} /> <p>Операции</p>
                             </NavLink>
@@ -122,7 +107,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                 className="flex items-center justify-between w-full text-sm"
                             >
                                 <div className="flex items-center gap-2">
-                                    <FaTable size={24} /> <p>Отчетность</p> {/* Заменили на FaTable */}
+                                    <FaTable size={24} /> <p>Отчетность</p>
                                 </div>
                                 <IoIosArrowForward className={operationLogsList ? "rotate-90" : ""} />
                             </button>
@@ -132,6 +117,36 @@ const Layout = ({ setIsAuthenticated }) => {
                                     <NavLink to="/inventory-item-list">Товары</NavLink>
                                 </div>
                             )}
+                        </>
+                    )}
+
+                    {/* admin: Управление пользователями и анализ логов */}
+                    {hasRole("admin") && (
+                        <>
+                            <NavLink to="/log-tabs" className="flex items-center gap-2 text-sm">
+                                <ImBook size={24} /> <p>Аудит</p>
+                            </NavLink>
+                            <NavLink to="/user-tabs" className="flex items-center gap-2 text-sm">
+                                <FaUsers size={24} /> <p>Пользователи</p>
+                            </NavLink>
+                        </>
+                    )}
+
+                    {/* employee: Просмотр склада товаров */}
+                    {hasRole("employee") && (
+                        <>
+                            <NavLink to="/warehouse-list" className="flex items-center gap-2 text-sm">
+                                <FaWarehouse size={24} /> <p>Склады</p>
+                            </NavLink>
+                        </>
+                    )}
+
+                    {/* storekeeper: Приемка товаров */}
+                    {hasRole("storekeeper") && (
+                        <>
+                            <NavLink to="/warehouse-tabs" className="flex items-center gap-2 text-sm">
+                                <ImTab size={24} /> <p>Операции</p>
+                            </NavLink>
                             <button
                                 onClick={() => setInventoryLogsList(!inventoryLogsList)}
                                 className="flex items-center justify-between w-full text-sm"
@@ -159,7 +174,11 @@ const Layout = ({ setIsAuthenticated }) => {
                     <NavLink to="/organization-profile" className="flex items-center gap-2 text-sm">
                         <VscOrganization size={16} /> <p>Организация</p>
                     </NavLink>
-                    <ConfirmationWrapper title="Вы точно хотите выйти?" onConfirm={handleLogout}>
+                    <ConfirmationWrapper
+                        title="Вы точно хотите выйти?"
+                        message="Все несохраненные изменения будут потеряны."
+                        onConfirm={handleLogout}
+                    >
                         <button className="bg-main-dull-blue py-1 px-3 rounded-lg text-white flex items-center justify-center gap-2 text-sm">
                             <MdLogout size={16} /> <p>Выйти</p>
                         </button>

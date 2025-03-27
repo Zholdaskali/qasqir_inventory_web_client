@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CiCalendarDate } from "react-icons/ci"; // Импорт иконки
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const TicketExecutionPage = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -26,7 +27,7 @@ const TicketExecutionPage = () => {
         try {
             setLoading(true);
             const response = await axios.get(
-                `http://localhost:8081/api/v1/warehouse-manager/ticket/${ticketType}`,
+                `http://localhost:8081/api/v1/employee/ticket/${ticketType}`,
                 {
                     headers: { "Auth-token": authToken },
                     params: {
@@ -53,7 +54,7 @@ const TicketExecutionPage = () => {
         try {
             setLoading(true);
             const response = await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/ticket/${ticketId}`,
+                `http://localhost:8081/api/v1/storekeeper/ticket/${ticketId}`,
                 {},
                 { headers: { "Auth-token": authToken } }
             );
@@ -177,20 +178,30 @@ const TicketExecutionPage = () => {
 
                 {ticket.status === "ALLOWED" && (
                     <div className="flex justify-end mt-5 gap-2">
-                        <button
-                            onClick={() => handleExecuteTicket(ticket.id)}
-                            className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 transition-colors text-sm"
-                            disabled={loading}
+                        <ConfirmationWrapper
+                            title="Подтверждение выполнения"
+                            message={`Вы уверены, что хотите выполнить заявку #${ticket.id} на ${actionLabel}?`}
+                            onConfirm={() => handleExecuteTicket(ticket.id)}
                         >
-                            Выполнить
-                        </button>
-                        <button
-                            onClick={() => handleCancelTicket(ticket.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 transition-colors text-sm"
-                            disabled={loading}
+                            <button
+                                className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 transition-colors text-sm"
+                                disabled={loading}
+                            >
+                                Выполнить
+                            </button>
+                        </ConfirmationWrapper>
+                        <ConfirmationWrapper
+                            title="Подтверждение отмены"
+                            message={`Вы уверены, что хотите отменить заявку #${ticket.id} на ${actionLabel}?`}
+                            onConfirm={() => handleCancelTicket(ticket.id)}
                         >
-                            Отменить
-                        </button>
+                            <button
+                                className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 transition-colors text-sm"
+                                disabled={loading}
+                            >
+                                Отменить
+                            </button>
+                        </ConfirmationWrapper>
                     </div>
                 )}
             </div>

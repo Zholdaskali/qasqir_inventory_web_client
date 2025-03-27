@@ -3,7 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Notification from "../../notification/Notification";
-
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
 
 const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -65,29 +65,40 @@ const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
                     />
                 </div>
                 <div className="flex justify-end gap-2 mt-4">
-                    <button
-                        onClick={handleDelete}
-                        className="bg-red-500 text-white px-4 py-2 rounded"
+                    <ConfirmationWrapper
+                        title="Подтверждение удаления"
+                        message="Вы уверены, что хотите удалить этого поставщика?"
+                        onConfirm={handleDelete}
                     >
-                        Удалить
-                    </button>
+                        <button
+                            type="button"
+                            className="bg-red-500 text-white px-4 py-2 rounded"
+                        >
+                            Удалить
+                        </button>
+                    </ConfirmationWrapper>
                     <button
                         onClick={onClose}
                         className="bg-gray-500 text-white px-4 py-2 rounded"
                     >
                         Отмена
                     </button>
-                    <button
-                        onClick={handleUpdate}
-                        className="bg-main-dull-blue text-white px-4 py-2 rounded"
+                    <ConfirmationWrapper
+                        title="Подтверждение обновления"
+                        message="Вы уверены, что хотите сохранить изменения для этого поставщика?"
+                        onConfirm={handleUpdate}
                     >
-                        Обновить
-                    </button>
+                        <button
+                            type="button"
+                            className="bg-main-dull-blue text-white px-4 py-2 rounded"
+                        >
+                            Обновить
+                        </button>
+                    </ConfirmationWrapper>
                 </div>
             </div>
             <Notification />
         </div>
-        
     );
 };
 

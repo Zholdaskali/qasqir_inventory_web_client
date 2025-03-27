@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
 
 const CategorySettingsModal = ({ category, onClose }) => {
     const [categoryName, setCategoryName] = useState(category?.name || "");
@@ -14,9 +15,7 @@ const CategorySettingsModal = ({ category, onClose }) => {
         setCategoryName(category?.name || "");
     }, [category]);
 
-    const handleSaveCategory = async (e) => {
-        e.preventDefault();
-
+    const handleSaveCategory = async () => { // Убрал e.preventDefault(), так как вызывается через ConfirmationWrapper
         if (!categoryName.trim()) {
             setIsFormError(true);
             toast.error("Заполните все поля");
@@ -42,8 +41,6 @@ const CategorySettingsModal = ({ category, onClose }) => {
     };
 
     const handleDeleteCategory = async () => {
-        if (!window.confirm("Вы действительно хотите удалить категорию?")) return;
-
         setIsLoading(true);
         try {
             await axios.delete(
@@ -64,7 +61,7 @@ const CategorySettingsModal = ({ category, onClose }) => {
         <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-1/2 lg:w-1/3 relative">
                 <h2 className="text-2xl font-semibold text-main-dull-gray mb-6 text-center">Настройки категории</h2>
-                <form onSubmit={handleSaveCategory} className="space-y-6">
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-6"> {/* Предотвращаем отправку формы */}
                     <div>
                         <label htmlFor="name" className="block text-left mb-2 text-main-dull-blue">Название категории</label>
                         <input
@@ -83,9 +80,39 @@ const CategorySettingsModal = ({ category, onClose }) => {
                         )}
                     </div>
                     <div className="flex justify-end space-x-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition">Отмена</button>
-                        <button type="button" onClick={handleDeleteCategory} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:bg-red-400" disabled={isLoading}>{isLoading ? "Удаление..." : "Удалить"}</button>
-                        <button type="submit" className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition disabled:bg-main-dull-gray" disabled={isLoading}>{isLoading ? "Сохранение..." : "Сохранить"}</button>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                        >
+                            Отмена
+                        </button>
+                        <ConfirmationWrapper
+                            title="Подтверждение удаления"
+                            message="Вы уверены, что хотите удалить эту категорию?"
+                            onConfirm={handleDeleteCategory}
+                        >
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:bg-red-400"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Удаление..." : "Удалить"}
+                            </button>
+                        </ConfirmationWrapper>
+                        <ConfirmationWrapper
+                            title="Подтверждение сохранения"
+                            message="Вы уверены, что хотите сохранить изменения для этой категории?"
+                            onConfirm={handleSaveCategory}
+                        >
+                            <button
+                                type="button"
+                                className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition disabled:bg-main-dull-gray"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Сохранение..." : "Сохранить"}
+                            </button>
+                        </ConfirmationWrapper>
                     </div>
                 </form>
             </div>

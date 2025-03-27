@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const InProgressInventoryPage = ({ onContinueInventory }) => {
   const authToken = useSelector((state) => state.token.token);
@@ -44,7 +46,6 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
     if (onContinueInventory) {
       onContinueInventory(inventoryId);
     } else {
-      // Если пропс не передан, используем navigate как запасной вариант
       navigate(`/inventory/${inventoryId}`);
     }
   };
@@ -108,12 +109,17 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
                     <td className="py-3 px-2">{inventory.createdBy}</td>
                     <td className="py-3 px-2">{new Date(inventory.createdAt).toLocaleString()}</td>
                     <td className="py-3 px-2">
-                      <button
-                        onClick={() => handleContinue(inventory.inventoryId)}
-                        className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
+                      <ConfirmationWrapper
+                        title="Подтверждение продолжения"
+                        message={`Вы уверены, что хотите продолжить инвентаризацию с ID: ${inventory.inventoryId}?`}
+                        onConfirm={() => handleContinue(inventory.inventoryId)}
                       >
-                        Продолжить
-                      </button>
+                        <button
+                          className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition"
+                        >
+                          Продолжить
+                        </button>
+                      </ConfirmationWrapper>
                     </td>
                   </tr>
                 ))}

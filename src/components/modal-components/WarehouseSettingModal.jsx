@@ -1,6 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
+import ConfirmationWrapper from "../ui/ConfirmationWrapper";
 
 const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
     const [name, setName] = useState(warehouse?.name || "");
@@ -57,14 +58,25 @@ const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
                     </div>
                 </div>
                 <div className="mt-6 flex justify-end space-x-4">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition">Отмена</button>
                     <button 
-                        onClick={handleSave} 
-                        className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition flex items-center"
-                        disabled={loading}
+                        onClick={onClose} 
+                        className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
                     >
-                        {loading ? "Сохранение..." : "Сохранить"}
+                        Отмена
                     </button>
+                    <ConfirmationWrapper
+                        title="Подтверждение сохранения"
+                        message="Вы уверены, что хотите сохранить изменения для этого склада?"
+                        onConfirm={handleSave}
+                    >
+                        <button
+                            type="button" // Добавлен type="button" для предотвращения отправки формы
+                            className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition flex items-center"
+                            disabled={loading}
+                        >
+                            {loading ? "Сохранение..." : "Сохранить"}
+                        </button>
+                    </ConfirmationWrapper>
                 </div>
             </div>
         </div>

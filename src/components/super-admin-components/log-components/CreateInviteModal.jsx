@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "react-toastify";
-
 import { API_CREATE_INVITE } from "../../../api/API";
 import Notification from "../../notification/Notification";
 import InviteRoleSelectionModal from "../../modal-components/InviteRoleSelectionModal";
@@ -24,7 +23,6 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
 
     const inviteUserName = `${inviteUserFirstName} ${inviteUserLastName}`;
 
-    // Функция для генерации случайного пароля
     const generatePassword = () => {
         const length = 12;
         const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
@@ -35,49 +33,29 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
         setInvitePassword(password);
     };
 
-    // Функция для проверки номера телефона
-    const validatePhoneNumber = (phoneNumber) => {
-        const phoneRegex = /^\+?[1-9]\d{1,14}$/; // Пример для международного формата
-        return phoneRegex.test(phoneNumber);
-    };
+    const validatePhoneNumber = (phoneNumber) => /^\+?[1-9]\d{1,14}$/.test(phoneNumber);
+    const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-    // Функция для проверки email
-    const validateEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    // Функция для обновления выбранных ролей с автоматическим добавлением роли "Сотрудник"
     const updateSelectedRoles = (newRoles) => {
-        const rolesToAdd = newRoles.filter((roleId) => [1, 2, 3].includes(roleId)); // Роли "Админ", "Кладовщик", "Продавец"
-        const hasEmployeeRole = newRoles.includes(4); // Роль "Сотрудник"
-
-        // Если выбрана одна из ролей "Админ", "Кладовщик", "Продавец" и роль "Сотрудник" ещё не выбрана, добавляем её
-        if (rolesToAdd.length > 0 && !hasEmployeeRole) {
-            newRoles.push(4); // Добавляем роль "Сотрудник"
-        }
-
-        setSelectedRoles([...new Set(newRoles)]); // Убираем дубликаты
+        const rolesToAdd = newRoles.filter((roleId) => [1, 2, 3].includes(roleId));
+        if (rolesToAdd.length > 0 && !newRoles.includes(4)) newRoles.push(4);
+        setSelectedRoles([...new Set(newRoles)]);
     };
 
     const createInvite = async (e) => {
         e.preventDefault();
-
         if (!inviteUserName.trim() || !inviteEmail.trim() || !invitePassword.trim() || selectedRoles.length === 0) {
-            toast.error("Заполните все поля и выберите роли");
+            toast.error("Заполните все поля");
             return;
         }
-
         if (!validatePhoneNumber(inviteUserNumber)) {
-            toast.error("Некорректный номер телефона");
+            toast.error("Некорректный номер");
             return;
         }
-
         if (!validateEmail(inviteEmail)) {
             toast.error("Некорректный email");
             return;
         }
-
         try {
             const response = await axios.post(
                 API_CREATE_INVITE,
@@ -88,133 +66,117 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     userNumber: inviteUserNumber,
                     userRoles: selectedRoles,
                 },
-                {
-                    headers: { "Auth-token": authToken },
-                }
+                { headers: { "Auth-token": authToken } }
             );
             toast.success(response.data.message || "Успешно");
             setCreateInviteModal(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка создания приглашения");
+            toast.error(error.response?.data?.message || "Ошибка");
+        }
+    };
+
+    const handleBackdropClick = (e) => {
+        if (e.target === e.currentTarget) {
+            setCreateInviteModal(false);
         }
     };
 
     return (
-        <div className="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50">
-            {/* Фон, который будет под модальным окном */}
-            <div
-                className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 z-10"
-                onClick={() => setCreateInviteModal(false)}
-            ></div>
-
-            {/* Модальное окно */}
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-4/5 lg:w-3/5 xl:w-2/5 z-20">
-                <form onSubmit={createInvite} className="flex flex-col gap-y-8 text-center">
-                    <h1 className="text-2xl font-semibold text-main-dull-gray mb-6">Создать приглашение</h1>
-                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="flex flex-col items-start gap-y-3">
-                            <label htmlFor="firstname" className="ml-3 text-left text-main-dull-blue">Имя</label>
+        <div
+            className="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center z-50"
+            onClick={handleBackdropClick}
+        >
+            <div className="bg-white rounded-lg p-5 w-full max-w-lg z-20">
+                <form onSubmit={createInvite} className="space-y-4">
+                    <h1 className="text-xl font-semibold text-main-dull-gray text-center">Новое приглашение</h1>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm text-main-dull-blue mb-1">Имя</label>
                             <input
                                 type="text"
-                                id="firstname"
-                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                                placeholder="Имя пользователя"
-                                required
+                                className="w-full p-2 border rounded text-sm"
                                 value={inviteUserFirstName}
                                 onChange={(e) => setInviteFirstName(e.target.value)}
+                                required
                             />
                         </div>
-                        <div className="flex flex-col items-start gap-y-3">
-                            <label htmlFor="lastname" className="ml-3 text-left text-main-dull-blue">Фамилия</label>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue mb-1">Фамилия</label>
                             <input
                                 type="text"
-                                id="lastname"
-                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                                placeholder="Фамилия пользователя"
-                                required
+                                className="w-full p-2 border rounded text-sm"
                                 value={inviteUserLastName}
                                 onChange={(e) => setInviteLastName(e.target.value)}
+                                required
                             />
                         </div>
                     </div>
-                    <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="flex flex-col items-start gap-y-3">
-                            <label htmlFor="userNumber" className="ml-3 text-left text-main-dull-blue">Номер телефона</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm text-main-dull-blue mb-1">Телефон</label>
                             <input
                                 type="tel"
-                                id="userNumber"
-                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                                placeholder="Номер телефона"
-                                required
+                                className="w-full p-2 border rounded text-sm"
                                 value={inviteUserNumber}
                                 onChange={(e) => setInviteUserNumber(e.target.value)}
+                                required
                             />
                         </div>
-                        <div className="flex flex-col items-start gap-y-3">
-                            <label htmlFor="userEmail" className="ml-3 text-left text-main-dull-blue">Почта пользователя</label>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue mb-1">Email</label>
                             <input
                                 type="email"
-                                id="userEmail"
-                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                                placeholder="Почта пользователя"
-                                required
+                                className="w-full p-2 border rounded text-sm"
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
+                                required
                             />
                         </div>
                     </div>
-                    <div className="flex flex-col w-full gap-y-3 items-start">
-                        <label htmlFor="password" className="ml-3 text-left text-main-dull-blue">Пароль для пользователя</label>
-                        <div className="flex gap-2 w-full">
+                    <div>
+                        <label className="block text-sm text-main-dull-blue mb-1">Пароль</label>
+                        <div className="flex gap-2">
                             <input
-                                id="password"
                                 type="password"
-                                className="px-5 py-3 rounded-lg border-b text-main-dull-blue w-full"
-                                placeholder="Пароль для пользователя"
-                                required
+                                className="w-full p-2 border rounded text-sm"
                                 value={invitePassword}
                                 onChange={(e) => setInvitePassword(e.target.value)}
+                                required
                             />
                             <button
                                 type="button"
-                                className="bg-main-dull-blue hover:bg-main-purp-dark text-white px-4 py-2 rounded-xl"
+                                className="px-3 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
                                 onClick={generatePassword}
                             >
                                 Сгенерировать
                             </button>
                         </div>
                     </div>
-                    <div className="w-full">
+                    <div>
                         <button
                             type="button"
-                            className="bg-main-dull-blue hover:bg-main-purp-dark text-white px-6 py-2 rounded-xl w-full sm:w-auto mt-4"
+                            className="w-full px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
                             onClick={() => setIsRoleModalOpen(true)}
                         >
                             Выбрать роли
                         </button>
-                        <p className="mt-2 text-sm text-gray-500">
-                            Выбранные роли:{" "}
-                            {selectedRoles.length > 0
-                                ? selectedRoles
-                                    .map((roleId) => rolesList.find((role) => role.id === roleId)?.name)
-                                    .join(", ")
-                                : "Нет"}
+                        <p className="mt-1 text-xs text-gray-500">
+                            Роли: {selectedRoles.length > 0 ? selectedRoles.map((id) => rolesList.find((r) => r.id === id)?.name).join(", ") : "Нет"}
                         </p>
                     </div>
                     <button
                         type="submit"
-                        className="bg-main-dull-blue self-end hover:bg-main-dull-gray text-white px-8 py-2 rounded-xl mt-4"
+                        className="w-full px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
                     >
-                        Создать приглашение
+                        Создать
                     </button>
                 </form>
             </div>
-
             <Notification />
             {isRoleModalOpen && (
                 <InviteRoleSelectionModal
                     onClose={() => setIsRoleModalOpen(false)}
-                    setSelectedRoles={updateSelectedRoles} // Передаем обновленную функцию
+                    setSelectedRoles={updateSelectedRoles}
                 />
             )}
         </div>

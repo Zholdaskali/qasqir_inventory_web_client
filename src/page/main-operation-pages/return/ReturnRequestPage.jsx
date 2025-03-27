@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const ReturnRequestPage = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -196,13 +197,18 @@ const ReturnRequestPage = () => {
 
         {/* Кнопка */}
         <section className="flex justify-end">
-          <button
-            onClick={handleCreateReturn}
-            className="w-full sm:w-48 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
-            disabled={loading}
+          <ConfirmationWrapper
+            title="Подтверждение создания возврата"
+            message="Вы уверены, что хотите создать эту заявку на возврат?"
+            onConfirm={handleCreateReturn}
           >
-            {loading ? "Создание..." : "Создать возврат"}
-          </button>
+            <button
+              className="w-full sm:w-48 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
+              disabled={loading}
+            >
+              {loading ? "Создание..." : "Создать возврат"}
+            </button>
+          </ConfirmationWrapper>
         </section>
       </div>
     </div>

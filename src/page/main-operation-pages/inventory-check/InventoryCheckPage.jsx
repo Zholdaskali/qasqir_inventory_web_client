@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -17,7 +18,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     const [inventoryItems, setInventoryItems] = useState([]);
     const [inventoryId, setInventoryId] = useState(initialInventoryId || null);
     const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
     // Загрузка складов
     useEffect(() => {
@@ -110,10 +110,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             toast.error("Инвентаризация еще не начата");
             return;
         }
-        setShowConfirmDialog(true); // Показываем диалог подтверждения
-    };
-
-    const confirmSubmitInventory = async () => {
         try {
             setLoading(true);
             const payload = inventoryItems.map((item) => ({
@@ -138,7 +134,6 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             toast.error(error.response?.data?.message || "Ошибка при завершении инвентаризации");
         } finally {
             setLoading(false);
-            setShowConfirmDialog(false);
         }
     };
 
@@ -353,42 +348,18 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                 )}
 
                 {inventoryId && (
-                    <button
-                        onClick={handleSubmitInventory}
-                        className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors w-48"
-                        disabled={loading || inventoryItems.length === 0}
+                    <ConfirmationWrapper
+                        title="Подтверждение завершения инвентаризации"
+                        message="Вы уверены, что хотите завершить инвентаризацию? Все данные будут сохранены."
+                        onConfirm={handleSubmitInventory}
                     >
-                        Завершить инвентаризацию
-                    </button>
-                )}
-
-                {/* Диалог подтверждения */}
-                {showConfirmDialog && (
-                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-                            <h3 className="text-lg font-medium text-gray-800 mb-4">
-                                Подтверждение завершения инвентаризации
-                            </h3>
-                            <p className="text-gray-600 mb-6">
-                                Вы уверены, что хотите завершить инвентаризацию? Все данные будут сохранены.
-                            </p>
-                            <div className="flex justify-end gap-4">
-                                <button
-                                    onClick={() => setShowConfirmDialog(false)}
-                                    className="p-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-                                >
-                                    Отмена
-                                </button>
-                                <button
-                                    onClick={confirmSubmitInventory}
-                                    className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    disabled={loading}
-                                >
-                                    {loading ? "Сохранение..." : "Подтвердить"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                        <button
+                            className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 transition-colors w-48"
+                            disabled={loading || inventoryItems.length === 0}
+                        >
+                            Завершить инвентаризацию
+                        </button>
+                    </ConfirmationWrapper>
                 )}
             </div>
         </div>

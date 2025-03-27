@@ -23,7 +23,7 @@ const SupplierList = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:8081/api/v1/warehouse-manager/suppliers",
+        "http://localhost:8081/api/v1/employee/suppliers",
         {
           headers: { "Auth-token": authToken },
         }

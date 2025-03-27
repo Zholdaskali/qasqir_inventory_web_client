@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CiCalendarDate } from "react-icons/ci"; // Импорт иконки
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const AdminTicketApprovalPage = ({ ticketType }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -24,7 +25,7 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
         try {
             setLoading(true);
             const response = await axios.get(
-                `http://localhost:8081/api/v1/warehouse-manager/ticket/${ticketType}`,
+                `http://localhost:8081/api/v1/employee/ticket/${ticketType}`,
                 {
                     headers: { "Auth-token": authToken },
                     params: {
@@ -48,12 +49,29 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
         fetchTickets();
     }, [fetchTickets]);
 
+    const handleCancelTicket = async (ticketId) => {
+        try {
+            setLoading(true);
+            const response = await axios.delete(
+                `http://localhost:8081/api/v1/warehouse-manager/ticket/${ticketId}`,
+                { headers: { "Auth-token": authToken } }
+            );
+            toast.success(response?.data?.message || "Заявка успешно отменена");
+            setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId)); // Удаляем заявку из списка
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Ошибка при отмене заявки");
+            console.error(`Cancel ${ticketType} error:`, error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleApproveTicket = async (ticketId) => {
         try {
             setLoading(true);
             const payload = { ticketId, managed_id: adminId };
             const response = await axios.put(
-                `http://localhost:8081/api/v1/admin/ticket/allowed`,
+                `http://localhost:8081/api/v1/warehouse-manager/ticket/allowed`,
                 payload,
                 { headers: { "Auth-token": authToken } }
             );
@@ -62,11 +80,11 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
                 prev.map((ticket) =>
                     ticket.id === ticketId
                         ? {
-                              ...ticket,
-                              status: "ALLOWED",
-                              managerId: adminId,
-                              managedAt: new Date().toISOString(),
-                          }
+                            ...ticket,
+                            status: "ALLOWED",
+                            managerId: adminId,
+                            managedAt: new Date().toISOString(),
+                        }
                         : ticket
                 )
             );
@@ -251,17 +269,35 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
                     </p>
                 </div>
 
-                {ticket.status === "ACTIVE" && (
-                    <div className="flex justify-end">
+                <div className="flex justify-between items-center">
+                    <ConfirmationWrapper
+                        title="Подтверждение удаления"
+                        message="Вы уверены, что хотите удалить эту заявку?"
+                        onConfirm={() => handleCancelTicket(ticket.id)}
+                    >
                         <button
-                            onClick={() => handleApproveTicket(ticket.id)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 text-sm transition-colors duration-200"
+                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-400 transition-colors text-sm"
                             disabled={loading}
                         >
-                            Одобрить
+                            Удалить
                         </button>
-                    </div>
-                )}
+                    </ConfirmationWrapper>
+
+                    {ticket.status === "ACTIVE" && (
+                        <ConfirmationWrapper
+                            title="Подтверждение одобрения"
+                            message="Вы уверены, что хотите одобрить эту заявку?"
+                            onConfirm={() => handleApproveTicket(ticket.id)}
+                        >
+                            <button
+                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400 text-sm transition-colors duration-200"
+                                disabled={loading}
+                            >
+                                Одобрить
+                            </button>
+                        </ConfirmationWrapper>
+                    )}
+                </div>
             </div>
         );
     };

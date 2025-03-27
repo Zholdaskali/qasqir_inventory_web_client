@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const TransferRequestPage = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -420,15 +421,20 @@ const TransferRequestPage = () => {
                     </div>
                 )}
 
-                {/* Submit Button */}
+                {/* Submit Button with Confirmation */}
                 {state.transferItems.size > 0 && (
-                    <button
-                        onClick={handleSubmitTransfer}
-                        disabled={state.loading}
-                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                    <ConfirmationWrapper
+                        title="Подтверждение перемещения"
+                        message="Вы уверены, что хотите создать запрос на перемещение товаров?"
+                        onConfirm={handleSubmitTransfer}
                     >
-                        {state.loading ? "Обработка..." : "Создать перемещение"}
-                    </button>
+                        <button
+                            disabled={state.loading}
+                            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                        >
+                            {state.loading ? "Обработка..." : "Создать перемещение"}
+                        </button>
+                    </ConfirmationWrapper>
                 )}
             </div>
         </div>

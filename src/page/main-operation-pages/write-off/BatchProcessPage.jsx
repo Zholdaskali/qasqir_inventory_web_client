@@ -5,6 +5,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { List, AutoSizer } from "react-virtualized";
 import debounce from "lodash/debounce";
+import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 const BatchWriteOffPage = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -60,7 +61,7 @@ const BatchWriteOffPage = () => {
     if (!authToken || documentType !== "SALES") return;
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/customers", {
+      const response = await axios.get("http://localhost:8081/api/v1/employee/customers", {
         headers: { "Auth-token": authToken },
       });
       setCustomers(Array.isArray(response.data.body) ? response.data.body : []);
@@ -154,7 +155,7 @@ const BatchWriteOffPage = () => {
           quantity: quantities[item.id],
         })),
       };
-      await axios.post("http://localhost:8081/api/v1/warehouse-manager/ticket/batch", payload, {
+      await axios.post("http://localhost:8081/api/v1/storekeeper/ticket/batch", payload, {
         headers: { "Auth-token": authToken, "Content-Type": "application/json" },
       });
       toast.success("Заявка успешно создана");
@@ -352,7 +353,7 @@ const BatchWriteOffPage = () => {
           </section>
         )}
 
-        {/* Комментарий и кнопка */}
+        {/* Комментарий и кнопка с подтверждением */}
         <section className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <label className="block text-xs font-medium text-gray-600 mb-1">Комментарий</label>
@@ -366,13 +367,18 @@ const BatchWriteOffPage = () => {
             />
           </div>
           <div className="sm:self-end">
-            <button
-              onClick={handleCreateBatchWriteOff}
-              className="w-full sm:w-48 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
-              disabled={loading}
+            <ConfirmationWrapper
+              title="Подтверждение создания заявки"
+              message="Вы уверены, что хотите создать эту групповую заявку?"
+              onConfirm={handleCreateBatchWriteOff}
             >
-              {loading ? "Создание..." : "Создать заявку"}
-            </button>
+              <button
+                className="w-full sm:w-48 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
+                disabled={loading}
+              >
+                {loading ? "Создание..." : "Создать заявку"}
+              </button>
+            </ConfirmationWrapper>
           </div>
         </section>
       </div>

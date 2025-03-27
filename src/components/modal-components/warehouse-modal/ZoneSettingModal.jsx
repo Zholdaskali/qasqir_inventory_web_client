@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import ConfirmationWrapper from "./ConfirmationWrapper";
 
 const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId }) => {
     const [name, setName] = useState(zone?.name || "");
@@ -53,14 +54,19 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId })
                     >
                         Отмена
                     </button>
-                    <button
-                        type="button"
-                        onClick={handleSave}
-                        className="px-4 py-2 bg-main-dull-blue text-white rounded hover:bg-main-purp-dark transition"
-                        disabled={loading}
+                    <ConfirmationWrapper
+                        title="Подтверждение редактирования"
+                        message="Вы уверены, что хотите сохранить изменения для этой зоны?"
+                        onConfirm={handleSave}
                     >
-                        {loading ? "Сохранение..." : "Сохранить"}
-                    </button>
+                        <button
+                            type="button"
+                            className="px-4 py-2 bg-main-dull-blue text-white rounded hover:bg-main-purp-dark transition"
+                            disabled={loading}
+                        >
+                            {loading ? "Сохранение..." : "Сохранить"}
+                        </button>
+                    </ConfirmationWrapper>
                 </div>
             </div>
         </div>

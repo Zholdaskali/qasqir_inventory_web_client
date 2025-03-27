@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
 
 const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -33,27 +34,15 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
         fetchCategories();
     }, [authToken]);
 
-    const handleSave = async (e) => {
-        e.preventDefault();
+    const handleSave = async () => { // Убрал e.preventDefault(), так как вызывается через ConfirmationWrapper
         setLoading(true);
         try {
             await axios.put(
                 `http://localhost:8081/api/v1/warehouse-manager/${nomenclature.id}/nomenclatures`,
-                { 
-                    name, 
-                    article, 
-                    code, 
-                    type, 
-                    tnved_code, 
-                    measurement_unit, 
-                    categoryId,
-                    height,
-                    length,
-                    width
-                },
+                { name, article, code, type, tnved_code, measurement_unit, categoryId, height, length, width },
                 { headers: { "Auth-token": authToken } }
             );
-            toast.success("Номенклатура успешно сохранена");
+            toast.success("Номенклатура сохранена");
             onClose();
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при сохранении");
@@ -63,124 +52,162 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     };
 
     const handleDelete = async () => {
-        const confirmDelete = window.confirm("Вы уверены, что хотите удалить эту номенклатуру?");
-        if (!confirmDelete) return;
-
         try {
             await axios.delete(
                 `http://localhost:8081/api/v1/warehouse-manager/${nomenclature.id}/nomenclatures`,
                 { headers: { "Auth-token": authToken } }
             );
-            toast.success("Номенклатура успешно удалена");
-            onClose(); // Закрыть модальное окно после удаления
+            toast.success("Номенклатура удалена");
+            onClose();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при удалении номенклатуры");
+            toast.error(error.response?.data?.message || "Ошибка при удалении");
         }
     };
 
     return (
-        <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-1/2 lg:w-1/3">
-                <h2 className="text-2xl font-semibold text-main-dull-gray mb-6 text-center">
-                    {nomenclature ? "Редактирование номенклатуры" : "Создание номенклатуры"}
+        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+            <div className="bg-white rounded-lg shadow p-5 w-full max-w-md">
+                <h2 className="text-xl font-semibold text-main-dull-gray mb-4 text-center">
+                    {nomenclature ? "Редактирование" : "Создание"}
                 </h2>
-                <form onSubmit={handleSave} className="space-y-6">
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-3"> {/* Предотвращаем отправку формы */}
                     <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Имя</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={name} onChange={(e) => setName(e.target.value)} required />
+                        <label className="block text-sm text-main-dull-blue">Имя</label>
+                        <input
+                            className="w-full border rounded px-2 py-1 text-sm"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
                     </div>
                     <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Артикль</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={article} onChange={(e) => setArticle(e.target.value)} />
+                        <label className="block text-sm text-main-dull-blue">Артикль</label>
+                        <input
+                            className="w-full border rounded px-2 py-1 text-sm"
+                            value={article}
+                            onChange={(e) => setArticle(e.target.value)}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Код</label>
+                            <input
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={code}
+                                onChange={(e) => setCode(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Тип</label>
+                            <input
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={type}
+                                onChange={(e) => setType(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">TNVED</label>
+                            <input
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={tnved_code}
+                                onChange={(e) => setTnvedCode(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Ед. изм.</label>
+                            <input
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={measurement_unit}
+                                onChange={(e) => setMeasurementUnit(e.target.value)}
+                            />
+                        </div>
                     </div>
                     <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Код</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={code} onChange={(e) => setCode(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Тип</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={type} onChange={(e) => setType(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">TNVED Code</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={tnved_code} onChange={(e) => setTnvedCode(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Единица измерения</label>
-                        <input className="w-full border rounded-lg px-4 py-2 border-main-dull-blue" value={measurement_unit} onChange={(e) => setMeasurementUnit(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Категория</label>
+                        <label className="block text-sm text-main-dull-blue">Категория</label>
                         <select
-                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue"
+                            className="w-full border rounded px-2 py-1 text-sm"
                             value={categoryId}
                             onChange={(e) => setCategoryId(e.target.value)}
                             required
                         >
-                            <option value="" disabled>Выберите категорию</option>
+                            <option value="" disabled>Выберите</option>
                             {categories.map((category) => (
-                                <option key={category.id} value={category.id}>{category.name}</option>
+                                <option key={category.id} value={category.id}>
+                                    {category.name}
+                                </option>
                             ))}
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Высота (м)</label>
-                        <input
-                            type="number"
-                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue"
-                            value={height}
-                            onChange={(e) => setHeight(parseFloat(e.target.value))}
-                            placeholder="Введите высоту"
-                            min="0"
-                            step="0.1"
-                        />
+                    <div className="grid grid-cols-3 gap-3">
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Высота (м)</label>
+                            <input
+                                type="number"
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={height}
+                                onChange={(e) => setHeight(parseFloat(e.target.value))}
+                                min="0"
+                                step="0.1"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Длина (м)</label>
+                            <input
+                                type="number"
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={length}
+                                onChange={(e) => setLength(parseFloat(e.target.value))}
+                                min="0"
+                                step="0.1"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Ширина (м)</label>
+                            <input
+                                type="number"
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={width}
+                                onChange={(e) => setWidth(parseFloat(e.target.value))}
+                                min="0"
+                                step="0.1"
+                            />
+                        </div>
                     </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Длина (м)</label>
-                        <input
-                            type="number"
-                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue"
-                            value={length}
-                            onChange={(e) => setLength(parseFloat(e.target.value))}
-                            placeholder="Введите длину"
-                            min="0"
-                            step="0.1"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Ширина (м)</label>
-                        <input
-                            type="number"
-                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue"
-                            value={width}
-                            onChange={(e) => setWidth(parseFloat(e.target.value))}
-                            placeholder="Введите ширину"
-                            min="0"
-                            step="0.1"
-                        />
-                    </div>
-                    <div className="flex justify-end space-x-4">
+                    <div className="flex justify-end gap-2 pt-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
+                            className="px-3 py-1 bg-gray-300 rounded hover:bg-gray-400 text-sm"
                         >
                             Отмена
                         </button>
-                        <button
-                            type="button"
-                            onClick={handleDelete}
-                            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                        <ConfirmationWrapper
+                            title="Подтверждение удаления"
+                            message="Вы уверены, что хотите удалить эту номенклатуру?"
+                            onConfirm={handleDelete}
                         >
-                            Удалить
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-main-dull-blue text-white rounded hover:bg-main-purp-dark transition"
-                            disabled={loading}
+                            <button
+                                type="button"
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                            >
+                                Удалить
+                            </button>
+                        </ConfirmationWrapper>
+                        <ConfirmationWrapper
+                            title="Подтверждение сохранения"
+                            message="Вы уверены, что хотите сохранить изменения для этой номенклатуры?"
+                            onConfirm={handleSave}
                         >
-                            {loading ? "Сохранение..." : nomenclature ? "Сохранить" : "Создать"}
-                        </button>
+                            <button
+                                type="button"
+                                className="px-3 py-1 bg-main-dull-blue text-white rounded hover:bg-main-purp-dark text-sm"
+                                disabled={loading}
+                            >
+                                {loading ? "Сохранение..." : "Сохранить"}
+                            </button>
+                        </ConfirmationWrapper>
                     </div>
                 </form>
             </div>

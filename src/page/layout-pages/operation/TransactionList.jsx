@@ -16,7 +16,7 @@ const TransactionList = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        "http://localhost:8081/api/v1/storekeeper/document/transaction",
+        "http://localhost:8081/api/v1/warehouse-manager/document/transaction",
         {
           headers: { "Auth-token": authToken },
           params: { startDate, endDate },
@@ -25,9 +25,9 @@ const TransactionList = () => {
       const sortedDocuments = (Array.isArray(response.data.body) ? response.data.body : [])
         .map(doc => ({
           ...doc,
-          transactions: doc.transactions.sort((a, b) => new Date(b.date) - new Date(a.date)) // Сортировка транзакций по убыванию
+          transactions: doc.transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         }))
-        .sort((a, b) => new Date(b.document.documentDate) - new Date(a.document.documentDate)); // Сортировка документов по убыванию
+        .sort((a, b) => new Date(b.document.createdAt) - new Date(a.document.createdAt));
       setDocuments(sortedDocuments);
       toast.success("Документы с транзакциями успешно загружены");
     } catch (error) {
@@ -50,7 +50,7 @@ const TransactionList = () => {
   const handleDownloadDocument = async (documentId) => {
     try {
       const response = await axios.get(
-        `http://localhost:8081/api/v1/storekeeper/document/${documentId}/download`,
+        `http://localhost:8081/api/v1/warehouse-manager/document/${documentId}/download`,
         {
           headers: { "Auth-token": authToken },
           responseType: "blob",
@@ -79,15 +79,13 @@ const TransactionList = () => {
 
   const exportDocumentToCSV = (docWithTransactions) => {
     try {
-      const document = docWithTransactions.document; // Извлекаем объект document
-      const transactions = docWithTransactions.transactions; // Извлекаем массив transactions
+      const document = docWithTransactions.document;
+      const transactions = docWithTransactions.transactions;
 
-      // Проверка входных данных
       if (!document || !transactions || !Array.isArray(transactions)) {
         throw new Error("Некорректные данные документа или транзакции отсутствуют");
       }
 
-      // Заголовки CSV
       const headers = [
         "Номер документа",
         "Тип документа",
@@ -104,7 +102,6 @@ const TransactionList = () => {
         "Дата создания",
       ];
 
-      // Формирование строк с безопасной обработкой данных
       const rows = transactions.map((transaction) => [
         `"${document.documentNumber || "N/A"}"`,
         `"${document.documentType || "N/A"}"`,
@@ -121,10 +118,9 @@ const TransactionList = () => {
         transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
       ]);
 
-      // Создание CSV-контента
       const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
       const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a"); // Используем глобальный document
+      const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
       link.setAttribute("download", `document_${document.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`);
       document.body.appendChild(link);

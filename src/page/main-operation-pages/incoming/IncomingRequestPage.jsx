@@ -39,7 +39,7 @@ const IncomingRequestPage = () => {
       try {
         const [warehousesRes, suppliersRes] = await Promise.all([
           axios.get("http://localhost:8081/api/v1/employee/warehouses", { headers: { "Auth-token": authToken } }),
-          axios.get("http://localhost:8081/api/v1/warehouse-manager/suppliers", { headers: { "Auth-token": authToken } })
+          axios.get("http://localhost:8081/api/v1/employee/suppliers", { headers: { "Auth-token": authToken } })
         ]);
         setWarehouses(warehousesRes.data.body);
         setSuppliers(suppliersRes.data.body);
@@ -60,7 +60,7 @@ const IncomingRequestPage = () => {
     if (nomenclaturesLoaded) return; // Не загружаем повторно
     setIsLoading(true);
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/warehouse-manager/nomenclatures", {
+      const response = await axios.get("http://localhost:8081/api/v1/employee/nomenclatures", {
         headers: { "Auth-token": authToken },
       });
       setNomenclatureOptions(response.data.body);
@@ -87,7 +87,7 @@ const IncomingRequestPage = () => {
   const fetchContainersForZone = useCallback(async (zoneId) => {
     if (containersByZone[zoneId]) return;
     try {
-      const response = await axios.get(`http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${zoneId}`, 
+      const response = await axios.get(`http://localhost:8081/api/v1/employee/warehouse/container/${zoneId}`, 
         { headers: { "Auth-token": authToken } });
       setContainersByZone(prev => ({ ...prev, [zoneId]: response.data.body }));
     } catch (error) {
