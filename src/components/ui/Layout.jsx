@@ -99,9 +99,6 @@ const Layout = ({ setIsAuthenticated }) => {
                             <NavLink to="/ticket-tabs" className="flex items-center gap-2 text-sm">
                                 <HiTicket size={27} /> <p>Заявки</p>
                             </NavLink>
-                            <NavLink to="/warehouse-tabs" className="flex items-center gap-2 text-sm">
-                                <ImTab size={24} /> <p>Операции</p>
-                            </NavLink>
                             <button
                                 onClick={() => setOperationLogsList(!operationLogsList)}
                                 className="flex items-center justify-between w-full text-sm"

@@ -5,7 +5,7 @@ import { useSelector } from "react-redux";
 import Notification from "../../notification/Notification";
 import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
 
-const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => { // Исправил supplier на customer
+const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => { 
     const authToken = useSelector((state) => state.token.token);
 
     const [name, setName] = useState(customer.name);

@@ -14,6 +14,17 @@ import { toast } from 'react-toastify';
 import { setUser } from '../../../store/slices/userSlice';
 import { NavLink } from 'react-router-dom';
 
+// Функция для перевода ролей
+const translateRole = (role) => {
+  const roleTranslations = {
+    'employee': 'Сотрудник',
+    'admin': 'Администратор',
+    'warehouse_manager': 'Менеджер склада',
+    'storekeeper': 'Кладовщик'
+  };
+  return roleTranslations[role] || role;
+};
+
 const SettingsPage = () => {
     const authToken = Cookies.get('authToken');
     const user = useSelector((state) => state.user);
@@ -129,10 +140,10 @@ const SettingsPage = () => {
                                 {Array.isArray(user.userRoles)
                                     ? user.userRoles.map((role, index) => (
                                         <li key={index} className="bg-gray-100 rounded-md mr-2.5 px-2 py-1 mb-2">
-                                            {role}
+                                            {translateRole(role)}
                                         </li>
                                     ))
-                                    : <li>{user.userRoles || "Нет ролей"}</li>
+                                    : <li>{translateRole(user.userRoles) || "Нет ролей"}</li>
                                 }
                             </ul>
                         </div>
