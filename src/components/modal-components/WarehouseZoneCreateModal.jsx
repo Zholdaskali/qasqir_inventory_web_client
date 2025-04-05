@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import * as THREE from 'three';
 import ReactDOM from "react-dom";
+import ConfirmationWrapper from "../ui/ConfirmationWrapper";
+import { API_WAREHOUSE_ZONE_CREATE } from "../../api/API";
 
 const Modal = ({ children, onClose }) => {
     return ReactDOM.createPortal(
@@ -16,21 +18,22 @@ const Modal = ({ children, onClose }) => {
     );
 };
 
-const WarehouseZoneCreateModal = ({ 
-    setIsWarehouseSaveModalOpen, 
-    warehouseId, 
-    parentId, 
-    width: parentWidth, 
-    height: parentHeight, 
-    length: parentLength, 
-    setIsZoneCreated 
+const WarehouseZoneCreateModal = ({
+    setIsWarehouseSaveModalOpen,
+    warehouseId,
+    parentId,
+    width: parentWidth,
+    height: parentHeight,
+    length: parentLength,
+    setIsZoneCreated,
+    parentZoneName // Новый пропс для имени родительской зоны
 }) => {
-    const [warehouseZoneName, setWarehouseZoneName] = useState("");
+    const [warehouseZoneName, setWarehouseZoneName] = useState(parentZoneName ? `${parentZoneName} - ` : "");
     const [height, setHeight] = useState(0);
     const [length, setLength] = useState(0);
     const [width, setWidth] = useState(0);
     const [isFormError, setIsFormError] = useState(false);
-    const [formErrors, setFormErrors] = useState({ height: false, length: false, width: false }); // Добавлено состояние для ошибок размеров
+    const [formErrors, setFormErrors] = useState({ height: false, length: false, width: false });
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
     const canvasRef = useRef(null);
@@ -56,12 +59,26 @@ const WarehouseZoneCreateModal = ({
         }));
     };
 
+    // Обработка ввода имени подзоны
+    const handleNameChange = (e) => {
+        const newValue = e.target.value;
+        const prefix = parentZoneName ? `${parentZoneName} - ` : "";
+
+        // Если значение не начинается с префикса, добавляем его
+        if (!newValue.startsWith(prefix)) {
+            setWarehouseZoneName(`${prefix}${newValue}`);
+        } else {
+            setWarehouseZoneName(newValue);
+        }
+        setIsFormError(false);
+    };
+
     // Инициализация 3D сцены
     useEffect(() => {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true });
-        
+
         renderer.setSize(300, 300);
         camera.position.set(5, 5, 5);
         camera.lookAt(0, 0, 0);
@@ -125,9 +142,7 @@ const WarehouseZoneCreateModal = ({
         }
     }, [length, height, width, parentLength, parentHeight, parentWidth]);
 
-    const saveWarehouseZone = async (e) => {
-        e.preventDefault();
-
+    const saveWarehouseZone = async () => {
         if (!warehouseZoneName.trim()) {
             setIsFormError(true);
             toast.error("Заполните все обязательные поля");
@@ -141,16 +156,16 @@ const WarehouseZoneCreateModal = ({
 
         try {
             const response = await axios.post(
-                `http://localhost:8081/api/v1/warehouse-manager/warehouses/${warehouseId}/zones?userId=${userId}`,
-                { 
-                    name: warehouseZoneName, 
+                `${API_WAREHOUSE_ZONE_CREATE}/${warehouseId}/zones?userId=${userId}`,
+                {
+                    name: warehouseZoneName,
                     parentId: parentId,
                     height: height,
                     length: length,
                     width: width
                 },
-                { 
-                    headers: { "Auth-token": authToken } 
+                {
+                    headers: { "Auth-token": authToken }
                 }
             );
 
@@ -165,7 +180,7 @@ const WarehouseZoneCreateModal = ({
         <Modal onClose={() => setIsWarehouseSaveModalOpen(false)}>
             <h2 className="text-2xl font-semibold text-gray-800 mb-8 text-center">Добавить подзону склада</h2>
             <div className="flex flex-col md:flex-row gap-8">
-                <form onSubmit={saveWarehouseZone} className="space-y-6 flex-1">
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-6 flex-1">
                     <div>
                         <label htmlFor="name" className="block text-left mb-2 text-gray-700 font-medium">Название подзоны</label>
                         <input
@@ -173,11 +188,8 @@ const WarehouseZoneCreateModal = ({
                             type="text"
                             className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${isFormError && !warehouseZoneName.trim() ? 'border-red-500' : 'border-gray-300'}`}
                             value={warehouseZoneName}
-                            onChange={(e) => {
-                                setWarehouseZoneName(e.target.value);
-                                setIsFormError(false);
-                            }}
-                            placeholder="Введите название подзоны"
+                            onChange={handleNameChange}
+                            placeholder={parentZoneName ? `${parentZoneName} - ` : "Введите название подзоны"}
                         />
                         {isFormError && !warehouseZoneName.trim() && <p className="text-red-500 text-sm mt-1">Это поле обязательно</p>}
                     </div>
@@ -235,12 +247,18 @@ const WarehouseZoneCreateModal = ({
                         >
                             Отмена
                         </button>
-                        <button
-                            type="submit"
-                            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+                        <ConfirmationWrapper
+                            title="Подтверждение сохранения"
+                            message="Вы уверены, что хотите создать эту подзону?"
+                            onConfirm={saveWarehouseZone}
                         >
-                            Сохранить
-                        </button>
+                            <button
+                                type="button"
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+                            >
+                                Сохранить
+                            </button>
+                        </ConfirmationWrapper>
                     </div>
                 </form>
                 <div className="flex-1 flex flex-col items-center justify-center">

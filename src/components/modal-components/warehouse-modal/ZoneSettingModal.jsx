@@ -1,26 +1,43 @@
+// ZoneSettingModal.jsx
 import { useState } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import ConfirmationWrapper from "./ConfirmationWrapper";
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_UPDATE_WAREHOUSE_ZONE } from "../../../api/API";
 
-const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId }) => {
+const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, onSave }) => {
     const [name, setName] = useState(zone?.name || "");
-    const [id, setId] = useState(zone?.id || "");
-    const [parentId, setParentId] = useState(zone?.parentId || "");
+    const [width, setWidth] = useState(zone?.width || 10);
+    const [height, setHeight] = useState(zone?.height || 5);
+    const [length, setLength] = useState(zone?.length || 10);
+    const [canStoreItems, setCanStoreItems] = useState(zone?.canStoreItems ?? true);
+    const [id] = useState(zone?.id || "");
+    const [parentId] = useState(zone?.parentId || null);
     const [loading, setLoading] = useState(false);
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
 
     const handleSave = async () => {
         setLoading(true);
+        const updatedZone = {
+            id,
+            name,
+            width: Number(width),
+            height: Number(height),
+            length: Number(length),
+            canStoreItems,
+            parentId,
+        };
+
         try {
-            await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/warehouses/${warehouseId}/zones?userId=${userId}`,
-                { id, name, parentId },
+            const response = await axios.put(
+                `${API_UPDATE_WAREHOUSE_ZONE}/${warehouseId}/zones?userId=${userId}`,
+                updatedZone,
                 { headers: { "Auth-token": authToken } }
             );
             toast.success("Зона успешно отредактирована");
+            onSave(updatedZone); // Передаем обновленные данные в родительский компонент
             setIsSettingModalOpen(false);
         } catch (error) {
             toast.error("Ошибка при сохранении");
@@ -44,6 +61,50 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId })
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Введите название зоны"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Ширина</label>
+                        <input
+                            type="number"
+                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue focus:ring-2 focus:ring-main-dull-blue"
+                            value={width}
+                            onChange={(e) => setWidth(e.target.value)}
+                            placeholder="Ширина зоны"
+                            min="1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Высота</label>
+                        <input
+                            type="number"
+                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue focus:ring-2 focus:ring-main-dull-blue"
+                            value={height}
+                            onChange={(e) => setHeight(e.target.value)}
+                            placeholder="Высота зоны"
+                            min="1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Длина</label>
+                        <input
+                            type="number"
+                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue focus:ring-2 focus:ring-main-dull-blue"
+                            value={length}
+                            onChange={(e) => setLength(e.target.value)}
+                            placeholder="Длина зоны"
+                            min="1"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-left mb-2 text-main-dull-blue">Может хранить предметы</label>
+                        <select
+                            className="w-full border rounded-lg px-4 py-2 border-main-dull-blue focus:ring-2 focus:ring-main-dull-blue"
+                            value={canStoreItems ? "true" : "false"}
+                            onChange={(e) => setCanStoreItems(e.target.value === "true")}
+                        >
+                            <option value="true">Да</option>
+                            <option value="false">Нет</option>
+                        </select>
                     </div>
                 </div>
                 <div className="flex justify-end mt-6 space-x-4">

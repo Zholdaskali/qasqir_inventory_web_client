@@ -186,7 +186,7 @@ const WarehouseList = () => {
             </div>
 
             <button
-                className="fixed bottom-6 right-6 w-10 h-10 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center"
+                className="fixed bottom-6 right-6 w-10 h-10 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center "
                 onClick={() => setIsWarehouseSaveModalOpen(true)}
                 title="Добавить склад"
             >

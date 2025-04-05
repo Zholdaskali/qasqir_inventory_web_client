@@ -3,10 +3,11 @@ import { ArrowUpRight, ArrowDownRight, Filter, Download, ChevronLeft, ChevronRig
 import { useSelector } from "react-redux";
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { API_GET_DASHBOARD_STATS, API_GET_CURRENT_DASHBOARD, API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API";
 
 const API_DASHBOARD_STATS = 'http://localhost:8081/api/v1/employee/dashboard/stats';
 const API_DASHBOARD_CURRENT = 'http://localhost:8081/api/v1/employee/dashboard/current';
-const API_TRANSACTIONS = 'http://localhost:8081/api/v1/employee/transactions'; // Предполагаемый эндпоинт для транзакций
+const API_TRANSACTIONS = 'http://localhost:8081/api/v1/warehouse-manager/document/transaction';
 
 const DashboardPage = () => {
     const [dashboardData, setDashboardData] = useState({
@@ -15,11 +16,11 @@ const DashboardPage = () => {
         transactionCount: 0,
         topNomenclatures: [],
         lowStockItems: [],
-        demandForecast: [], // Добавлено
-        trendingItems: [],  // Добавлено
+        demandForecast: [],
+        trendingItems: [],
         zoneStats: [],
     });
-    const [transactions, setTransactions] = useState([]); // Состояние для транзакций
+    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [startDate, setStartDate] = useState('');
@@ -77,7 +78,7 @@ const DashboardPage = () => {
     const fetchDashboardStats = async (start, end) => {
         try {
             setLoading(true);
-            const response = await axios.get(API_DASHBOARD_STATS, {
+            const response = await axios.get(API_GET_DASHBOARD_STATS, {
                 params: { startDate: start, endDate: end },
                 headers: { 'Auth-token': authToken },
             });
@@ -87,10 +88,10 @@ const DashboardPage = () => {
                 zoneStats: Array.isArray(data.zoneStats) ? data.zoneStats : [],
                 topNomenclatures: Array.isArray(data.topNomenclatures) ? data.topNomenclatures : [],
                 lowStockItems: Array.isArray(data.lowStockItems) ? data.lowStockItems : [],
-                demandForecast: Array.isArray(data.demandForecast) ? data.demandForecast : [], // Добавлено
-                trendingItems: Array.isArray(data.trendingItems) ? data.trendingItems : [],   // Добавлено
+                demandForecast: Array.isArray(data.demandForecast) ? data.demandForecast : [],
+                trendingItems: Array.isArray(data.trendingItems) ? data.trendingItems : [],
             });
-            fetchTransactions(start, end); // Загружаем транзакции
+            await fetchTransactions(start, end);
             setLoading(false);
             toast.success('Данные загружены');
         } catch (error) {
@@ -103,7 +104,7 @@ const DashboardPage = () => {
     const fetchCurrentDashboardStats = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(API_DASHBOARD_CURRENT, {
+            const response = await axios.get(API_GET_CURRENT_DASHBOARD, {
                 headers: { 'Auth-token': authToken },
             });
             const data = response.data.body || response.data;
@@ -115,7 +116,7 @@ const DashboardPage = () => {
                 demandForecast: Array.isArray(data.demandForecast) ? data.demandForecast : [],
                 trendingItems: Array.isArray(data.trendingItems) ? data.trendingItems : [],
             });
-            fetchTransactions(); // Загружаем текущие транзакции
+            await fetchTransactions();
             setLoading(false);
             toast.success('Текущие данные загружены');
         } catch (error) {
@@ -127,12 +128,15 @@ const DashboardPage = () => {
 
     const fetchTransactions = async (start, end) => {
         try {
-            const response = await axios.get(API_TRANSACTIONS, {
+            const response = await axios.get(API_GET_DOCUMENTS_WITH_TRANSACTIONS, {
                 params: start && end ? { startDate: start, endDate: end } : {},
                 headers: { 'Auth-token': authToken },
             });
             const data = response.data.body || response.data;
-            setTransactions(Array.isArray(data) ? data : []);
+            const allTransactions = Array.isArray(data) 
+                ? data.flatMap(doc => doc.transactions || []) 
+                : [];
+            setTransactions(allTransactions);
         } catch (error) {
             console.error('Ошибка загрузки транзакций:', error);
             setTransactions([]);
@@ -155,13 +159,13 @@ const DashboardPage = () => {
             headers.join(','),
             statsRow.join(','),
             'Низкий запас,,,',
-            ...(dashboardData.lowStockItems || []).map(item => [item.name, '', item.totalQuantity ?? 0].join(',')),
+            ...(dashboardData.lowStockItems || []).map(item => [item.nomenclatureName || '-', '', item.totalQuantity ?? 0].join(',')),
             'Прогноз спроса,,,',
-            ...(dashboardData.demandForecast || []).map(item => [item.name, '', item.totalQuantity ?? 0].join(',')),
+            ...(dashboardData.demandForecast || []).map(item => [item.nomenclatureName || '-', '', item.totalQuantity ?? 0].join(',')),
             'Тенденции,,,',
-            ...(dashboardData.trendingItems || []).map(item => [item.name, '', item.totalQuantity ?? 0].join(',')),
+            ...(dashboardData.trendingItems || []).map(item => [item.nomenclatureName || '-', '', item.totalQuantity ?? 0].join(',')),
             'Зоны,,,',
-            ...(dashboardData.zoneStats || []).map(zone => [zone.zoneName, zone.warehouseName, '', '', `${zone.fillPercentage ?? 0}%`].join(','))
+            ...(dashboardData.zoneStats || []).map(zone => [zone.zoneName || '-', zone.warehouseName || '-', '', '', `${zone.fillPercentage ?? 0}%`].join(','))
         ].join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -408,7 +412,7 @@ const DashboardPage = () => {
                                             <td className="py-2" style={{ color: txn.quantity > 0 ? 'green' : 'red' }}>
                                                 {txn.quantity > 0 ? `+${txn.quantity}` : txn.quantity}
                                             </td>
-                                            <td className="py-2">{new Date(txn.date).toLocaleDateString() || '-'}</td>
+                                            <td className="py-2">{txn.date ? new Date(txn.date).toLocaleDateString() : '-'}</td>
                                         </tr>
                                     ))
                                 ) : (
@@ -436,7 +440,7 @@ const DashboardPage = () => {
                                     dashboardData.demandForecast.map((item) => (
                                         <tr key={item.id} className="border-b hover:bg-gray-50">
                                             <td className="py-2">{item.nomenclatureName || '-'}</td>
-                                            <td className="py-2">{item.totalQuantity.toFixed(1) || 0}</td>
+                                            <td className="py-2">{item.totalQuantity?.toFixed(1) || 0}</td>
                                         </tr>
                                     ))
                                 ) : (

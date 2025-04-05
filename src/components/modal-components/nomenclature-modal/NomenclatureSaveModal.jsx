@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { API_CREATE_NOMENCLATURE } from "../../../api/API";
 
 const NomenclatureSaveModal = ({ onClose, categoryId }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -53,8 +54,9 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
             };
 
             try {
+                const url = API_CREATE_NOMENCLATURE.replace("{categoryId}", categoryId);
                 await axios.post(
-                    `http://localhost:8081/api/v1/warehouse-manager/${categoryId}/nomenclatures`,
+                    url,
                     data,
                     { headers: { "Auth-token": authToken } }
                 );

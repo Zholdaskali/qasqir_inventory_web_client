@@ -3,6 +3,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_UPDATE_CATEGORY, API_DELETE_CATEGORY } from "../../../api/API";
+
 
 const CategorySettingsModal = ({ category, onClose }) => {
     const [categoryName, setCategoryName] = useState(category?.name || "");
@@ -15,7 +17,7 @@ const CategorySettingsModal = ({ category, onClose }) => {
         setCategoryName(category?.name || "");
     }, [category]);
 
-    const handleSaveCategory = async () => { // Убрал e.preventDefault(), так как вызывается через ConfirmationWrapper
+    const handleSaveCategory = async () => { 
         if (!categoryName.trim()) {
             setIsFormError(true);
             toast.error("Заполните все поля");
@@ -25,7 +27,7 @@ const CategorySettingsModal = ({ category, onClose }) => {
         setIsLoading(true);
         try {
             const response = await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/categories/${category.id}`,
+                `${API_UPDATE_CATEGORY}/${category.id}`,
                 { name: categoryName, updateBy: userId },
                 { headers: { "Auth-token": authToken } }
             );
@@ -44,7 +46,7 @@ const CategorySettingsModal = ({ category, onClose }) => {
         setIsLoading(true);
         try {
             await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/categories/${category.id}`,
+                `${API_DELETE_CATEGORY}/${category.id}`,
                 { headers: { "Auth-token": authToken } }
             );
             toast.success("Категория успешно удалена");

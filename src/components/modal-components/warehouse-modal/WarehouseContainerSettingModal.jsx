@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { useSelector } from 'react-redux'; // Добавлен импорт
-import ConfirmationWrapper from "../../ui/ConfirmationWrapper"; // Добавлен импорт ConfirmationWrapper
+import { useSelector } from 'react-redux';
+import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_UPDATE_WAREHOUSE_CONTAINER } from "../../../api/API";
 
 const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, container, onClose }) => {
     const [serialNumber, setSerialNumber] = useState(container.serialNumber);
@@ -26,7 +27,7 @@ const WarehouseContainerSettingModal = ({ setIsContainerSettingModalOpen, contai
             };
 
             const response = await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/warehouse/container/${container.id}`,
+                `${API_UPDATE_WAREHOUSE_CONTAINER}/${container.id}`, // Замена на константу с динамическим параметром
                 payload,
                 {
                     headers: { "Auth-token": authToken },

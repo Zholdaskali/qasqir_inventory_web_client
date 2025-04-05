@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_GET_CATEGORIES, API_UPDATE_NOMENCLATURE, API_DELETE_NOMENCLATURE } from "../../../api/API";
 
 const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -23,7 +24,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await axios.get("http://localhost:8081/api/v1/categories", {
+                const response = await axios.get(API_GET_CATEGORIES, { // Замена на константу
                     headers: { "Auth-token": authToken },
                 });
                 setCategories(response.data);
@@ -38,7 +39,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
         setLoading(true);
         try {
             await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/${nomenclature.id}/nomenclatures`,
+                `${API_UPDATE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`, // Замена на константу
                 { name, article, code, type, tnved_code, measurement_unit, categoryId, height, length, width },
                 { headers: { "Auth-token": authToken } }
             );
@@ -54,7 +55,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const handleDelete = async () => {
         try {
             await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/${nomenclature.id}/nomenclatures`,
+                `${API_DELETE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`, // Замена на константу
                 { headers: { "Auth-token": authToken } }
             );
             toast.success("Номенклатура удалена");

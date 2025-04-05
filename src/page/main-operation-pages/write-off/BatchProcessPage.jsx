@@ -7,6 +7,14 @@ import { List, AutoSizer } from "react-virtualized";
 import debounce from "lodash/debounce";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
+// Импорт API-путей
+import {
+  API_GET_WAREHOUSE_LIST, // Замена для http://localhost:8081/api/v1/employee/warehouses
+  API_GET_ALL_CUSTOMERS,  // Замена для http://localhost:8081/api/v1/employee/customers
+  API_GET_INVENTORY_ITEMS_BY_WAREHOUSE, // Замена для http://localhost:8081/api/v1/user/warehouse/items/{warehouseId}
+  API_ADD_BATCH_WRITE_OFF_TICKETS, // Замена для http://localhost:8081/api/v1/storekeeper/ticket/batch
+} from "../../../api/API";
+
 const BatchWriteOffPage = () => {
   const authToken = useSelector((state) => state.token.token);
   const userId = useSelector((state) => state.user.userId);
@@ -46,7 +54,7 @@ const BatchWriteOffPage = () => {
     if (!authToken) return;
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/employee/warehouses", {
+      const response = await axios.get(API_GET_WAREHOUSE_LIST, {
         headers: { "Auth-token": authToken },
       });
       setWarehouses(Array.isArray(response.data.body) ? response.data.body : []);
@@ -61,7 +69,7 @@ const BatchWriteOffPage = () => {
     if (!authToken || documentType !== "SALES") return;
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/employee/customers", {
+      const response = await axios.get(API_GET_ALL_CUSTOMERS, {
         headers: { "Auth-token": authToken },
       });
       setCustomers(Array.isArray(response.data.body) ? response.data.body : []);
@@ -77,7 +85,7 @@ const BatchWriteOffPage = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:8081/api/v1/user/warehouse/items/${selectedWarehouseId}`,
+        `${API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", selectedWarehouseId)}`,
         { headers: { "Auth-token": authToken } }
       );
       const inventory = Array.isArray(response.data.body.inventory) ? response.data.body.inventory : [];
@@ -155,7 +163,7 @@ const BatchWriteOffPage = () => {
           quantity: quantities[item.id],
         })),
       };
-      await axios.post("http://localhost:8081/api/v1/storekeeper/ticket/batch", payload, {
+      await axios.post(API_ADD_BATCH_WRITE_OFF_TICKETS, payload, {
         headers: { "Auth-token": authToken, "Content-Type": "application/json" },
       });
       toast.success("Заявка успешно создана");

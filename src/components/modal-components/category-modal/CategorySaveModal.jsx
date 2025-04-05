@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
+import { API_CREATE_CATEGORY } from "../../../api/API";
 
 const CategorySaveModal = ({ onClose, parentId }) => {
     const [categoryName, setCategoryName] = useState("");
@@ -20,7 +21,7 @@ const CategorySaveModal = ({ onClose, parentId }) => {
 
         try {
             const response = await axios.post(
-                `http://localhost:8081/api/v1/warehouse-manager/categories?userId=${userId}`,
+                `${API_CREATE_CATEGORY}?userId=${userId}`,
                 { name: categoryName, parentId: parentId },
                 { headers: { "Auth-token": authToken } }
             );

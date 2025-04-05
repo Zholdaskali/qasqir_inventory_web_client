@@ -66,175 +66,170 @@ const SettingsPage = () => {
         try {
             const response = await axios.post(
                 API_EMAIL_VERIFY,
-                {
-                    email: user.email,
-                    code,
-                },
+                { email: user.email, code },
                 { headers: { 'Auth-token': authToken } }
             );
-            dispatch(
-                setUser({
-                    ...user,
-                    emailVerified: response.data,
-                })
-            );
+            dispatch(setUser({ ...user, emailVerified: response.data }));
             toast.success(response.data || 'Успешно');
             setEmailVerifyModal(false);
         } catch (error) {
-            toast.error(
-                error.response?.data?.message || 'Ошибка при проверке кода'
-            );
+            toast.error(error.response?.data?.message || 'Ошибка при проверке кода');
         }
     };
 
     const handleInputChange = (e, fieldName, nextInput, prevInput) => {
         const value = e.target.value;
         if (value.length === 1) {
-            setVerificationCode((prevState) => ({
-                ...prevState,
-                [fieldName]: value,
-            }));
-            if (nextInput) {
-                nextInput.focus();
-            }
+            setVerificationCode((prevState) => ({ ...prevState, [fieldName]: value }));
+            if (nextInput) nextInput.focus();
         } else if (value.length === 0 && e.key === "Backspace" && prevInput) {
             prevInput.focus();
         }
     };
 
     return (
-        <div className="bg-white w-full md:w-4/5 h-[100vh] md:h-[70vh] self-center px-5 md:px-10 rounded-xl shadow-sm flex flex-col items-center justify-between py-5 overflow-y-scroll">
-            <div className='w-full flex items-center gap-x-3 overflow-y-auto'>
-                <img src={userIcon} alt="" />
-                <h1 className='uppercase text-main-dull-blue font-medium'>Ваш профиль</h1>
+        <div className="bg-white w-full md:w-4/5 max-w-4xl mx-auto h-[90vh] md:h-[70vh] rounded-2xl shadow-lg flex flex-col items-center py-8 px-6 md:px-12 overflow-y-auto">
+            <div className="w-full flex items-center gap-x-3 mb-8">
+                <img src={userIcon} alt="User Icon" className="w-6 h-6" />
+                <h1 className="uppercase text-main-dull-blue text-lg md:text-xl font-semibold tracking-wide">
+                    Ваш профиль
+                </h1>
             </div>
-            <div className='flex flex-col md:flex-row w-full '>
-                <div className="flex flex-col items-center gap-y-12 w-full md:w-1/3">
-                    <img src={user.imagePath ? user.imagePath : avatar} alt="User Avatar" className="w-3/4" />
-                    <button className="flex items-center border-2 border-main-dull-blue w-full md:w-1/3 py-2 rounded-xl gap-x-2 justify-center">
-                        <p>Загрузить</p>
-                        <img src={camera} alt="Camera Icon" />
+
+            <div className="flex flex-col md:flex-row w-full gap-8">
+                <div className="flex flex-col items-center gap-y-6 w-full md:w-1/3">
+                    <img
+                        src={user.imagePath ? user.imagePath : avatar}
+                        alt="User Avatar"
+                        className="w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-gray-200 object-cover shadow-sm"
+                    />
+                    <button className="flex items-center gap-x-2 border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md">
+                        <span>Загрузить</span>
+                        <img src={camera} alt="Camera Icon" className="w-5 h-5" />
                     </button>
-                    <div className="flex w-full md:w-1/2 uppercase text-xs justify-between">
-                        <p>Дата регистрации</p>
+                    <div className="text-center text-xs text-gray-500">
+                        <p className="font-medium">Дата регистрации:</p>
                         <p>{user.registrationDate || "Не указано"}</p>
                     </div>
                 </div>
-                <div className="flex flex-col w-full md:w-1/2 gap-y-5 mt-5 md:mt-0 ">
-                    <div className="flex flex-col gap-y-7 font-medium">
-                        <div className="space-y-1">
-                            <p>Имя пользователя:</p>
-                            <p>{user.userName || "Не указано"}</p>
+
+                <div className="flex flex-col w-full md:w-2/3 gap-y-6">
+                    <div className="space-y-4 text-sm">
+                        <div>
+                            <p className="text-gray-600 font-medium">Имя пользователя:</p>
+                            <p className="text-gray-800">{user.userName || "Не указано"}</p>
                         </div>
-                        <div className="space-y-1">
-                            <p>Почта пользователя:</p>
-                            <p>{user.email || "Не указано"}</p>
+                        <div>
+                            <p className="text-gray-600 font-medium">Почта пользователя:</p>
+                            <p className="text-gray-800">{user.email || "Не указано"}</p>
                         </div>
-                        <div className="space-y-1">
-                            <p>Номер пользователя:</p>
-                            <p>{user.userNumber || "Не указано"}</p>
+                        <div>
+                            <p className="text-gray-600 font-medium">Номер пользователя:</p>
+                            <p className="text-gray-800">{user.userNumber || "Не указано"}</p>
                         </div>
-                        <div className="space-y-1">
-                            <p>Роли пользователя:</p>
-                            <ul className="flex flex-wrap">
-                                {Array.isArray(user.userRoles)
-                                    ? user.userRoles.map((role, index) => (
-                                        <li key={index} className="bg-gray-100 rounded-md mr-2.5 px-2 py-1 mb-2">
+                        <div>
+                            <p className="text-gray-600 font-medium">Роли пользователя:</p>
+                            <ul className="flex flex-wrap gap-2 mt-1">
+                                {Array.isArray(user.userRoles) ? (
+                                    user.userRoles.map((role, index) => (
+                                        <li
+                                            key={index}
+                                            className="bg-gray-100 rounded-full px-3 py-1 text-xs text-gray-700 shadow-sm"
+                                        >
                                             {translateRole(role)}
                                         </li>
                                     ))
-                                    : <li>{translateRole(user.userRoles) || "Нет ролей"}</li>
-                                }
+                                ) : (
+                                    <li className="text-gray-600">{translateRole(user.userRoles) || "Нет ролей"}</li>
+                                )}
                             </ul>
                         </div>
-                        <NavLink to="/edit-profile" className="flex items-center border-2 border-main-dull-blue w-full md:w-1/2 py-2 rounded-xl gap-x-2 justify-center">
-                            <p>Изменить профиль</p>
-                            <img src={pen} alt="Pen Icon" className="w-4 h-4" />
-                        </NavLink>
-                        <div className="flex flex-col md:flex-row w-full gap-x-4 items-center justify-between">
-                            <p className="w-full md:w-1/3 mb-2.5">Статус почты : </p>
-                            <div className="w-full md:w-1/2">
-                                <div
-                                    className={`${user.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"
-                                        } text-center flex items-center justify-center px-2 rounded-full mb-2.5`}
-                                >
-                                    <div
-                                        className={`${user.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"
-                                            } h-3 w-3 rounded-full`}
-                                    ></div>
-                                    <p 
-                                        className={`${user.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"
-                                            } px-2 py-1 rounded `}
-                                    >
-                                        {`${user.emailVerified ? "Подтверждено" : "Не подтверждено"}`}
-                                    </p>
-                                </div>
-                            </div>
-                            {!user.emailVerified ? (
-                                <button
-                                    className="bg-main-dull-blue w-full md:w-1/3 text-white px-4 rounded-xl py-1 mt-2 md:mt-0"
-                                    onClick={() => emailVerifyGenerate(user.email)}
-                                    disabled={loading}
-                                >
-                                    Подтвердить
-                                </button>
-                            ) : (
-                                <div className="w-full md:w-1/3"></div>
-                            )}
+                    </div>
+
+                    <NavLink
+                        to="/edit-profile"
+                        className="flex items-center justify-center gap-x-2 border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md w-full md:w-auto"
+                    >
+                        <span>Изменить профиль</span>
+                        <img src={pen} alt="Pen Icon" className="w-4 h-4" />
+                    </NavLink>
+
+                    <div className="flex flex-col md:flex-row items-center gap-4">
+                        <p className="text-gray-600 font-medium w-full md:w-1/3">Статус почты:</p>
+                        <div className={`flex items-center justify-center w-full md:w-1/3 px-3 py-1 rounded-full ${user.emailVerified ? "bg-[#E3F3E9]" : "bg-[#FFF2EA]"} shadow-sm`}>
+                            <div className={`h-2 w-2 rounded-full ${user.emailVerified ? "bg-[#11B066]" : "bg-[#E84D43]"} mr-2`}></div>
+                            <p className={`${user.emailVerified ? "text-[#11B066]" : "text-[#E84D43]"} text-sm`}>
+                                {user.emailVerified ? "Подтверждено" : "Не подтверждено"}
+                            </p>
                         </div>
+                        {!user.emailVerified && (
+                            <button
+                                className="bg-main-dull-blue text-white px-6 py-2 rounded-lg hover:bg-main-purp-dark transition-all duration-200 shadow-md w-full md:w-auto"
+                                onClick={() => emailVerifyGenerate(user.email)}
+                                disabled={loading}
+                            >
+                                Подтвердить
+                            </button>
+                        )}
                     </div>
                 </div>
-                {emailVerifyModal && (
-                    <div className='w-full fixed top-0 left-0 h-screen flex justify-center items-center'>
-                        <div className={`z-20 bg-white ${loading ? 'w-1/6 px-1 py-12' : 'w-full md:w-1/3 p-4'}  flex flex-col items-center shadow-lg rounded-lg text-center`}>
-                            {loading ? (
-                                <Spinner className='w-1/2 h-1/6 fill-main-dull-blue' />
-                            ) : (
-                                <div className='flex flex-col justify-center items-center gap-y-5 py-12'>
-                                    <img src={emailVerifyIllustr} alt="" className='w-1/2' />
-                                    <h1 className='text-2xl font-bold'>Подтвердите Email</h1>
-                                    <p className='w-1/2 text-lg'>Мы выслали вам 6-ти значный код на <span className='font-bold'>{user.email}</span></p>
-                                    <div className='w-3/4 flex flex-row items-center justify-center gap-x-5'>
-                                        {['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'].map((field, index) => (
-                                            <input
-                                                key={field}
-                                                type="text"
-                                                maxLength={1}
-                                                onChange={(e) =>
-                                                    handleInputChange(
-                                                        e,
-                                                        field,
-                                                        document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index + 1])?.[0],
-                                                        document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0]
-                                                    )
-                                                }
-                                                onKeyDown={(e) => {
-                                                    if (e.key === "Backspace" && e.target.value === "") {
-                                                        const prevInput = document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0];
-                                                        if (prevInput) prevInput.focus();
-                                                    }
-                                                }}
-                                                className='w-1/6 border py-5 text-center text-2xl rounded-xl border-main-dull-blue'
-                                                name={field}
-                                            />
-                                        ))}
-                                    </div>
-                                    <button className="mt-4 bg-main-dull-blue text-white px-4 py-2 rounded" onClick={emailVerify}>
-                                        Проверить
-                                    </button>
-                                    <button
-                                        className="mt-4 bg-gray-500 text-white w-1/2 px-4 py-2 rounded"
-                                        onClick={() => setEmailVerifyModal(false)}
-                                    >
-                                        Закрыть
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                        <div className='absolute top-0 backdrop-blur-md w-full h-screen z-10'></div>
-                    </div>
-                )}
             </div>
+
+            {emailVerifyModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className={`bg-white rounded-2xl shadow-xl z-20 flex flex-col items-center ${loading ? 'w-32 py-12' : 'w-full max-w-md p-8'}`}>
+                        {loading ? (
+                            <Spinner className="w-12 h-12 fill-main-dull-blue" />
+                        ) : (
+                            <div className="flex flex-col items-center gap-y-6">
+                                <img src={emailVerifyIllustr} alt="Email Verify" className="w-1/3" />
+                                <h1 className="text-xl font-semibold text-gray-800">Подтвердите Email</h1>
+                                <p className="text-sm text-gray-600 text-center">
+                                    Мы выслали 6-значный код на <span className="font-bold">{user.email}</span>
+                                </p>
+                                <div className="flex gap-x-3">
+                                    {['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'].map((field, index) => (
+                                        <input
+                                            key={field}
+                                            type="text"
+                                            maxLength={1}
+                                            onChange={(e) =>
+                                                handleInputChange(
+                                                    e,
+                                                    field,
+                                                    document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index + 1])?.[0],
+                                                    document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0]
+                                                )
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Backspace" && e.target.value === "") {
+                                                    const prevInput = document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0];
+                                                    if (prevInput) prevInput.focus();
+                                                }
+                                            }}
+                                            className="w-12 h-12 border border-main-dull-blue rounded-lg text-center text-xl focus:outline-none focus:ring-2 focus:ring-main-dull-blue shadow-sm"
+                                            name={field}
+                                        />
+                                    ))}
+                                </div>
+                                <button
+                                    className="bg-main-dull-blue text-white px-6 py-2 rounded-lg hover:bg-main-purp-dark transition-all duration-200 shadow-md"
+                                    onClick={emailVerify}
+                                >
+                                    Проверить
+                                </button>
+                                <button
+                                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200"
+                                    onClick={() => setEmailVerifyModal(false)}
+                                >
+                                    Закрыть
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <div className="fixed inset-0 bg-black opacity-40 backdrop-blur-sm z-40" onClick={() => setEmailVerifyModal(false)}></div>
+                </div>
+            )}
             <Notification />
         </div>
     );

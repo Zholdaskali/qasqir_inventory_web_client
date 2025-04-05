@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
-import { ChevronDownIcon, CubeIcon, MapPinIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronDownIcon,
+  CubeIcon,
+  MapPinIcon,
+  MagnifyingGlassIcon,
+} from "@heroicons/react/24/outline";
+import { API_GET_INVENTORY_ITEMS_BY_WAREHOUSE } from "../../../../api/API";
 
 const WarehouseItemsPage = () => {
   const { warehouseId } = useParams();
@@ -21,14 +27,14 @@ const WarehouseItemsPage = () => {
       }
       try {
         const { data: { body: { inventory = [] } = {} } = {} } = await axios.get(
-          `http://localhost:8081/api/v1/user/warehouse/items/${warehouseId}`,
+          API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", warehouseId),
           { headers: { "Auth-token": authToken } }
         );
         const groupedZones = groupItemsByZones(inventory);
         setZones(groupedZones);
         setFilteredZones(groupedZones);
       } catch (err) {
-        console.error(err);
+        console.error("Ошибка при загрузке элементов склада:", err);
       } finally {
         setLoading(false);
       }
@@ -41,12 +47,17 @@ const WarehouseItemsPage = () => {
       zones
         .map((zone) => ({
           ...zone,
-          items: zone.items.filter((item) =>
-            item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.code.toLowerCase().includes(searchQuery.toLowerCase())
+          items: zone.items.filter(
+            (item) =>
+              item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.code.toLowerCase().includes(searchQuery.toLowerCase())
           ),
         }))
-        .filter((zone) => zone.items.length > 0 || zone.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        .filter(
+          (zone) =>
+            zone.items.length > 0 ||
+            zone.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
     );
   }, [searchQuery, zones]);
 
@@ -80,7 +91,12 @@ const WarehouseItemsPage = () => {
     return Array.from(zoneMap.values());
   };
 
-  if (loading) return <div className="flex justify-center items-center h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-indigo-600"></div></div>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-indigo-600"></div>
+      </div>
+    );
 
   return (
     <div className="container mx-auto p-4">
@@ -91,10 +107,13 @@ const WarehouseItemsPage = () => {
             <div>
               <h1 className="text-2xl font-bold">{warehouse?.name || "Склад"}</h1>
               <p className="text-sm text-gray-600 flex items-center gap-1">
-                <MapPinIcon className="w-4 h-4" /> {warehouse?.location || "Не указан"} | Зон: {warehouse?.zonesCount || zones.length}
+                <MapPinIcon className="w-4 h-4" />{" "}
+                {warehouse?.location || "Не указан"} | Зон:{" "}
+                {warehouse?.zonesCount || zones.length}
               </p>
               <p className="text-xs text-gray-500">
-                Вместимость: {warehouse?.warehouseCapacity || 0} м³ | Создан: {new Date(warehouse?.createdAt || "").toLocaleDateString()}
+                Вместимость: {warehouse?.warehouseCapacity || 0} м³ | Создан:{" "}
+                {new Date(warehouse?.createdAt || "").toLocaleDateString()}
               </p>
             </div>
           </div>
@@ -127,7 +146,10 @@ const ZoneCard = ({ zone }) => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 50;
   const totalPages = Math.ceil(zone.items.length / itemsPerPage);
-  const paginatedItems = zone.items.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const paginatedItems = zone.items.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -138,9 +160,12 @@ const ZoneCard = ({ zone }) => {
         <div className="flex items-center gap-2">
           <div className="w-2 h-8 rounded-full bg-indigo-600" />
           <div>
-            <h2 className="text-lg font-semibold">{zone.name} ({zone.items.length})</h2>
+            <h2 className="text-lg font-semibold">
+              {zone.name} ({zone.items.length})
+            </h2>
             <p className="text-xs text-gray-600">
-              Вместимость: {zone.capacity} м³ | Размеры: {zone.dimensions} м | Создано: {new Date(zone.createdAt).toLocaleDateString()}
+              Вместимость: {zone.capacity} м³ | Размеры: {zone.dimensions} м |
+              Создано: {new Date(zone.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
@@ -154,9 +179,15 @@ const ZoneCard = ({ zone }) => {
               <div key={item.id} className="bg-gray-50 rounded p-2 text-sm">
                 <p className="font-medium truncate">{item.name}</p>
                 <p className="text-gray-600">Код: {item.code}</p>
-                <p className="text-gray-600">{item.quantity} {item.unit}</p>
-                <p className="text-xs text-gray-500 truncate">Контейнер: {item.containerSerial} ({item.containerCapacity} м³)</p>
-                <p className="text-xs text-gray-400">Создан: {new Date(item.createdAt).toLocaleDateString()}</p>
+                <p className="text-gray-600">
+                  {item.quantity} {item.unit}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  Контейнер: {item.containerSerial} ({item.containerCapacity} м³)
+                </p>
+                <p className="text-xs text-gray-400">
+                  Создан: {new Date(item.createdAt).toLocaleDateString()}
+                </p>
               </div>
             ))}
           </div>
@@ -169,7 +200,9 @@ const ZoneCard = ({ zone }) => {
               >
                 ←
               </button>
-              <span>{page}/{totalPages}</span>
+              <span>
+                {page}/{totalPages}
+              </span>
               <button
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
                 disabled={page === totalPages}

@@ -30,16 +30,20 @@ const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
 
     const handleSave = async () => {
         try {
-            const response = await axios.put(`${API_CHANGE_ROLE}${selectedUser.userId}/role`, {
+            // Заменяем {userId} в URL на реальный ID пользователя
+            const url = API_CHANGE_ROLE.replace("{userId}", selectedUser.userId);
+            
+            const response = await axios.put(url, {
                 newRoles: selectedRoles,
-            },
-            {headers:{"Auth-token":authToken}});
-
+            }, {
+                headers: {"Auth-token": authToken}
+            });
+    
             if (response.status === 200) {
                 console.log("Роли обновлены!");
                 fetchUserList();
             }
-            onClose()
+            onClose();
         } catch (error) {
             console.error("Ошибка при сохранении данных", error);
         }

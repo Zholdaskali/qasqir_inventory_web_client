@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { API_GET_INVENTORY_ITEMS_BY_WAREHOUSE } from "../../../api/API";
 
 const InventoryItemsList = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -11,16 +12,20 @@ const InventoryItemsList = () => {
     const fetchInventoryItems = async () => {
         try {
             setLoading(true);
+            const warehouseId = 1; // Замените на динамическое значение, если нужно
             const response = await axios.get(
-                "http://localhost:8081/api/v1/user/inventory/items",
+                API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", warehouseId),
                 {
                     headers: { "Auth-token": authToken },
                 }
             );
-            setItems(response.data.body);
+            // Устанавливаем только массив inventory из body
+            setItems(response.data.body.inventory || []);
             toast.success(response.data.message || "Список элементов инвентаризации успешно загружен");
         } catch (error) {
-            toast.error("Ошибка загрузки списка элементов инвентаризации");
+            toast.error(
+                error.response?.data?.message || "Ошибка загрузки списка элементов инвентаризации"
+            );
         } finally {
             setLoading(false);
         }
@@ -68,10 +73,10 @@ const InventoryItemsList = () => {
                                             <td className="py-3 px-2">{item.measurementUnit}</td>
                                             <td className="py-3 px-2">{item.code}</td>
                                             <td className="py-3 px-2">
-                                                {item.warehouseName} (ID: {item.warehouseId})
+                                                {item.warehouseZone?.name} (ID: {item.warehouseZone?.warehouseId})
                                             </td>
                                             <td className="py-3 px-2">
-                                                {item.containerName} (ID: {item.containerId})
+                                                {item.warehouseContainer?.serialNumber} (ID: {item.warehouseContainer?.id})
                                             </td>
                                         </tr>
                                     ))

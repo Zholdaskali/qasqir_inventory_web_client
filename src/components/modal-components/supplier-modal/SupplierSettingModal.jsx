@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Notification from "../../notification/Notification";
 import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_UPDATE_SUPPLIER, API_DELETE_SUPPLIER } from "../../../api/API";
 
 const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
     const authToken = useSelector((state) => state.token.token);
@@ -14,7 +15,7 @@ const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
     const handleUpdate = async () => {
         try {
             await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/suppliers/${supplier.id}`,
+                `${API_UPDATE_SUPPLIER}/${supplier.id}`, // Замена на константу
                 { name, contactInfo },
                 {
                     headers: { "Auth-token": authToken },
@@ -31,7 +32,7 @@ const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
     const handleDelete = async () => {
         try {
             await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/suppliers/${supplier.id}`,
+                `${API_DELETE_SUPPLIER}/${supplier.id}`, // Замена на константу
                 {
                     headers: { "Auth-token": authToken },
                 }

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
+import { API_GET_NOMENCLATURES_BY_CATEGORY } from "../../../api/API"; // Добавляем импорт
 import { saveNomenclatureList } from "../../../store/slices/inventorySlice/nomenclatureListSlice";
 import { HiOutlineRefresh } from "react-icons/hi";
 import { FiSettings } from "react-icons/fi";
@@ -25,7 +26,7 @@ const NomenclatureList = () => {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:8081/api/v1/employee/${categoryId}/nomenclatures`,
+        API_GET_NOMENCLATURES_BY_CATEGORY.replace("{categoryId}", categoryId), // Используем импорт с заменой параметра
         {
           headers: { "Auth-token": authToken },
         }
@@ -34,7 +35,7 @@ const NomenclatureList = () => {
       dispatch(saveNomenclatureList(response.data.body));
       toast.success("Номенклатуры успешно загружены");
     } catch (error) {
-      toast.error("Ошибка загрузки номенклатур");
+      toast.error(error.response?.data?.message || "Ошибка загрузки номенклатур");
     } finally {
       setLoading(false);
     }

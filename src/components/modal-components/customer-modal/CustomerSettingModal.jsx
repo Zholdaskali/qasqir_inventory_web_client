@@ -4,6 +4,7 @@ import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import Notification from "../../notification/Notification";
 import ConfirmationWrapper from "../../ui/ConfirmationWrapper";
+import { API_UPDATE_CUSTOMER, API_DELETE_CUSTOMER } from "../../../api/API"; 
 
 const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => { 
     const authToken = useSelector((state) => state.token.token);
@@ -14,13 +15,13 @@ const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => {
     const handleUpdate = async () => {
         try {
             await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/customers/${customer.id}`,
+                `${API_UPDATE_CUSTOMER}/${customer.id}`, // Замена на константу
                 { name, contactInfo },
                 {
                     headers: { "Auth-token": authToken },
                 }
             );
-            toast.success("Клиент успешно обновлен"); // Исправил ошибку с error.response и текст
+            toast.success("Клиент успешно обновлен");
             onClose(); // Закрываем модальное окно
             fetchCustomerList(); // Обновляем список клиентов
         } catch (error) {
@@ -31,12 +32,12 @@ const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => {
     const handleDelete = async () => {
         try {
             await axios.delete(
-                `http://localhost:8081/api/v1/warehouse-manager/customers/${customer.id}`,
+                `${API_DELETE_CUSTOMER}/${customer.id}`, // Замена на константу
                 {
                     headers: { "Auth-token": authToken },
                 }
             );
-            toast.success("Клиент успешно удален"); // Исправил текст
+            toast.success("Клиент успешно удален");
             onClose(); // Закрываем модальное окно
             fetchCustomerList(); // Обновляем список клиентов
         } catch (error) {
@@ -47,7 +48,7 @@ const CustomerSettingModal = ({ customer, onClose, fetchCustomerList }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg w-96">
-                <h2 className="text-xl mb-4">Редактировать клиента</h2> {/* Исправил текст */}
+                <h2 className="text-xl mb-4">Редактировать клиента</h2>
                 <div className="flex flex-col gap-4">
                     <input
                         type="text"

@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from 'react-toastify';
 import * as THREE from 'three';
+import { API_SAVE_WAREHOUSE_CONTAINER } from "../../../api/API";
 
 const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZoneId, onClose }) => {
     const [serialNumber, setSerialNumber] = useState("");
@@ -123,7 +124,7 @@ const WarehouseContainerSaveModal = ({ setIsContainerSaveModalOpen, warehouseZon
             console.log("Отправляемый payload:", payload);
 
             const response = await axios.post(
-                "http://localhost:8081/api/v1/warehouse-manager/warehouse/container",
+                API_SAVE_WAREHOUSE_CONTAINER, // Замена хардкод URL на константу
                 payload,
                 {
                     headers: { "Auth-token": authToken },

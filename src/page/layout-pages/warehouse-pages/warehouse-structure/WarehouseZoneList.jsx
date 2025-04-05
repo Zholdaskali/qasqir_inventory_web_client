@@ -9,6 +9,9 @@ import { toast } from 'react-toastify';
 import Notification from '../../../../components/notification/Notification';
 import Warehouse3DViewer from './Warehouse3DViewer';
 
+// Импорт API-путей
+import { API_GET_WAREHOUSE_STRUCTURE_BY_ID } from "../../../../api/API";
+
 const WarehouseZoneList = () => {
   const location = useLocation();
   const { warehouse } = location.state || {};
@@ -29,7 +32,7 @@ const WarehouseZoneList = () => {
     setError(null);
     try {
       const response = await axios.get(
-        `http://localhost:8081/api/v1/employee/warehouses/${warehouse.id}`,
+        `${API_GET_WAREHOUSE_STRUCTURE_BY_ID.replace("{warehouseId}", warehouse.id)}`,
         { headers: { "Auth-token": authToken } }
       );
       setWarehouseData(response.data.body);

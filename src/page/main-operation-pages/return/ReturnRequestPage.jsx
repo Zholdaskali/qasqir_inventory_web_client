@@ -5,6 +5,12 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
+import {
+  API_GET_ALL_WAREHOUSES,
+  API_GET_INVENTORY_ITEMS_BY_WAREHOUSE,
+  API_PROCESS_RETURN,
+} from "../../../api/API";
+
 const ReturnRequestPage = () => {
   const authToken = useSelector((state) => state.token.token);
   const userId = useSelector((state) => state.user.userId);
@@ -19,12 +25,22 @@ const ReturnRequestPage = () => {
   const [quantity, setQuantity] = useState("");
   const [reason, setReason] = useState("");
 
+  // Проверка, все ли обязательные поля заполнены
+  const isFormValid = useCallback(() => {
+    return (
+      selectedWarehouseId !== "" &&
+      selectedInventoryId !== "" &&
+      quantity > 0 && // Проверка, что количество больше 0
+      reason.trim() !== "" // Проверка, что причина не пустая
+    );
+  }, [selectedWarehouseId, selectedInventoryId, quantity, reason]);
+
   // Загрузка складов
   const fetchWarehouses = useCallback(async () => {
     if (!authToken) return;
     setLoading(true);
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/employee/warehouses", {
+      const response = await axios.get(API_GET_ALL_WAREHOUSES, {
         headers: { "Auth-token": authToken },
       });
       setWarehouses(Array.isArray(response.data.body) ? response.data.body : []);
@@ -41,7 +57,7 @@ const ReturnRequestPage = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `http://localhost:8081/api/v1/user/warehouse/items/${selectedWarehouseId}`,
+        `${API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", selectedWarehouseId)}`,
         { headers: { "Auth-token": authToken } }
       );
       setInventoryItems(Array.isArray(response.data.body.inventory) ? response.data.body.inventory : []);
@@ -62,7 +78,7 @@ const ReturnRequestPage = () => {
 
   // Обработчик отправки возврата
   const handleCreateReturn = useCallback(async () => {
-    if (!selectedWarehouseId || !selectedInventoryId || !quantity || !reason) {
+    if (!isFormValid()) {
       toast.error("Заполните все обязательные поля");
       return;
     }
@@ -84,7 +100,7 @@ const ReturnRequestPage = () => {
         reason,
         createdBy: userId,
       };
-      await axios.post("http://localhost:8081/api/v1/storekeeper/return", payload, {
+      await axios.post(API_PROCESS_RETURN, payload, {
         headers: { "Auth-token": authToken, "Content-Type": "application/json" },
       });
       toast.success("Возврат успешно создан");
@@ -97,7 +113,7 @@ const ReturnRequestPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [authToken, userId, returnType, documentNumber, selectedInventoryId, quantity, reason, inventoryItems]);
+  }, [authToken, userId, returnType, documentNumber, selectedInventoryId, quantity, reason, inventoryItems, isFormValid]);
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
@@ -204,7 +220,7 @@ const ReturnRequestPage = () => {
           >
             <button
               className="w-full sm:w-48 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
-              disabled={loading}
+              disabled={loading || !isFormValid()} // Кнопка отключена, если форма не валидна
             >
               {loading ? "Создание..." : "Создать возврат"}
             </button>

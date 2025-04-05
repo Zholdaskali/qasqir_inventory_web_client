@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux";
 import ConfirmationWrapper from "../ui/ConfirmationWrapper";
+import { API_UPDATE_WAREHOUSE } from "../../api/API";
 
 const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
     const [name, setName] = useState(warehouse?.name || "");
@@ -14,7 +15,7 @@ const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
         setLoading(true);
         try {
             const response = await axios.put(
-                `http://localhost:8081/api/v1/warehouse-manager/warehouses/${warehouse.id}`,
+                `${API_UPDATE_WAREHOUSE}/${warehouse.id}`, // Замена на константу
                 { name, location },
                 {
                     headers: { "Auth-token": authToken },
@@ -70,7 +71,7 @@ const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
                         onConfirm={handleSave}
                     >
                         <button
-                            type="button" // Добавлен type="button" для предотвращения отправки формы
+                            type="button" // Предотвращение отправки формы
                             className="px-4 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition flex items-center"
                             disabled={loading}
                         >

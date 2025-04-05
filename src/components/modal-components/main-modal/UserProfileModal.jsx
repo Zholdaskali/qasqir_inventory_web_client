@@ -22,24 +22,21 @@ const UserProfileModal = ({ selectedUser, onClose, fetchUserList }) => {
     }, [selectedUser.userRoles]);
 
     const user = useSelector((state) => state.user);
-
     const [showRoleModal, setShowRoleModal] = useState(false);
-
     const isSuperAdmin = useMemo(() => selectedUser.userRoles.includes("admin"), [
         selectedUser.userRoles,
     ]);
-
     const authToken = useSelector((state) => state.token.token);
 
     const handleDeleteUser = async () => {
         try {
+            const url = API_SUPER_ADMIN_DELETE_USER.replace("{userId}", selectedUser.userId);
             const response = await axios.delete(
-                `${API_SUPER_ADMIN_DELETE_USER}${selectedUser.userId}`,
+                url,
                 {
                     headers: { "Auth-token": authToken },
                 }
             );
-
             console.log(response.data.message);
             onClose(true);
         } catch (error) {
@@ -49,84 +46,110 @@ const UserProfileModal = ({ selectedUser, onClose, fetchUserList }) => {
     };
 
     return (
-        <div className="flex absolute top-0 left-0 z-30 items-center justify-center w-full h-screen">
-            <div className="bg-white rounded-xl z-20 py-16 px-12 shadow-md w-full sm:w-3/4 lg:w-2/4 xl:w-1/3">
-                <div className="flex w-full justify-between mb-8">
-                    <div className="w-full flex items-center gap-x-3">
-                        <img src={userIcon} alt="User Icon" className="w-8 h-8" />
-                        <h1 className="uppercase text-main-dull-blue font-medium text-xl">
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-lg bg-main-dull-blue/10">
+                            <img src={userIcon} alt="User Icon" className="w-6 h-6" />
+                        </div>
+                        <h1 className="text-xl font-semibold text-main-dull-blue">
                             Настройки пользователя
                         </h1>
                     </div>
-                    <div className="self-end">
-                        <IoMdClose
-                            onClick={onClose}
-                            className="cursor-pointer text-gray-600"
-                            size={30}
-                        />
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                    >
+                        <IoMdClose className="text-gray-500" size={24} />
+                    </button>
                 </div>
-                <div className="flex flex-col items-center gap-y-6">
-                    <div className="flex flex-col sm:flex-row w-full gap-6 sm:gap-12">
-                        <div className="flex flex-col items-center gap-y-4 sm:w-1/3">
-                            <img
-                                src={selectedUser.imagePath ? selectedUser.imagePath : avatar}
-                                alt="User Avatar"
-                                className="w-24 h-24 rounded-full border-2 border-gray-300"
-                            />
-                            <div className="w-full text-center text-xs text-gray-600">
+
+                {/* Content */}
+                <div className="p-6">
+                    <div className="flex flex-col md:flex-row gap-8">
+                        {/* Avatar Section */}
+                        <div className="flex flex-col items-center md:items-start gap-4">
+                            <div className="relative">
+                                <img
+                                    src={selectedUser.imagePath ? selectedUser.imagePath : avatar}
+                                    alt="User Avatar"
+                                    className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-md"
+                                />
+                                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full shadow-sm text-xs font-medium text-main-dull-blue border border-gray-100">
+                                    {userRole}
+                                </div>
+                            </div>
+                            <div className="text-center md:text-left text-sm text-gray-500 bg-gray-50 px-4 py-2 rounded-lg">
                                 <p>Дата регистрации:</p>
-                                <p>{selectedUser.registrationDate || "Не указано"}</p>
+                                <p className="font-medium text-gray-700">
+                                    {selectedUser.registrationDate || "Не указано"}
+                                </p>
                             </div>
                         </div>
-                        <div className="flex flex-col w-full sm:w-2/3 gap-y-6">
-                            <div className="flex flex-col gap-y-4 font-medium">
-                                <div className="space-y-1">
-                                    <p className="text-gray-600">Имя пользователя:</p>
-                                    <p>{selectedUser.userName || "Не указано"}</p>
+
+                        {/* User Info */}
+                        <div className="flex-1 space-y-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">Имя пользователя</p>
+                                    <p className="text-lg font-medium mt-1">
+                                        {selectedUser.userName || "Не указано"}
+                                    </p>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-gray-600">Почта пользователя:</p>
-                                    <p>{selectedUser.email || "Не указано"}</p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <p className="text-sm text-gray-500">Почта</p>
+                                        <p className="font-medium mt-1">
+                                            {selectedUser.email || "Не указано"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-500">Номер</p>
+                                        <p className="font-medium mt-1">
+                                            {selectedUser.userNumber || "Не указано"}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-gray-600">Номер пользователя:</p>
-                                    <p>{selectedUser.userNumber || "Не указано"}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-gray-600">Роли пользователя:</p>
-                                    <ul className="flex flex-wrap gap-2">
-                                        {Array.isArray(selectedUser.userRoles)
-                                            ? selectedUser.userRoles.map((role, index) => (
-                                                  <li
-                                                      key={index}
-                                                      className="bg-gray-100 rounded-md px-3 py-1 text-sm text-gray-700"
-                                                  >
-                                                      {role}
-                                                  </li>
-                                              ))
-                                            : <li className="text-gray-600">Нет ролей</li>}
-                                    </ul>
+
+                                <div>
+                                    <p className="text-sm text-gray-500">Роли</p>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                        {Array.isArray(selectedUser.userRoles) ? (
+                                            selectedUser.userRoles.map((role, index) => (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-main-dull-blue/10 text-main-dull-blue"
+                                                >
+                                                    {role}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-gray-500">Нет ролей</span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-x-4 justify-end mt-8">
+                            {/* Actions */}
+                            <div className="flex flex-wrap justify-end gap-3 pt-4">
                                 {selectedUser.email !== user.email && (
                                     <button
-                                        className="bg-main-dull-blue text-white px-8 py-3 rounded-lg hover:bg-main-purp-dark transition-all duration-200"
+                                        className="px-6 py-2 bg-main-dull-blue text-white rounded-lg hover:bg-main-purp-dark transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-main-dull-blue/50"
                                         onClick={() => setShowRoleModal(true)}
                                     >
                                         Изменить роль
                                     </button>
                                 )}
 
-                                {/* Используем ConfirmationWrapper для обработки подтверждения */}
                                 {!isSuperAdmin && (
                                     <ConfirmationWrapper
-                                        title="Все данные пользователя будут удалены !!!"
+                                        title="Все данные пользователя будут удалены!"
                                         onConfirm={handleDeleteUser}
                                     >
-                                        <button className="bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-all duration-200">
+                                        <button className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500/50">
                                             Удалить
                                         </button>
                                     </ConfirmationWrapper>
@@ -136,10 +159,8 @@ const UserProfileModal = ({ selectedUser, onClose, fetchUserList }) => {
                     </div>
                 </div>
             </div>
-            <div
-                className="w-full h-screen absolute z-10 bg-black opacity-30 backdrop-blur-md"
-                onClick={onClose}
-            ></div>
+
+            {/* Role Selection Modal */}
             {showRoleModal && (
                 <RoleSelectionModal
                     selectedUser={selectedUser}

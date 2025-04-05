@@ -4,6 +4,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { HiRefresh, HiDownload } from "react-icons/hi";
 import Notification from "../../../components/notification/Notification";
+import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API"; // Импортируем нужный API
 
 const TransactionList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -15,23 +16,20 @@ const TransactionList = () => {
   const fetchDocumentsWithTransactions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:8081/api/v1/warehouse-manager/document/transaction",
-        {
-          headers: { "Auth-token": authToken },
-          params: { startDate, endDate },
-        }
-      );
+      const response = await axios.get(API_GET_DOCUMENTS_WITH_TRANSACTIONS, {
+        headers: { "Auth-token": authToken },
+        params: { startDate, endDate },
+      });
       const sortedDocuments = (Array.isArray(response.data.body) ? response.data.body : [])
-        .map(doc => ({
+        .map((doc) => ({
           ...doc,
-          transactions: doc.transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+          transactions: doc.transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
         }))
         .sort((a, b) => new Date(b.document.createdAt) - new Date(a.document.createdAt));
       setDocuments(sortedDocuments);
       toast.success("Документы с транзакциями успешно загружены");
     } catch (error) {
-      toast.error("Ошибка загрузки данных");
+      toast.error(error.response?.data?.message || "Ошибка загрузки данных");
       console.error("Ошибка загрузки документов с транзакциями:", error);
       setDocuments([]);
     } finally {
@@ -72,7 +70,7 @@ const TransactionList = () => {
       window.URL.revokeObjectURL(url);
       toast.success("Документ успешно скачан");
     } catch (error) {
-      toast.error("Ошибка при скачивании документа");
+      toast.error(error.response?.data?.message || "Ошибка при скачивании документа");
       console.error("Ошибка скачивания PDF:", error.message || error);
     }
   };
@@ -107,8 +105,8 @@ const TransactionList = () => {
         `"${document.documentType || "N/A"}"`,
         document.documentDate ? `"${new Date(document.documentDate).toLocaleString()}"` : '"N/A"',
         `"${document.status || "N/A"}"`,
-        `"${document.supplier?.name || "N/A"}"`,
-        `"${document.customer?.name || "N/A"}"`,
+        `"${document.supplier || "N/A"}"`,
+        `"${document.customer || "N/A"}"`,
         `"${transaction.id || "N/A"}"`,
         `"${transaction.transactionType || "N/A"}"`,
         `"${transaction.nomenclatureName || "N/A"}"`,
@@ -118,11 +116,15 @@ const TransactionList = () => {
         transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
       ]);
 
-      const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const csvContent =
+        "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `document_${document.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`);
+      link.setAttribute(
+        "download",
+        `document_${document.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`
+      );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -135,22 +137,33 @@ const TransactionList = () => {
 
   const getStatusStyles = (status) => {
     switch (status) {
-      case "COMPLETED": return "bg-green-100 text-green-700";
-      case "PENDING": return "bg-yellow-100 text-yellow-700";
-      case "CANCELED": return "bg-red-100 text-red-700";
-      default: return "bg-gray-100 text-gray-700";
+      case "COMPLETED":
+        return "bg-green-100 text-green-700";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700";
+      case "CANCELED":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
 
   const getTransactionTypeStyles = (type) => {
     switch (type) {
-      case "INCOMING": return { className: "bg-blue-100 text-blue-600", label: "Поступление" };
-      case "TRANSFER": return { className: "bg-purple-100 text-purple-600", label: "Перемещение" };
-      case "WRITE-OFF": return { className: "bg-red-100 text-red-600", label: "Списание" };
-      case "RETURN": return { className: "bg-orange-100 text-orange-600", label: "Возврат" };
-      case "PRODUCTION": return { className: "bg-indigo-100 text-indigo-600", label: "Производство" };
-      case "SALES": return { className: "bg-green-100 text-green-600", label: "Продажа" };
-      default: return { className: "bg-gray-100 text-gray-600", label: "Неизвестно" };
+      case "INCOMING":
+        return { className: "bg-blue-100 text-blue-600", label: "Поступление" };
+      case "TRANSFER":
+        return { className: "bg-purple-100 text-purple-600", label: "Перемещение" };
+      case "WRITE-OFF":
+        return { className: "bg-red-100 text-red-600", label: "Утилизация" };
+      case "RETURN":
+        return { className: "bg-orange-100 text-orange-600", label: "Возврат" };
+      case "PRODUCTION":
+        return { className: "bg-indigo-100 text-indigo-600", label: "Производство" };
+      case "SALES":
+        return { className: "bg-green-100 text-green-600", label: "Продажа" };
+      default:
+        return { className: "bg-gray-100 text-gray-600", label: "Неизвестно" };
     }
   };
 
@@ -212,19 +225,31 @@ const TransactionList = () => {
                         </p>
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Дата:</span>{" "}
-                          {new Date(document.documentDate).toLocaleString()}
+                          {new Date(document.documentDate).toLocaleString('ru-RU', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-600">
-                          <span className="font-medium">Поставщик:</span> {document.supplier?.name || "N/A"}
+                          <span className="font-medium">Поставщик:</span>{" "}
+                          {document.supplier?.name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Клиент:</span> {document.customer?.name || "N/A"}
                         </p>
                         <p className="text-sm text-gray-600">
                           <span className="font-medium">Создан:</span>{" "}
-                          {new Date(document.createdAt).toLocaleString()} (ID: {document.createdBy})
+                          {new Date(document.createdAt).toLocaleString('ru-RU', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })} (ID: {document.createdBy})
                         </p>
                       </div>
                       <div className="flex items-center justify-start md:justify-end gap-4">
@@ -251,7 +276,7 @@ const TransactionList = () => {
                       </div>
                     </div>
 
-                    <h3 className="text-lg font-medium text-gray-700 mb-3">Принятые товары</h3>
+                    <h3 className="text-lg font-medium text-gray-700 mb-3">Список транзакций</h3>
                     {transactions.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {transactions.map((transaction) => {

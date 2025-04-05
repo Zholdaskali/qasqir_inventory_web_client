@@ -7,6 +7,7 @@ import { FiSettings } from "react-icons/fi";
 import SupplierSaveModal from "../../../components/modal-components/supplier-modal/SupplierSaveModal";
 import SupplierSettingModal from "../../../components/modal-components/supplier-modal/SupplierSettingModal";
 import Notification from "../../../components/notification/Notification";
+import { API_GET_ALL_SUPPLIERS } from "../../../api/API"; // Импортируем только нужный API
 
 const SupplierList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -22,17 +23,14 @@ const SupplierList = () => {
   const fetchSupplierList = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        "http://localhost:8081/api/v1/employee/suppliers",
-        {
-          headers: { "Auth-token": authToken },
-        }
-      );
+      const response = await axios.get(API_GET_ALL_SUPPLIERS, {
+        headers: { "Auth-token": authToken },
+      });
       setLocalSuppliers(response.data.body); // Записываем в локальный state
       dispatch(saveSupplierList(response.data.body)); // Сохраняем в Redux
       toast.success(response.data.message || "Успешно");
     } catch (error) {
-      error.response?.data?.message
+      toast.error(error.response?.data?.message);
     } finally {
       setLoading(false);
     }

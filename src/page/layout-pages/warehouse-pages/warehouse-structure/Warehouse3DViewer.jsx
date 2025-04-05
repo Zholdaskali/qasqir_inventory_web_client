@@ -1,20 +1,25 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { gsap } from 'gsap';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { FaCube, FaEye, FaEyeSlash, FaSyncAlt } from 'react-icons/fa';
+import ZoneSettingModal from '../../../../components/modal-components/warehouse-modal/ZoneSettingModal';
 
-const Warehouse3DViewer = ({ warehouseData }) => {
+const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) => {
     const mountRef = useRef(null);
     const [selectedObject, setSelectedObject] = useState(null);
     const [isWireframe, setIsWireframe] = useState(false);
     const [showGrid, setShowGrid] = useState(true);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
     const sceneRef = useRef(null);
     const cameraRef = useRef(null);
     const rendererRef = useRef(null);
     const controlsRef = useRef(null);
+    const transformControlsRef = useRef(null);
     const warehouseGroupRef = useRef(null);
     const connectionsRef = useRef([]);
+    const isDraggingRef = useRef(false);
 
     const highlightColor = new THREE.Color(0x00ff00);
     const defaultZoneColor = 0x3498db;
@@ -24,13 +29,14 @@ const Warehouse3DViewer = ({ warehouseData }) => {
     useEffect(() => {
         if (!warehouseData || !mountRef.current) return;
 
+        // Инициализация сцены
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf0f0f0);
         sceneRef.current = scene;
 
         const aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
         const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-        camera.position.set(10, 10, 10);
+        camera.position.set(50, 50, 50);
         cameraRef.current = camera;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -38,219 +44,115 @@ const Warehouse3DViewer = ({ warehouseData }) => {
         rendererRef.current = renderer;
         mountRef.current.appendChild(renderer.domElement);
 
+        // Освещение
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
         scene.add(ambientLight);
-
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(10, 20, 10);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
 
+        // Сетка
         const gridHelper = new THREE.GridHelper(50, 50);
         gridHelper.visible = showGrid;
         scene.add(gridHelper);
 
+        // Управление камерой
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: null,
+        };
         controlsRef.current = controls;
 
+        // Управление трансформацией
+        const transformControls = new TransformControls(camera, renderer.domElement);
+        transformControlsRef.current = transformControls;
+        transformControls.setMode('translate');
+        transformControls.enabled = false;
+        scene.add(transformControls);
+
+        // Группа для зон склада
         const warehouseGroup = new THREE.Group();
         warehouseGroupRef.current = warehouseGroup;
         scene.add(warehouseGroup);
 
-        const createZone = (zone, parentGroup, level = 0, offsetX = 0, offsetZ = 0) => {
-            const zoneGroup = new THREE.Group();
-            zoneGroup.userData = { ...zone, type: 'zone', isExpanded: false, childGroups: [] };
-
-            const zoneGeometry = new THREE.BoxGeometry(zone.width, zone.height, zone.length);
-            const zoneMaterial = new THREE.MeshPhongMaterial({
+        // Функция создания зоны
+        const createZone = (zone, parentGroup, level, offsetX, offsetZ) => {
+            const geometry = new THREE.BoxGeometry(zone.width || 2, zone.height || 4, zone.length || 2);
+            const material = new THREE.MeshPhongMaterial({
                 color: zone.canStoreItems ? defaultZoneColor : restrictedZoneColor,
-                transparent: true,
-                opacity: 0.7,
                 wireframe: isWireframe,
+                transparent: true,
+                opacity: 0.8,
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            mesh.position.set(
+                offsetX + (zone.width || 2) / 2,
+                (zone.height || 4) / 2,
+                offsetZ + (zone.length || 2) / 2
+            );
+
+            mesh.userData = {
+                id: zone.id,
+                type: 'zone',
+                name: zone.name,
+                width: zone.width || 2,
+                height: zone.height || 4,
+                length: zone.length || 2,
+                canStoreItems: zone.canStoreItems,
+            };
+
+            parentGroup.add(mesh);
+
+            // Создание дочерних зон
+            const subZones = warehouseData.zones.filter(z => z.parentId === zone.id);
+            subZones.forEach(subZone => {
+                createZone(subZone, parentGroup, level + 1, offsetX, offsetZ);
             });
 
-            const zoneMesh = new THREE.Mesh(zoneGeometry, zoneMaterial);
-            zoneMesh.castShadow = true;
-            zoneMesh.receiveShadow = true;
-            zoneMesh.position.set(0, zone.height / 2, 0);
-            zoneMesh.userData = { ...zone, type: 'zone' };
-            zoneGroup.add(zoneMesh);
-
-            const labelSprite = createTextSprite(zone.name, 24);
-            labelSprite.position.set(0, zone.height + 0.5, 0);
-            zoneGroup.add(labelSprite);
-
-            if (level === 0) {
-                zoneGroup.position.set(offsetX + zone.width / 2, 0, offsetZ + zone.length / 2);
-            } else {
-                zoneGroup.position.set(
-                    offsetX - parentGroup.userData.width / 2 + zone.width / 2,
-                    0,
-                    offsetZ - parentGroup.userData.length / 2 + zone.length / 2
-                );
-                zoneGroup.visible = false;
-            }
-
-            parentGroup.add(zoneGroup);
-
-            let childOffsetX = 0;
-            let childOffsetZ = 0;
-            zone.childZones.forEach((childZone, index) => {
-                const childGroup = createZone(childZone, zoneGroup, level + 1, childOffsetX, childOffsetZ);
-                zoneGroup.userData.childGroups.push(childGroup);
-                childOffsetX += childZone.width + 1;
-                if (childOffsetX + childZone.width > zone.width) {
-                    childOffsetX = 0;
-                    childOffsetZ += childZone.length + 1;
-                }
-            });
-
-            zone.containers.forEach((container, index) => {
-                const containerGeometry = new THREE.BoxGeometry(container.width, container.height, container.length);
-                const containerMaterial = new THREE.MeshPhongMaterial({
-                    color: containerColor,
-                    transparent: true,
-                    opacity: 0.9,
-                    wireframe: isWireframe,
-                });
-
-                const containerMesh = new THREE.Mesh(containerGeometry, containerMaterial);
-                containerMesh.castShadow = true;
-                containerMesh.receiveShadow = true;
-                containerMesh.position.set(
-                    -zone.width / 2 + (index % 3) * (container.width + 0.1),
-                    container.height / 2,
-                    -zone.length / 2 + Math.floor(index / 3) * (container.length + 0.1)
-                );
-                containerMesh.userData = { ...container, type: 'container' };
-                containerMesh.visible = false;
-                zoneGroup.add(containerMesh);
-
-                const containerLabel = createTextSprite(container.serialNumber, 14);
-                containerLabel.position.copy(containerMesh.position);
-                containerLabel.position.y += container.height / 2 + 0.2;
-                containerLabel.visible = false;
-                zoneGroup.add(containerLabel);
-
-                zoneGroup.userData.childGroups.push(containerMesh);
-            });
-
-            return zoneGroup;
+            return mesh;
         };
 
-        const createTextSprite = (text, fontSize) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 128;
-            const context = canvas.getContext('2d');
-            context.fillStyle = '#000000';
-            context.font = `Bold ${fontSize}px Arial`;
-            context.fillText(text, 10, fontSize + 10);
-
-            const texture = new THREE.CanvasTexture(canvas);
-            const material = new THREE.SpriteMaterial({ map: texture });
-            const sprite = new THREE.Sprite(material);
-            sprite.scale.set(fontSize / 24, fontSize / 48, 1);
-            return sprite;
-        };
-
-        const createConnectionLine = (start, end) => {
-            const material = new THREE.LineBasicMaterial({ color: 0x000000 });
-            const points = [start, end];
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, material);
-            scene.add(line);
-            connectionsRef.current.push(line);
-            return line;
-        };
-
-        const clearConnectionLines = () => {
-            connectionsRef.current.forEach(line => scene.remove(line));
-            connectionsRef.current = [];
-        };
-
+        // Загрузка корневых зон
         let rootOffsetX = 0;
         let rootOffsetZ = 0;
         warehouseData.zones.filter(zone => zone.parentId === null).forEach(zone => {
             createZone(zone, warehouseGroup, 0, rootOffsetX, rootOffsetZ);
-            rootOffsetX += zone.width + 2;
-            if (rootOffsetX + zone.width > 50) {
+            rootOffsetX += (zone.width || 2) + 2;
+            if (rootOffsetX + (zone.width || 2) > 50) {
                 rootOffsetX = 0;
-                rootOffsetZ += zone.length + 2;
+                rootOffsetZ += (zone.length || 2) + 2;
             }
         });
 
+        // Raycaster для выбора объектов
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
-        const onClick = (event) => {
-            const rect = mountRef.current.getBoundingClientRect();
-            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        const handleObjectChange = () => {
+            if (!selectedObject || !transformControls.object) return;
 
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(warehouseGroup.children, true);
+            const object = transformControls.object;
+            const updatedPosition = object.position.clone();
 
-            if (intersects.length > 0) {
-                const object = intersects[0].object;
-                let targetGroup = object;
-                while (targetGroup && !targetGroup.userData.type) {
-                    targetGroup = targetGroup.parent;
+            const updatedZones = warehouseData.zones.map(zone => {
+                if (zone.id === selectedObject.id) {
+                    return {
+                        ...zone,
+                        positionX: updatedPosition.x,
+                        positionY: updatedPosition.y,
+                        positionZ: updatedPosition.z,
+                    };
                 }
-                if (!targetGroup) return;
+                return zone;
+            });
 
-                resetColors();
-                clearConnectionLines();
-                object.material.color.copy(highlightColor);
-
-                // Устанавливаем выбранный объект для отображения информации
-                setSelectedObject(targetGroup.userData);
-
-                // Скрываем дочерние элементы всех зон, кроме текущей
-                warehouseGroup.traverse(child => {
-                    if (child.userData.type === 'zone' && child !== targetGroup) {
-                        child.userData.childGroups.forEach(subChild => {
-                            subChild.visible = false;
-                        });
-                        child.userData.isExpanded = false;
-                    }
-                });
-
-                // Обрабатываем клик на зону или контейнер
-                if (targetGroup.userData.type === 'zone') {
-                    const isExpanding = !targetGroup.userData.isExpanded;
-                    targetGroup.userData = { ...targetGroup.userData, isExpanded: isExpanding };
-
-                    targetGroup.userData.childGroups.forEach((child, index) => {
-                        // Показываем подзоны и контейнеры
-                        child.visible = isExpanding;
-                        if (child.userData.type === 'container') {
-                            // Также показываем метку контейнера
-                            const label = targetGroup.children.find(c => c.position.equals(child.position) && c.isSprite);
-                            if (label) label.visible = isExpanding;
-                        }
-
-                        if (isExpanding) {
-                            const startPos = new THREE.Vector3().setFromMatrixPosition(targetGroup.matrixWorld);
-                            const endPos = new THREE.Vector3().setFromMatrixPosition(child.matrixWorld);
-                            startPos.y = targetGroup.userData.height / 2;
-                            endPos.y = child.userData.height ? child.userData.height / 2 : child.userData.height / 2;
-
-                            gsap.from(child.position, {
-                                x: 0,
-                                z: 0,
-                                duration: 0.5,
-                                ease: 'power2.out',
-                                delay: index * 0.1,
-                            });
-
-                            createConnectionLine(startPos, endPos);
-                        }
-                    });
-                }
-            }
+            onUpdateWarehouse({ ...warehouseData, zones: updatedZones });
         };
 
         const resetColors = () => {
@@ -267,43 +169,143 @@ const Warehouse3DViewer = ({ warehouseData }) => {
             });
         };
 
+        const onDoubleClick = (event) => {
+            event.preventDefault();
+
+            const rect = mountRef.current.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(warehouseGroup.children, true);
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                let targetGroup = object;
+                while (targetGroup && !targetGroup.userData.type) {
+                    targetGroup = targetGroup.parent;
+                }
+                if (!targetGroup) return;
+
+                resetColors();
+                object.material.color.copy(highlightColor);
+                setSelectedObject(targetGroup.userData);
+
+                if (isEditMode) {
+                    transformControls.attach(object);
+                    setIsSettingModalOpen(true);
+                }
+            } else if (isEditMode) {
+                transformControls.detach();
+                controls.enabled = true;
+                setSelectedObject(null);
+                setIsSettingModalOpen(false);
+                resetColors();
+            }
+        };
+
+        const onMouseDown = (event) => {
+            if (!isEditMode || !transformControls.object || event.button !== 2) return;
+            event.preventDefault();
+            controls.enabled = false;
+            isDraggingRef.current = true;
+        };
+
+        const onMouseMove = (event) => {
+            if (!isDraggingRef.current || !transformControls.object) return;
+
+            const rect = mountRef.current.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const intersectPoint = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, intersectPoint);
+
+            transformControls.object.position.set(
+                intersectPoint.x,
+                transformControls.object.position.y,
+                intersectPoint.z
+            );
+        };
+
+        const onMouseUp = (event) => {
+            if (event.button !== 2 || !isDraggingRef.current) return;
+            isDraggingRef.current = false;
+            controls.enabled = true;
+            handleObjectChange();
+        };
+
+        // Анимация
         let animationFrameId;
         const animate = () => {
             animationFrameId = requestAnimationFrame(animate);
             controls.update();
-            connectionsRef.current.forEach(line => {
-                line.geometry.attributes.position.needsUpdate = true;
-            });
             renderer.render(scene, camera);
         };
         animate();
 
+        // Обработка изменения размера
         const handleResize = () => {
-            if (mountRef.current && renderer) {
-                const width = mountRef.current.clientWidth;
-                const height = mountRef.current.clientHeight;
-                renderer.setSize(width, height);
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
+            const width = mountRef.current.clientWidth;
+            const height = mountRef.current.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        };
+
+        // Обработка клавиш
+        const onKeyDown = (event) => {
+            if (!isEditMode) return;
+            switch (event.key) {
+                case 't':
+                    transformControls.setMode('translate');
+                    break;
+                case 'r':
+                    transformControls.setMode('rotate');
+                    break;
+                case 's':
+                    transformControls.setMode('scale');
+                    break;
+                case 'Escape':
+                    transformControls.detach();
+                    controls.enabled = true;
+                    setSelectedObject(null);
+                    setIsSettingModalOpen(false);
+                    break;
+                default:
+                    break;
             }
         };
 
-        renderer.domElement.addEventListener('click', onClick);
+        // Добавление слушателей событий
+        renderer.domElement.addEventListener('dblclick', onDoubleClick);
+        renderer.domElement.addEventListener('mousedown', onMouseDown);
+        renderer.domElement.addEventListener('mousemove', onMouseMove);
+        renderer.domElement.addEventListener('mouseup', onMouseUp);
         window.addEventListener('resize', handleResize);
+        window.addEventListener('keydown', onKeyDown);
 
+        // Очистка
         return () => {
-            renderer.domElement.removeEventListener('click', onClick);
+            renderer.domElement.removeEventListener('dblclick', onDoubleClick);
+            renderer.domElement.removeEventListener('mousedown', onMouseDown);
+            renderer.domElement.removeEventListener('mousemove', onMouseMove);
+            renderer.domElement.removeEventListener('mouseup', onMouseUp);
             window.removeEventListener('resize', handleResize);
+            window.removeEventListener('keydown', onKeyDown);
             cancelAnimationFrame(animationFrameId);
-            if (mountRef.current && renderer.domElement && mountRef.current.contains(renderer.domElement)) {
+            if (mountRef.current && renderer.domElement) {
                 mountRef.current.removeChild(renderer.domElement);
             }
             renderer.dispose();
             scene.clear();
             controls.dispose();
+            transformControls.dispose();
             connectionsRef.current = [];
         };
-    }, [warehouseData]);
+    }, [warehouseData, isWireframe, onUpdateWarehouse]);
 
     const toggleWireframe = () => {
         setIsWireframe(prev => {
@@ -316,11 +318,77 @@ const Warehouse3DViewer = ({ warehouseData }) => {
         });
     };
 
+    const toggleEditMode = () => {
+        setIsEditMode(prev => {
+            const newState = !prev;
+            if (!newState) {
+                transformControlsRef.current.detach();
+                controlsRef.current.enabled = true;
+                setSelectedObject(null);
+                setIsSettingModalOpen(false);
+            }
+            return newState;
+        });
+    };
+
+    const handleSaveZone = (updatedZone) => {
+        const updatedZones = warehouseData.zones.map(z =>
+            z.id === updatedZone.id ? { ...z, ...updatedZone } : z
+        );
+        onUpdateWarehouse({ ...warehouseData, zones: updatedZones });
+        warehouseGroupRef.current.clear();
+        let rootOffsetX = 0;
+        let rootOffsetZ = 0;
+        updatedZones.filter(zone => zone.parentId === null).forEach(zone => {
+            const createZone = (zone, parentGroup, level, offsetX, offsetZ) => {
+                const geometry = new THREE.BoxGeometry(zone.width || 2, zone.height || 4, zone.length || 2);
+                const material = new THREE.MeshPhongMaterial({
+                    color: zone.canStoreItems ? defaultZoneColor : restrictedZoneColor,
+                    wireframe: isWireframe,
+                    transparent: true,
+                    opacity: 0.8,
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.set(
+                    offsetX + (zone.width || 2) / 2,
+                    (zone.height || 4) / 2,
+                    offsetZ + (zone.length || 2) / 2
+                );
+
+                mesh.userData = {
+                    id: zone.id,
+                    type: 'zone',
+                    name: zone.name,
+                    width: zone.width || 2,
+                    height: zone.height || 4,
+                    length: zone.length || 2,
+                    canStoreItems: zone.canStoreItems,
+                };
+
+                parentGroup.add(mesh);
+
+                const subZones = updatedZones.filter(z => z.parentId === zone.id);
+                subZones.forEach(subZone => {
+                    createZone(subZone, parentGroup, level + 1, offsetX, offsetZ);
+                });
+
+                return mesh;
+            };
+
+            createZone(zone, warehouseGroupRef.current, 0, rootOffsetX, rootOffsetZ);
+            rootOffsetX += (zone.width || 2) + 2;
+            if (rootOffsetX + (zone.width || 2) > 50) {
+                rootOffsetX = 0;
+                rootOffsetZ += (zone.length || 2) + 2;
+            }
+        });
+    };
+
     return (
         <div className="relative w-full h-[800px] border border-gray-300 rounded-xl shadow-lg overflow-hidden bg-gray-50">
             <div ref={mountRef} className="w-full h-full" />
 
-            {/* Панель управления */}
             <div className="absolute top-2 left-2 w-48 bg-white/95 p-3 rounded-md shadow-lg pointer-events-auto border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2 flex items-center gap-1">
                     <FaCube className="text-blue-600 w-4 h-4" /> Управление
@@ -344,9 +412,7 @@ const Warehouse3DViewer = ({ warehouseData }) => {
                         onClick={() =>
                             setShowGrid((prev) => {
                                 const gridHelper = sceneRef.current?.children.find((obj) => obj instanceof THREE.GridHelper);
-                                if (gridHelper) {
-                                    gridHelper.visible = !prev;
-                                }
+                                if (gridHelper) gridHelper.visible = !prev;
                                 return !prev;
                             })
                         }
@@ -364,19 +430,22 @@ const Warehouse3DViewer = ({ warehouseData }) => {
                     </button>
                     <button
                         onClick={() => {
-                            if (cameraRef.current && controlsRef.current) {
-                                cameraRef.current.position.set(10, 10, 10);
-                                controlsRef.current.reset();
-                            }
+                            cameraRef.current.position.set(50, 50, 50);
+                            controlsRef.current.reset();
                         }}
                         className="w-full flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-all duration-150 text-xs font-medium"
                     >
                         <FaSyncAlt className="w-3 h-3" /> Сброс камеры
                     </button>
+                    <button
+                        onClick={toggleEditMode}
+                        className="w-full flex items-center gap-1 px-2 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-150 text-xs font-medium"
+                    >
+                        {isEditMode ? "Просмотр" : "Редактировать"}
+                    </button>
                 </div>
             </div>
 
-            {/* Панель информации */}
             {selectedObject && (
                 <div className="absolute top-4 right-4 w-80 bg-white/95 p-5 rounded-lg shadow-xl pointer-events-auto border border-gray-100">
                     <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -401,28 +470,18 @@ const Warehouse3DViewer = ({ warehouseData }) => {
                                 {selectedObject.width}×{selectedObject.height}×{selectedObject.length}
                             </span>
                         </p>
-                        {selectedObject.type === 'zone' && (
-                            <>
-                                <p className="text-sm">
-                                    <strong className="font-semibold">Может хранить:</strong>{' '}
-                                    <span className={selectedObject.canStoreItems ? 'text-green-600' : 'text-red-600'}>
-                                        {selectedObject.canStoreItems ? 'Да' : 'Нет'}
-                                    </span>
-                                </p>
-                                <p className="text-sm">
-                                    <strong className="font-semibold">Контейнеров:</strong>{' '}
-                                    <span className="text-gray-900">{selectedObject.containers.length}</span>
-                                </p>
-                            </>
-                        )}
-                        {selectedObject.type === 'container' && selectedObject.contents && (
-                            <p className="text-sm">
-                                <strong className="font-semibold">Содержимое:</strong>{' '}
-                                <span className="text-gray-900">{selectedObject.contents}</span>
-                            </p>
-                        )}
                     </div>
                 </div>
+            )}
+
+            {isSettingModalOpen && (
+                <ZoneSettingModal
+                    setIsSettingModalOpen={setIsSettingModalOpen}
+                    zone={selectedObject}
+                    onClose={() => setIsSettingModalOpen(false)}
+                    warehouseId={warehouseId}
+                    onSave={handleSaveZone}
+                />
             )}
         </div>
     );
