@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -10,7 +10,7 @@ import { API_WAREHOUSE_ZONE_CREATE } from "../../api/API";
 const Modal = ({ children, onClose }) => {
     return ReactDOM.createPortal(
         <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-2/3 lg:w-1/2">
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-2xl">
                 {children}
             </div>
         </div>,
@@ -26,14 +26,16 @@ const WarehouseZoneCreateModal = ({
     height: parentHeight,
     length: parentLength,
     setIsZoneCreated,
-    parentZoneName // Новый пропс для имени родительской зоны
+    parentZoneName
 }) => {
-    const [warehouseZoneName, setWarehouseZoneName] = useState(parentZoneName ? `${parentZoneName} - ` : "");
-    const [height, setHeight] = useState(0);
-    const [length, setLength] = useState(0);
-    const [width, setWidth] = useState(0);
+    const initialName = parentZoneName ? `${parentZoneName} - ` : "";
+    const [warehouseZoneName, setWarehouseZoneName] = useState(initialName);
+    const [height, setHeight] = useState(parentHeight/2 || 0.1);
+    const [length, setLength] = useState(parentLength/2 || 0.1);
+    const [width, setWidth] = useState(parentWidth/2 || 0.1);
     const [isFormError, setIsFormError] = useState(false);
     const [formErrors, setFormErrors] = useState({ height: false, length: false, width: false });
+    const [isLoading, setIsLoading] = useState(false);
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
     const canvasRef = useRef(null);
@@ -41,30 +43,34 @@ const WarehouseZoneCreateModal = ({
     const rendererRef = useRef(null);
     const cameraRef = useRef(null);
 
-    // Функция валидации размеров
     const validateDimensions = (value, maxValue, fieldName) => {
-        if (value > maxValue) {
-            return `${fieldName} не может превышать ${maxValue} м`;
-        }
+        if (value < 0.1) return `${fieldName} должна быть не менее 0.1 м`;
+        if (value > maxValue) return `${fieldName} не может превышать ${maxValue} м`;
         return "";
     };
 
-    // Обработка изменения размеров
-    const handleDimensionChange = (value, setter, maxValue, fieldName) => {
-        const numValue = parseFloat(value) || 0;
+    const debounce = (func, wait) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
+    };
+
+    const handleDimensionChange = useCallback((value, setter, maxValue, fieldName) => {
+        const numValue = Math.max(0.1, Math.min(parseFloat(value) || 0.1, maxValue));
         setter(numValue);
         setFormErrors(prev => ({
             ...prev,
-            [fieldName.toLowerCase()]: numValue > maxValue
+            [fieldName.toLowerCase()]: numValue > maxValue || numValue < 0.1
         }));
-    };
+    }, []);
 
-    // Обработка ввода имени подзоны
+    const debouncedDimensionChange = debounce(handleDimensionChange, 100);
+
     const handleNameChange = (e) => {
         const newValue = e.target.value;
         const prefix = parentZoneName ? `${parentZoneName} - ` : "";
-
-        // Если значение не начинается с префикса, добавляем его
         if (!newValue.startsWith(prefix)) {
             setWarehouseZoneName(`${prefix}${newValue}`);
         } else {
@@ -73,7 +79,15 @@ const WarehouseZoneCreateModal = ({
         setIsFormError(false);
     };
 
-    // Инициализация 3D сцены
+    const resetForm = () => {
+        setWarehouseZoneName(initialName);
+        setHeight(parentHeight/2 || 0.1);
+        setLength(parentLength/2 || 0.1);
+        setWidth(parentWidth/2 || 0.1);
+        setIsFormError(false);
+        setFormErrors({ height: false, length: false, width: false });
+    };
+
     useEffect(() => {
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
@@ -86,6 +100,10 @@ const WarehouseZoneCreateModal = ({
         const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(5, 5, 5);
         scene.add(light);
+
+        // Добавляем оси координат
+        const axesHelper = new THREE.AxesHelper(5);
+        scene.add(axesHelper);
 
         sceneRef.current = scene;
         rendererRef.current = renderer;
@@ -102,15 +120,12 @@ const WarehouseZoneCreateModal = ({
         };
     }, []);
 
-    // Обновление визуализации
     useEffect(() => {
         const scene = sceneRef.current;
         if (!scene) return;
 
         scene.children.forEach(child => {
-            if (child.type === 'Mesh') {
-                scene.remove(child);
-            }
+            if (child.type === 'Mesh') scene.remove(child);
         });
 
         const parentGeometry = new THREE.BoxGeometry(parentLength || 1, parentHeight || 1, parentWidth || 1);
@@ -136,10 +151,6 @@ const WarehouseZoneCreateModal = ({
         const maxDimension = Math.max(parentLength || 1, parentHeight || 1, parentWidth || 1);
         cameraRef.current.position.set(maxDimension * 2, maxDimension * 2, maxDimension * 2);
         cameraRef.current.lookAt(0, 0, 0);
-
-        if ((length > parentLength) || (height > parentHeight) || (width > parentWidth)) {
-            toast.warn("Размеры подзоны превышают размеры родительской зоны!");
-        }
     }, [length, height, width, parentLength, parentHeight, parentWidth]);
 
     const saveWarehouseZone = async () => {
@@ -149,11 +160,12 @@ const WarehouseZoneCreateModal = ({
             return;
         }
 
-        if ((length > parentLength) || (height > parentHeight) || (width > parentWidth)) {
-            toast.error("Размеры подзоны не могут превышать размеры родительской зоны");
+        if (Object.values(formErrors).some(error => error)) {
+            toast.error("Проверьте правильность введенных размеров");
             return;
         }
 
+        setIsLoading(true);
         try {
             const response = await axios.post(
                 `${API_WAREHOUSE_ZONE_CREATE}/${warehouseId}/zones?userId=${userId}`,
@@ -171,22 +183,30 @@ const WarehouseZoneCreateModal = ({
 
             setIsZoneCreated(true);
             setIsWarehouseSaveModalOpen(false);
+            toast.success("Подзона успешно создана");
         } catch (error) {
-            toast.error(error.response?.data?.message);
+            toast.error(error.response?.data?.message || "Ошибка при сохранении");
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    const handleClose = () => {
+        resetForm();
+        setIsWarehouseSaveModalOpen(false);
+    };
+
     return (
-        <Modal onClose={() => setIsWarehouseSaveModalOpen(false)}>
+        <Modal onClose={handleClose}>
             <h2 className="text-2xl font-semibold text-gray-800 mb-8 text-center">Добавить подзону склада</h2>
             <div className="flex flex-col md:flex-row gap-8">
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-6 flex-1">
+                <div className="space-y-6 flex-1">
                     <div>
                         <label htmlFor="name" className="block text-left mb-2 text-gray-700 font-medium">Название подзоны</label>
                         <input
                             id="name"
                             type="text"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${isFormError && !warehouseZoneName.trim() ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${isFormError && !warehouseZoneName.trim() ? 'border-red-500' : 'border-gray-300'}`}
                             value={warehouseZoneName}
                             onChange={handleNameChange}
                             placeholder={parentZoneName ? `${parentZoneName} - ` : "Введите название подзоны"}
@@ -199,11 +219,11 @@ const WarehouseZoneCreateModal = ({
                         <input
                             id="height"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${formErrors.height ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.height ? 'border-red-500' : 'border-gray-300'}`}
                             value={height}
-                            onChange={(e) => handleDimensionChange(e.target.value, setHeight, parentHeight, "Высота")}
+                            onChange={(e) => debouncedDimensionChange(e.target.value, setHeight, parentHeight, "Высота")}
                             placeholder="Введите высоту"
-                            min="0"
+                            min="0.1"
                             step="0.1"
                         />
                         {formErrors.height && <p className="text-red-500 text-sm mt-1">{validateDimensions(height, parentHeight, "Высота")}</p>}
@@ -214,11 +234,11 @@ const WarehouseZoneCreateModal = ({
                         <input
                             id="length"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${formErrors.length ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.length ? 'border-red-500' : 'border-gray-300'}`}
                             value={length}
-                            onChange={(e) => handleDimensionChange(e.target.value, setLength, parentLength, "Длина")}
+                            onChange={(e) => debouncedDimensionChange(e.target.value, setLength, parentLength, "Длина")}
                             placeholder="Введите длину"
-                            min="0"
+                            min="0.1"
                             step="0.1"
                         />
                         {formErrors.length && <p className="text-red-500 text-sm mt-1">{validateDimensions(length, parentLength, "Длина")}</p>}
@@ -229,11 +249,11 @@ const WarehouseZoneCreateModal = ({
                         <input
                             id="width"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 ${formErrors.width ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.width ? 'border-red-500' : 'border-gray-300'}`}
                             value={width}
-                            onChange={(e) => handleDimensionChange(e.target.value, setWidth, parentWidth, "Ширина")}
+                            onChange={(e) => debouncedDimensionChange(e.target.value, setWidth, parentWidth, "Ширина")}
                             placeholder="Введите ширину"
-                            min="0"
+                            min="0.1"
                             step="0.1"
                         />
                         {formErrors.width && <p className="text-red-500 text-sm mt-1">{validateDimensions(width, parentWidth, "Ширина")}</p>}
@@ -242,8 +262,9 @@ const WarehouseZoneCreateModal = ({
                     <div className="flex justify-end space-x-4 mt-8">
                         <button
                             type="button"
-                            onClick={() => setIsWarehouseSaveModalOpen(false)}
-                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200"
+                            onClick={handleClose}
+                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50"
+                            disabled={isLoading}
                         >
                             Отмена
                         </button>
@@ -254,15 +275,16 @@ const WarehouseZoneCreateModal = ({
                         >
                             <button
                                 type="button"
-                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200"
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                                disabled={isLoading}
                             >
-                                Сохранить
+                                {isLoading ? "Сохранение..." : "Сохранить"}
                             </button>
                         </ConfirmationWrapper>
                     </div>
-                </form>
+                </div>
                 <div className="flex-1 flex flex-col items-center justify-center">
-                    <canvas ref={canvasRef} className="border rounded-lg border-gray-300 bg-gray-50" />
+                    <canvas ref={canvasRef} className="border rounded-lg border-gray-300 bg-gray-50 w-full max-w-[300px] h-[300px]" />
                     <div className="mt-4 flex items-center gap-4 text-sm font-medium">
                         <div className="flex items-center gap-1">
                             <span className="inline-block w-4 h-4 bg-gray-300 opacity-30 border border-gray-400"></span>
@@ -272,6 +294,9 @@ const WarehouseZoneCreateModal = ({
                             <span className="inline-block w-4 h-4 bg-green-500 opacity-90 border border-green-600"></span>
                             <span className="text-gray-700">Подзона</span>
                         </div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-500">
+                        Красная ось: X (длина), Зеленая ось: Y (высота), Синяя ось: Z (ширина)
                     </div>
                 </div>
             </div>

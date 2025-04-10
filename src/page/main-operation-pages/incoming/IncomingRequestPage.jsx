@@ -16,7 +16,7 @@ import {
   setNomenclatures,
   setWarehouses,
   setZonesForWarehouse,
-  setContainersForZone,
+  setContainersForZone, 
   setSuppliers
 } from '../../../store/slices/main-operation-slice/incoming/incomingCacheSlice';
 
@@ -49,7 +49,6 @@ const IncomingRequestPage = () => {
       documentNumber: "",
       documentDate: "",
       supplierId: "",
-      tnvedCode: "",
     },
   });
 
@@ -312,15 +311,6 @@ const IncomingRequestPage = () => {
                 )}
               />
               {errors.supplierId && <p className="text-red-500 text-xs">{errors.supplierId.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm text-main-dull-blue font-medium mb-1">Код ТН ВЭД</label>
-              <input
-                {...register("tnvedCode")}
-                className="w-full border border-main-dull-blue rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-main-purp-dark transition"
-                placeholder="Необязательно"
-                disabled={isLoading}
-              />
             </div>
           </div>
         </div>

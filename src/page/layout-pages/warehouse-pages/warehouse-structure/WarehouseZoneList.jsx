@@ -147,7 +147,7 @@ const WarehouseZoneList = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen w-full flex flex-col">
+    <div className="bg-gray-50 min-h-screen w-full flex flex-col ">
       <div className="flex-grow max-w-full mx-auto w-full">
         <div className="bg-white rounded-lg shadow-sm h-full flex flex-col">
           {/* Шапка с управлением */}
@@ -198,7 +198,7 @@ const WarehouseZoneList = () => {
           </div>
   
           {/* Основное содержимое */}
-          <div className="flex-grow w-full h-full overflow-auto">
+          <div className="flex-grow w-full h-full overflow-auto p-4">
             {loading && (
               <div className="flex flex-col items-center justify-center h-full">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
@@ -250,7 +250,7 @@ const WarehouseZoneList = () => {
         {/* Кнопка добавления шкафа */}
         {hasRole("warehouse_manager") && (
           <button
-            className="fixed bottom-6 right-6 w-12 h-12 bg-blue-600 rounded-full shadow-lg text-white text-2xl flex items-center justify-center hover:bg-blue-700 transition-colors duration-200"
+            className="fixed bottom-6 right-6 w-12 h-12 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center"
             onClick={() => setIsModalOpen(true)}
             title="Добавить шкаф"
           >

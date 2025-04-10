@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { BiDotsVerticalRounded, BiPlus, BiTrash } from "react-icons/bi";
+import { BiDotsVerticalRounded, BiPlus, BiTrash, BiCog } from "react-icons/bi";
 import { HiArrowSmDown } from "react-icons/hi";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import ContainerCard from "./ContainerCard";
 import WarehouseContainerSaveModal from "../../../../components/modal-components/warehouse-modal/WarehouseContainerSaveModal";
 import WarehouseZoneCreateModal from "../../../../components/modal-components/WarehouseZoneCreateModal";
+import ZoneSettingModal from "../../../../components/modal-components/warehouse-modal/ZoneSettingModal";
 import { toast } from "react-toastify";
 import {
   FaRulerCombined,
@@ -14,7 +15,8 @@ import {
   FaLayerGroup,
   FaPercentage,
 } from "react-icons/fa";
-import { API_DELETE_WAREHOUSE_ZONE } from "../../../../api/API";
+import { API_DELETE_WAREHOUSE_ZONE, API_DELETE_WAREHOUSE_CONTAINER } from "../../../../api/API";
+
 
 const ZoneCard = ({ zone, warehouse, allZones }) => {
   const authToken = useSelector((state) => state.token.token);
@@ -25,9 +27,9 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
   const [openContainers, setOpenContainers] = useState({});
   const [isContainerModalOpen, setIsContainerModalOpen] = useState(false);
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(null);
 
-  // Инициализация подзон и контейнеров
   const fetchShelves = useCallback(() => {
     const subZones = allZones.filter((z) => z.parentId === zone.id);
     setShelves(subZones);
@@ -75,21 +77,24 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
     [authToken, fetchShelves]
   );
 
-  const handleDeleteContainer = useCallback(async (zoneId, containerId) => {
-    try {
-      await axios.delete(
-        API_DELETE_WAREHOUSE_CONTAINER.replace("{containerId}", containerId),
-        { headers: { "Auth-token": authToken } }
-      );
-      setContainers((prev) => ({
-        ...prev,
-        [zoneId]: prev[zoneId].filter((c) => c.id !== containerId),
-      }));
-      toast.success("Контейнер удалён");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Ошибка удаления контейнера");
-    }
-  }, [authToken]);
+  const handleDeleteContainer = useCallback(
+    async (zoneId, containerId) => {
+      try {
+        await axios.delete(
+          API_DELETE_WAREHOUSE_CONTAINER.replace("{containerId}", containerId),
+          { headers: { "Auth-token": authToken } }
+        );
+        setContainers((prev) => ({
+          ...prev,
+          [zoneId]: prev[zoneId].filter((c) => c.id !== containerId),
+        }));
+        toast.success("Контейнер удалён");
+      } catch (error) {
+        toast.error(error.response?.data?.message || "Ошибка удаления контейнера");
+      }
+    },
+    [authToken]
+  );
 
   const freeCapacity = useMemo(() => {
     const totalCapacity = zone.capacity || 0;
@@ -143,6 +148,16 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
             <BiPlus size={14} className="text-green-500" /> Контейнер
           </button>
           <button
+            className="flex items-center gap-2 w-full px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors duration-150"
+            onClick={() => {
+              setSelectedZoneId(zoneId);
+              setIsSettingsModalOpen(true);
+              setMenuOpen(false);
+            }}
+          >
+            <BiCog size={14} className="text-gray-500" /> Настройки
+          </button>
+          <button
             className="flex items-center gap-2 w-full px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
             onClick={() => {
               handleDeleteZone(zoneId);
@@ -172,8 +187,8 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
     }, [shelf.capacity, shelfFreeCapacity]);
 
     const shelfDimensions = `${shelf.length || "-"} × ${shelf.width || "-"} × ${
-      shelf.height || "-"
-    }`;
+            shelf.height || "-"
+    }`
 
     return (
       <div className="p-3 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -191,8 +206,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
             </button>
             <div>
               <div className="text-sm font-medium text-gray-800 flex items-center gap-1">
-                <FaLayerGroup size={12} className="text-gray-400" />
-                {shelf.name}
+                <FaLayerGroup size={12} className="text-gray-400" />{shelf.name}
                 <span className="text-xs text-gray-500 ml-1">
                   ({(containers[shelf.id] || shelf.containers || []).length} конт.)
                 </span>
@@ -287,7 +301,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
       {openShelves && (
         <div className="mt-3 pl-6">
           {shelves.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {shelves.map((shelf) => (
                 <ShelfCard key={shelf.id} shelf={shelf} />
               ))}
@@ -322,6 +336,16 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
             setIsZoneModalOpen(false);
             fetchShelves();
           }}
+        />
+      )}
+      {isSettingsModalOpen && (
+        <ZoneSettingModal
+          zone={zone}
+          onClose={() => {
+            setIsSettingsModalOpen(false);
+            fetchShelves();
+          }}
+          warehouseId={warehouse.id}
         />
       )}
     </div>
