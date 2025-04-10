@@ -7,6 +7,7 @@ import { API_GET_CATEGORIES, API_UPDATE_NOMENCLATURE, API_DELETE_NOMENCLATURE } 
 
 const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const authToken = useSelector((state) => state.token.token);
+    const userId = useSelector((state) => state.user.userId);
 
     const [name, setName] = useState(nomenclature?.name || "");
     const [article, setArticle] = useState(nomenclature?.article || "");
@@ -18,31 +19,53 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const [height, setHeight] = useState(nomenclature?.height || 0);
     const [length, setLength] = useState(nomenclature?.length || 0);
     const [width, setWidth] = useState(nomenclature?.width || 0);
+    const [volume, setVolume] = useState(nomenclature?.volume || 0);
+    const [sizeType, setSizeType] = useState(nomenclature?.volume ? "volume" : "dimensions"); // Новый переключатель
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await axios.get(API_GET_CATEGORIES, { // Замена на константу
+                const response = await axios.get(API_GET_CATEGORIES, {
                     headers: { "Auth-token": authToken },
                 });
-                setCategories(response.data);
+                console.log("API response.data:", response.data);
+                setCategories(Array.isArray(response.data.body) ? response.data.body : []);
             } catch (error) {
+                console.error("Ошибка при загрузке категорий:", error);
+                setCategories([]);
                 toast.error("Ошибка загрузки категорий");
             }
         };
         fetchCategories();
     }, [authToken]);
 
-    const handleSave = async () => { // Убрал e.preventDefault(), так как вызывается через ConfirmationWrapper
+    const handleSave = async () => {
         setLoading(true);
         try {
-            await axios.put(
-                `${API_UPDATE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`, // Замена на константу
-                { name, article, code, type, tnved_code, measurement_unit, categoryId, height, length, width },
-                { headers: { "Auth-token": authToken } }
-            );
+            const url = API_UPDATE_NOMENCLATURE.replace("{nomenclatureId}", nomenclature.id);
+            const updated_by = userId;
+            // Формируем объект данных в зависимости от sizeType
+            const data = {
+                name,
+                article,
+                code,
+                type,
+                updated_by,
+                tnved_code,
+                measurement_unit,
+                categoryId,
+            };
+            if (sizeType === "volume") {
+                data.volume = volume;
+            } else {
+                data.width = width;
+                data.height = height;
+                data.length = length;
+            }
+
+            await axios.put(url, data, { headers: { "Auth-token": authToken } });
             toast.success("Номенклатура сохранена");
             onClose();
         } catch (error) {
@@ -55,7 +78,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const handleDelete = async () => {
         try {
             await axios.delete(
-                `${API_DELETE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`, // Замена на константу
+                `${API_DELETE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`,
                 { headers: { "Auth-token": authToken } }
             );
             toast.success("Номенклатура удалена");
@@ -71,7 +94,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                 <h2 className="text-xl font-semibold text-main-dull-gray mb-4 text-center">
                     {nomenclature ? "Редактирование" : "Создание"}
                 </h2>
-                <form onSubmit={(e) => e.preventDefault()} className="space-y-3"> {/* Предотвращаем отправку формы */}
+                <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
                     <div>
                         <label className="block text-sm text-main-dull-blue">Имя</label>
                         <input
@@ -134,48 +157,91 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                             required
                         >
                             <option value="" disabled>Выберите</option>
-                            {categories.map((category) => (
-                                <option key={category.id} value={category.id}>
-                                    {category.name}
-                                </option>
-                            ))}
+                            {Array.isArray(categories) && categories.length > 0 ? (
+                                categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))
+                            ) : (
+                                <option value="" disabled>Категории не загружены</option>
+                            )}
                         </select>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div>
-                            <label className="block text-sm text-main-dull-blue">Высота (м)</label>
-                            <input
-                                type="number"
-                                className="w-full border rounded px-2 py-1 text-sm"
-                                value={height}
-                                onChange={(e) => setHeight(parseFloat(e.target.value))}
-                                min="0"
-                                step="0.1"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-main-dull-blue">Длина (м)</label>
-                            <input
-                                type="number"
-                                className="w-full border rounded px-2 py-1 text-sm"
-                                value={length}
-                                onChange={(e) => setLength(parseFloat(e.target.value))}
-                                min="0"
-                                step="0.1"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm text-main-dull-blue">Ширина (м)</label>
-                            <input
-                                type="number"
-                                className="w-full border rounded px-2 py-1 text-sm"
-                                value={width}
-                                onChange={(e) => setWidth(parseFloat(e.target.value))}
-                                min="0"
-                                step="0.1"
-                            />
+                    {/* Переключатель для выбора типа размера */}
+                    <div>
+                        <label className="block text-sm text-main-dull-blue">Тип размера</label>
+                        <div className="flex gap-4">
+                            <label className="flex items-center gap-1">
+                                <input
+                                    type="radio"
+                                    value="volume"
+                                    checked={sizeType === "volume"}
+                                    onChange={() => setSizeType("volume")}
+                                />
+                                Объем
+                            </label>
+                            <label className="flex items-center gap-1">
+                                <input
+                                    type="radio"
+                                    value="dimensions"
+                                    checked={sizeType === "dimensions"}
+                                    onChange={() => setSizeType("dimensions")}
+                                />
+                                Размеры
+                            </label>
                         </div>
                     </div>
+                    {/* Условное отображение полей */}
+                    {sizeType === "volume" ? (
+                        <div>
+                            <label className="block text-sm text-main-dull-blue">Объем (м³)</label>
+                            <input
+                                type="number"
+                                className="w-full border rounded px-2 py-1 text-sm"
+                                value={volume}
+                                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                                min="0"
+                                step="0.1"
+                            />
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-3">
+                            <div>
+                                <label className="block text-sm text-main-dull-blue">Высота (м)</label>
+                                <input
+                                    type="number"
+                                    className="w-full border rounded px-2 py-1 text-sm"
+                                    value={height}
+                                    onChange={(e) => setHeight(parseFloat(e.target.value))}
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-main-dull-blue">Длина (м)</label>
+                                <input
+                                    type="number"
+                                    className="w-full border rounded px-2 py-1 text-sm"
+                                    value={length}
+                                    onChange={(e) => setLength(parseFloat(e.target.value))}
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-main-dull-blue">Ширина (м)</label>
+                                <input
+                                    type="number"
+                                    className="w-full border rounded px-2 py-1 text-sm"
+                                    value={width}
+                                    onChange={(e) => setWidth(parseFloat(e.target.value))}
+                                    min="0"
+                                    step="0.1"
+                                />
+                            </div>
+                        </div>
+                    )}
                     <div className="flex justify-end gap-2 pt-3">
                         <button
                             type="button"

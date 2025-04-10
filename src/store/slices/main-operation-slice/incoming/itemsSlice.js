@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  items: [], // Массив товаров
+  items: [],
 };
 
 const itemsSlice = createSlice({
@@ -12,7 +12,7 @@ const itemsSlice = createSlice({
       state.items.push(action.payload);
     },
     removeItem: (state, action) => {
-      state.items = state.items.filter((_, index) => index !== action.payload);
+      state.items.splice(action.payload, 1);
     },
     updateItem: (state, action) => {
       const { index, field, value } = action.payload;
@@ -21,9 +21,11 @@ const itemsSlice = createSlice({
     setItems: (state, action) => {
       state.items = action.payload;
     },
+    resetItems: (state) => {
+      state.items = [];
+    },
   },
 });
 
-export const { addItem, removeItem, updateItem, setItems } = itemsSlice.actions;
-
+export const { addItem, removeItem, updateItem, setItems, resetItems } = itemsSlice.actions;
 export default itemsSlice.reducer;

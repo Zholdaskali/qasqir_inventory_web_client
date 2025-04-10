@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const formatDate = (isoString) => {
-  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/); // Извлекаем только дату
+  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) {
     return "Неправильная дата";
   }
@@ -20,12 +20,11 @@ const userListSlice = createSlice({
         ...user,
         registrationDate: formatDate(user.registrationDate),
       }));
-
-      return formattedUserList; 
+      return formattedUserList;
     },
-    clearUserList:()=>initialState
+    clearUserList: () => initialState,
   },
 });
 
-export const { saveUserList,clearUserList } = userListSlice.actions;
+export const { saveUserList, clearUserList } = userListSlice.actions;
 export default userListSlice.reducer;

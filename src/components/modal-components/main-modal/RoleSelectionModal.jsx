@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { useState } from "react";
 import axios from "axios";
 import { API_CHANGE_ROLE } from "../../../api/API";
@@ -7,38 +6,57 @@ import { useSelector } from "react-redux";
 const rolesList = [
     { id: 1, name: "Админ" },
     { id: 2, name: "Кладовщик" },
-    { id: 3, name: "Продавец" },
+    { id: 3, name: "Управляющий складом" },
     { id: 4, name: "Сотрудник" },
 ];
 
 const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
-    const [selectedRoles, setSelectedRoles] = useState([]);
+    const [selectedRoles, setSelectedRoles] = useState(selectedUser.userRoles || []);
     const [roleDropdown, setRoleDropdown] = useState(rolesList);
 
-    const authToken = useSelector((state)=>state.token.token)
+    const authToken = useSelector((state) => state.token.token);
 
     const handleRoleSelect = (roleId) => {
-        // Проверяем, чтобы роль не была уже выбрана
-        if (!selectedRoles.includes(roleId)) {
-            const newRoles = [...selectedRoles, roleId];
-            setSelectedRoles(newRoles);
-            // Обновляем доступные роли в выпадающем списке
-            const filteredDropdown = rolesList.filter((role) => !newRoles.includes(role.id));
-            setRoleDropdown(filteredDropdown);
+        let newRoles = [...selectedRoles];
+        const employeeRoleId = 4; // Сотрудник
+        const warehousemanRoleId = 2; // Кладовщик
+        const managerRoleId = 3; // Управляющий складом
+
+        if (!newRoles.includes(roleId)) {
+            newRoles.push(roleId);
+
+            // Если выбрана роль "Управляющий складом" (id: 3)
+            if (roleId === managerRoleId) {
+                if (!newRoles.includes(employeeRoleId)) newRoles.push(employeeRoleId);
+                if (!newRoles.includes(warehousemanRoleId)) newRoles.push(warehousemanRoleId);
+            }
+            // Если выбрана роль "Кладовщик" (id: 2)
+            else if (roleId === warehousemanRoleId) {
+                if (!newRoles.includes(employeeRoleId)) newRoles.push(employeeRoleId);
+            }
         }
+
+        setSelectedRoles(newRoles);
+        const filteredDropdown = rolesList.filter((role) => !newRoles.includes(role.id));
+        setRoleDropdown(filteredDropdown);
+    };
+
+    const handleRemoveRole = (roleId) => {
+        const newSelectedRoles = selectedRoles.filter((id) => id !== roleId);
+        setSelectedRoles(newSelectedRoles);
+        const newDropdown = rolesList.filter((r) => !newSelectedRoles.includes(r.id));
+        setRoleDropdown(newDropdown);
     };
 
     const handleSave = async () => {
         try {
-            // Заменяем {userId} в URL на реальный ID пользователя
             const url = API_CHANGE_ROLE.replace("{userId}", selectedUser.userId);
-            
-            const response = await axios.put(url, {
-                newRoles: selectedRoles,
-            }, {
-                headers: {"Auth-token": authToken}
-            });
-    
+            const response = await axios.put(
+                url,
+                { newRoles: selectedRoles },
+                { headers: { "Auth-token": authToken } }
+            );
+
             if (response.status === 200) {
                 console.log("Роли обновлены!");
                 fetchUserList();
@@ -62,12 +80,12 @@ const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
                     </button>
                 </div>
 
-                {/* Dropdown */}
                 <div className="mb-4">
                     <label className="text-gray-600 mb-2 block">Выберите роль:</label>
                     <select
                         className="w-full px-3 py-2 border rounded-lg"
                         onChange={(e) => handleRoleSelect(parseInt(e.target.value, 10))}
+                        value=""
                     >
                         <option value="">Выберите роль</option>
                         {roleDropdown.map((role) => (
@@ -78,7 +96,6 @@ const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
                     </select>
                 </div>
 
-                {/* Список выбранных ролей */}
                 <div className="mb-4">
                     <h2 className="text-gray-600 mb-2">Выбранные роли:</h2>
                     {selectedRoles.length === 0 && <p>Нет выбранных ролей</p>}
@@ -93,13 +110,7 @@ const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
                                     {role?.name}
                                     <button
                                         className="text-red-500 hover:text-red-700"
-                                        onClick={() => {
-                                            // Удаляем роль и возвращаем ее в список
-                                            const newSelectedRoles = selectedRoles.filter((id) => id !== roleId);
-                                            setSelectedRoles(newSelectedRoles);
-                                            const newDropdown = rolesList.filter((r) => !newSelectedRoles.includes(r.id));
-                                            setRoleDropdown(newDropdown);
-                                        }}
+                                        onClick={() => handleRemoveRole(roleId)}
                                     >
                                         Удалить
                                     </button>
@@ -109,7 +120,6 @@ const RoleSelectionModal = ({ selectedUser, onClose, fetchUserList }) => {
                     </ul>
                 </div>
 
-                {/* Кнопка сохранить */}
                 <div className="flex justify-between mt-4">
                     <button
                         onClick={handleSave}

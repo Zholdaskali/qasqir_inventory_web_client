@@ -1,34 +1,41 @@
-import { createSlice } from "@reduxjs/toolkit";
-
-const formatDate = (isoString) => {
-  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/); // Извлекаем только дату
-  if (!match) {
-    return "Неправильная дата";
-  }
-  const [, year, month, day] = match;
-  return `${day}.${month}.${year}`;
-};
-
-const initialState = [];
+import { createSlice } from '@reduxjs/toolkit';
 
 const categoryListSlice = createSlice({
-  name: "categoryList",
-  initialState,
+  name: 'categoryList',
+  initialState: {
+    categories: [], // Список категорий
+    loading: false, // Состояние загрузки
+    error: null,    // Ошибка, если есть
+    lastFetched: null, // Время последней успешной загрузки
+  },
   reducers: {
-    saveCategoryList: (state, action) => {
-      const formattedCategoryList = action.payload.map((category) => ({
-        ...category,
-        createdAt: formatDate(category.createdAt),
-        updatedAt: formatDate(category.updatedAt), 
-      }));
-
-      console.log("Сохраненные категории с преобразованиями:", formattedCategoryList);
-
-      return formattedCategoryList; 
+    fetchCategoriesStart(state) {
+      state.loading = true;
+      state.error = null;
     },
-    clearCategoryList: () => initialState, 
+    fetchCategoriesSuccess(state, action) {
+      state.categories = action.payload; // Сохраняем категории
+      state.loading = false;
+      state.lastFetched = Date.now(); // Обновляем время загрузки
+    },
+    fetchCategoriesFailure(state, action) {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    clearCategories(state) { // Для очистки данных
+      state.categories = [];
+      state.loading = false;
+      state.error = null;
+      state.lastFetched = null;
+    },
   },
 });
 
-export const { saveCategoryList, clearCategoryList } = categoryListSlice.actions;
+export const { 
+  fetchCategoriesStart, 
+  fetchCategoriesSuccess, 
+  fetchCategoriesFailure, 
+  clearCategories 
+} = categoryListSlice.actions;
+
 export default categoryListSlice.reducer;

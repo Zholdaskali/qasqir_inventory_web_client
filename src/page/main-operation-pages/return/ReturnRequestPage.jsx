@@ -1,72 +1,87 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useCallback } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
-
 import {
   API_GET_ALL_WAREHOUSES,
   API_GET_INVENTORY_ITEMS_BY_WAREHOUSE,
   API_PROCESS_RETURN,
 } from "../../../api/API";
+import { 
+  setWarehouses, 
+  setInventoryItems 
+} from '../../../store/slices/main-operation-slice/return/returnCacheSlice';
+import { 
+  setReturnField, 
+  resetReturnForm,
+  setLoading 
+} from '../../../store/slices/main-operation-slice/return/returnSlice';
 
 const ReturnRequestPage = () => {
   const authToken = useSelector((state) => state.token.token);
   const userId = useSelector((state) => state.user.userId);
+  const {
+    warehouses = [],
+    inventoryItems = {}
+  } = useSelector((state) => state.returnCache || {});
+  const {
+    selectedWarehouseId = "",
+    selectedInventoryId = "",
+    returnType = "DEFECTIVE",
+    documentNumber = `RET-${Date.now()}`,
+    quantity = "",
+    reason = "",
+    loading = false
+  } = useSelector((state) => state.returnForm || {});
+  const dispatch = useDispatch();
 
-  const [loading, setLoading] = useState(false);
-  const [warehouses, setWarehouses] = useState([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState("");
-  const [inventoryItems, setInventoryItems] = useState([]);
-  const [selectedInventoryId, setSelectedInventoryId] = useState("");
-  const [returnType, setReturnType] = useState("DEFECTIVE");
-  const [documentNumber, setDocumentNumber] = useState(`RET-${Date.now()}`);
-  const [quantity, setQuantity] = useState("");
-  const [reason, setReason] = useState("");
-
-  // Проверка, все ли обязательные поля заполнены
+  // Проверка валидности формы
   const isFormValid = useCallback(() => {
     return (
-      selectedWarehouseId !== "" &&
-      selectedInventoryId !== "" &&
-      quantity > 0 && // Проверка, что количество больше 0
-      reason.trim() !== "" // Проверка, что причина не пустая
+      selectedWarehouseId &&
+      selectedInventoryId &&
+      quantity > 0 &&
+      reason.trim()
     );
   }, [selectedWarehouseId, selectedInventoryId, quantity, reason]);
 
   // Загрузка складов
   const fetchWarehouses = useCallback(async () => {
-    if (!authToken) return;
-    setLoading(true);
+    if (!authToken || warehouses.length > 0) return;
     try {
+      dispatch(setLoading(true));
       const response = await axios.get(API_GET_ALL_WAREHOUSES, {
         headers: { "Auth-token": authToken },
       });
-      setWarehouses(Array.isArray(response.data.body) ? response.data.body : []);
+      dispatch(setWarehouses(response.data.body || []));
     } catch (error) {
       toast.error("Ошибка загрузки складов");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
-  }, [authToken]);
+  }, [authToken, warehouses.length, dispatch]);
 
   // Загрузка инвентаря
   const fetchInventory = useCallback(async () => {
     if (!authToken || !selectedWarehouseId) return;
-    setLoading(true);
     try {
+      dispatch(setLoading(true));
       const response = await axios.get(
-        `${API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", selectedWarehouseId)}`,
+        API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", selectedWarehouseId),
         { headers: { "Auth-token": authToken } }
       );
-      setInventoryItems(Array.isArray(response.data.body.inventory) ? response.data.body.inventory : []);
+      dispatch(setInventoryItems({
+        warehouseId: selectedWarehouseId,
+        items: response.data.body?.inventory || []
+      }));
     } catch (error) {
       toast.error("Ошибка загрузки инвентаря");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
-  }, [authToken, selectedWarehouseId]);
+  }, [authToken, selectedWarehouseId, dispatch]);
 
   useEffect(() => {
     fetchWarehouses();
@@ -76,6 +91,11 @@ const ReturnRequestPage = () => {
     if (selectedWarehouseId) fetchInventory();
   }, [fetchInventory, selectedWarehouseId]);
 
+  // Обработчик изменения полей формы
+  const handleFieldChange = (field, value) => {
+    dispatch(setReturnField({ field, value }));
+  };
+
   // Обработчик отправки возврата
   const handleCreateReturn = useCallback(async () => {
     if (!isFormValid()) {
@@ -83,14 +103,16 @@ const ReturnRequestPage = () => {
       return;
     }
 
-    const selectedItem = inventoryItems.find((item) => item.id === parseInt(selectedInventoryId));
+    const items = inventoryItems[selectedWarehouseId] || [];
+    const selectedItem = items.find(item => item.id === parseInt(selectedInventoryId));
+    
     if (!selectedItem || parseInt(quantity) <= 0 || parseInt(quantity) > selectedItem.quantity) {
       toast.error("Указано некорректное количество");
       return;
     }
 
-    setLoading(true);
     try {
+      dispatch(setLoading(true));
       const payload = {
         returnType,
         documentNumber,
@@ -100,20 +122,23 @@ const ReturnRequestPage = () => {
         reason,
         createdBy: userId,
       };
+      
       await axios.post(API_PROCESS_RETURN, payload, {
         headers: { "Auth-token": authToken, "Content-Type": "application/json" },
       });
+      
       toast.success("Возврат успешно создан");
-      setSelectedInventoryId("");
-      setQuantity("");
-      setReason("");
-      setDocumentNumber(`RET-${Date.now()}`);
+      dispatch(resetReturnForm());
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при создании возврата");
     } finally {
-      setLoading(false);
+      dispatch(setLoading(false));
     }
-  }, [authToken, userId, returnType, documentNumber, selectedInventoryId, quantity, reason, inventoryItems, isFormValid]);
+  }, [
+    authToken, userId, returnType, documentNumber, 
+    selectedInventoryId, quantity, reason, 
+    inventoryItems, selectedWarehouseId, isFormValid, dispatch
+  ]);
 
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
@@ -124,7 +149,6 @@ const ReturnRequestPage = () => {
       </header>
 
       <div className="bg-white rounded-lg shadow-sm p-6">
-        {/* Настройки возврата */}
         <section className="mb-6">
           <h2 className="text-sm font-medium text-gray-700 mb-3">Настройки возврата</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -132,7 +156,7 @@ const ReturnRequestPage = () => {
               <label className="block text-xs font-medium text-gray-600 mb-1">Склад *</label>
               <select
                 value={selectedWarehouseId}
-                onChange={(e) => setSelectedWarehouseId(e.target.value)}
+                onChange={(e) => handleFieldChange("selectedWarehouseId", e.target.value)}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 text-sm"
                 disabled={loading}
               >
@@ -148,12 +172,12 @@ const ReturnRequestPage = () => {
               <label className="block text-xs font-medium text-gray-600 mb-1">Товар *</label>
               <select
                 value={selectedInventoryId}
-                onChange={(e) => setSelectedInventoryId(e.target.value)}
+                onChange={(e) => handleFieldChange("selectedInventoryId", e.target.value)}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 text-sm"
                 disabled={loading || !selectedWarehouseId}
               >
                 <option value="">Выберите товар</option>
-                {inventoryItems.map((item) => (
+                {(inventoryItems[selectedWarehouseId] || []).map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.nomenclatureName} ({item.quantity} {item.measurementUnit})
                   </option>
@@ -164,7 +188,7 @@ const ReturnRequestPage = () => {
               <label className="block text-xs font-medium text-gray-600 mb-1">Тип возврата *</label>
               <select
                 value={returnType}
-                onChange={(e) => setReturnType(e.target.value)}
+                onChange={(e) => handleFieldChange("returnType", e.target.value)}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 disabled:bg-gray-100 text-sm"
                 disabled={loading}
               >
@@ -178,7 +202,7 @@ const ReturnRequestPage = () => {
               <input
                 type="text"
                 value={documentNumber}
-                onChange={(e) => setDocumentNumber(e.target.value)}
+                onChange={(e) => handleFieldChange("documentNumber", e.target.value)}
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 text-sm"
                 disabled={loading}
               />
@@ -188,7 +212,7 @@ const ReturnRequestPage = () => {
               <input
                 type="number"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={(e) => handleFieldChange("quantity", e.target.value)}
                 min="1"
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 text-sm"
                 placeholder="Введите количество"
@@ -198,12 +222,11 @@ const ReturnRequestPage = () => {
           </div>
         </section>
 
-        {/* Причина возврата */}
         <section className="mb-6">
           <h2 className="text-sm font-medium text-gray-700 mb-3">Причина возврата</h2>
           <textarea
             value={reason}
-            onChange={(e) => setReason(e.target.value)}
+            onChange={(e) => handleFieldChange("reason", e.target.value)}
             className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 text-sm"
             rows="4"
             placeholder="Укажите причину возврата (обязательно)"
@@ -211,7 +234,6 @@ const ReturnRequestPage = () => {
           />
         </section>
 
-        {/* Кнопка */}
         <section className="flex justify-end">
           <ConfirmationWrapper
             title="Подтверждение создания возврата"
@@ -220,7 +242,7 @@ const ReturnRequestPage = () => {
           >
             <button
               className="w-full sm:w-48 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
-              disabled={loading || !isFormValid()} // Кнопка отключена, если форма не валидна
+              disabled={loading || !isFormValid()}
             >
               {loading ? "Создание..." : "Создать возврат"}
             </button>

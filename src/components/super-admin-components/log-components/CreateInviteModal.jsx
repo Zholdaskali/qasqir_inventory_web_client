@@ -9,7 +9,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     const rolesList = [
         { id: 1, name: "Админ" },
         { id: 2, name: "Кладовщик" },
-        { id: 3, name: "Продавец" },
+        { id: 3, name: "Управляющий складом" }, // Изменено с "Продавец"
         { id: 4, name: "Сотрудник" },
     ];
 
@@ -21,7 +21,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
-    const inviteUserName = `${inviteUserFirstName} ${inviteUserLastName}`;
+    const inviteUserName = `${inviteUserFirstName} ${inviteUserLastName}`.trim();
 
     const generatePassword = () => {
         const length = 12;
@@ -37,19 +37,25 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
     const updateSelectedRoles = (newRoles) => {
-        const rolesToAdd = newRoles.filter((roleId) => [1, 2, 3].includes(roleId));
-        if (rolesToAdd.length > 0 && !newRoles.includes(4)) newRoles.push(4);
-        setSelectedRoles([...new Set(newRoles)]);
+        let updatedRoles = [...newRoles];
+        const employeeRoleId = 4;
+        const hasManagerOrStorekeeper = updatedRoles.some((roleId) => roleId === 3 || roleId === 2);
+
+        if (hasManagerOrStorekeeper && !updatedRoles.includes(employeeRoleId)) {
+            updatedRoles.push(employeeRoleId);
+        }
+
+        setSelectedRoles([...new Set(updatedRoles)]);
     };
 
     const createInvite = async (e) => {
         e.preventDefault();
-        if (!inviteUserName.trim() || !inviteEmail.trim() || !invitePassword.trim() || selectedRoles.length === 0) {
-            toast.error("Заполните все поля");
+        if (!inviteUserName || !inviteEmail || !invitePassword || selectedRoles.length === 0) {
+            toast.error("Заполните все обязательные поля");
             return;
         }
         if (!validatePhoneNumber(inviteUserNumber)) {
-            toast.error("Некорректный номер");
+            toast.error("Некорректный номер телефона");
             return;
         }
         if (!validateEmail(inviteEmail)) {
@@ -68,10 +74,10 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                 },
                 { headers: { "Auth-token": authToken } }
             );
-            toast.success(response.data.message || "Успешно");
+            toast.success(response.data.message || "Приглашение успешно создано");
             setCreateInviteModal(false);
         } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка");
+            toast.error(error.response?.data?.message || "Ошибка при создании приглашения");
         }
     };
 
@@ -161,7 +167,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                             Выбрать роли
                         </button>
                         <p className="mt-1 text-xs text-gray-500">
-                            Роли: {selectedRoles.length > 0 ? selectedRoles.map((id) => rolesList.find((r) => r.id === id)?.name).join(", ") : "Нет"}
+                            Роли: {selectedRoles.length > 0 ? selectedRoles.map((id) => rolesList.find((r) => r.id === id)?.name).join(", ") : "Не выбраны"}
                         </p>
                     </div>
                     <button
@@ -177,6 +183,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                 <InviteRoleSelectionModal
                     onClose={() => setIsRoleModalOpen(false)}
                     setSelectedRoles={updateSelectedRoles}
+                    selectedRoles={selectedRoles}
                 />
             )}
         </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CiCalendarDate } from "react-icons/ci";
@@ -10,12 +10,20 @@ import {
   API_DELETE_TICKET,
   API_ALLOW_TICKET,
 } from "../../../api/API";
+import {
+  fetchTicketsStart,
+  fetchTicketsSuccess,
+  fetchTicketsFailure,
+  updateTicket,
+  deleteTicket,
+  clearTickets,
+} from "../../../store/slices/layout/ticket/ticketApprovalSlice";
 
-const AdminTicketApprovalPage = ({ ticketType }) => {
+const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const authToken = useSelector((state) => state.token.token);
   const adminId = useSelector((state) => state.user.userId);
-  const [loading, setLoading] = useState(false);
-  const [tickets, setTickets] = useState([]);
+  const { tickets, loading, error } = useSelector((state) => state.ticketApproval);
+  const dispatch = useDispatch();
 
   // Установка начальных дат: сегодня и 3 дня назад
   const today = new Date();
@@ -26,9 +34,13 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
   const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
 
   const fetchTickets = useCallback(async () => {
-    if (!authToken) return;
+    if (!authToken) {
+      toast.error("Токен авторизации отсутствует");
+      return;
+    }
     try {
-      setLoading(true);
+      dispatch(fetchTicketsStart());
+      console.log("Запрос с датами:", { startDate, endDate, ticketType }); // Отладка
       const response = await axios.get(
         API_GET_TICKETS_BY_TYPE.replace("{type}", ticketType),
         {
@@ -40,64 +52,56 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
         }
       );
       console.log(`Ответ API по заявкам (${ticketType}):`, response.data);
-      setTickets(Array.isArray(response.data.body) ? response.data.body : []);
-    } catch (error) {
-      toast.error(
-        error.response?.data?.message || `Ошибка при загрузке заявок (${ticketType})`
-      );
-      console.error(`Ошибка загрузки заявок (${ticketType}):`, error);
-      setTickets([]);
-    } finally {
-      setLoading(false);
+      const ticketData = Array.isArray(response.data.body) ? response.data.body : [];
+      dispatch(fetchTicketsSuccess(ticketData));
+      toast.success("Заявки успешно загружены");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || `Ошибка при загрузке заявок (${ticketType})`;
+      dispatch(fetchTicketsFailure(errorMessage));
+      toast.error(errorMessage);
+      console.error(`Ошибка загрузки заявок (${ticketType}):`, err);
     }
-  }, [authToken, ticketType, startDate, endDate]);
+  }, [authToken, ticketType, startDate, endDate, dispatch]);
 
   useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
+    dispatch(clearTickets()); // Очищаем слайс при смене ticketType
+    fetchTickets(); // Загружаем новые данные
+  }, [fetchTickets, ticketType]); // Добавляем ticketType в зависимости
 
   const handleCancelTicket = async (ticketId) => {
     try {
-      setLoading(true);
+      dispatch(fetchTicketsStart());
       const response = await axios.delete(
         API_DELETE_TICKET.replace("{ticketId}", ticketId),
         { headers: { "Auth-token": authToken } }
       );
       toast.success(response?.data?.message || "Заявка успешно отменена");
-      setTickets((prev) => prev.filter((ticket) => ticket.id !== ticketId));
+      dispatch(deleteTicket(ticketId));
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при отмене заявки");
       console.error(`Cancel ${ticketType} error:`, error);
-    } finally {
-      setLoading(false);
     }
   };
 
   const handleApproveTicket = async (ticketId) => {
     try {
-      setLoading(true);
+      dispatch(fetchTicketsStart());
       const payload = { ticketId, managed_id: adminId };
       const response = await axios.put(API_ALLOW_TICKET, payload, {
         headers: { "Auth-token": authToken },
       });
       toast.success(response?.data?.message || "Заявка успешно одобрена");
-      setTickets((prev) =>
-        prev.map((ticket) =>
-          ticket.id === ticketId
-            ? {
-                ...ticket,
-                status: "ALLOWED",
-                managerId: adminId,
-                managedAt: new Date().toISOString(),
-              }
-            : ticket
-        )
+      dispatch(
+        updateTicket({
+          id: ticketId,
+          status: "ALLOWED",
+          managerId: adminId,
+          managedAt: new Date().toISOString(),
+        })
       );
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при одобрении заявки");
       console.error(`Ошибка одобрения заявки (${ticketType}):`, error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -158,6 +162,15 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast.success("Экспорт в CSV выполнен");
+  };
+
+  const handleShowDates = () => {
+    const datesInfo = `Start Date: ${startDate}, End Date: ${endDate}`;
+    console.log(datesInfo);
+    toast.info(datesInfo);
+    dispatch(clearTickets());
+    fetchTickets();
   };
 
   const getStatusStyles = (status) => {
@@ -318,11 +331,20 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
     <div className="w-full h-full px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto bg-gray-50">
       <ToastContainer position="top-center" autoClose={3000} />
       <div className="flex flex-col gap-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-800">
-            Одобрение заявок на {actionTitle}
-          </h1>
-          <div className="flex gap-2 sm:w-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-800">
+              Одобрение заявок на {actionTitle}
+            </h1>
+            <button
+              onClick={handleShowDates}
+              className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+              disabled={loading}
+            >
+              Вывод
+            </button>
+          </div>
+          <div className="flex gap-2 sm:w-auto mt-4 md:mt-0">
             <div className="flex-1">
               <label className="flex items-center gap-1 text-sm">
                 <CiCalendarDate /> Начало
@@ -332,6 +354,7 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="border px-2 py-1 rounded-md w-full text-sm"
+                disabled={loading}
               />
             </div>
             <div className="flex-1">
@@ -343,6 +366,7 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="border px-2 py-1 rounded-md w-full text-sm"
+                disabled={loading}
               />
             </div>
           </div>
@@ -350,6 +374,8 @@ const AdminTicketApprovalPage = ({ ticketType }) => {
 
         {loading ? (
           <div className="text-center text-lg text-gray-600">Загрузка...</div>
+        ) : error ? (
+          <div className="text-center py-4 text-red-500">Ошибка: {error}</div>
         ) : (
           <div className="space-y-8">
             <div>

@@ -26,8 +26,10 @@ const CategorySettingsModal = ({ category, onClose }) => {
 
         setIsLoading(true);
         try {
+            const url = API_UPDATE_CATEGORY.replace("{categoryId}", category.id);
+
             const response = await axios.put(
-                `${API_UPDATE_CATEGORY}/${category.id}`,
+                url,
                 { name: categoryName, updateBy: userId },
                 { headers: { "Auth-token": authToken } }
             );
@@ -45,8 +47,9 @@ const CategorySettingsModal = ({ category, onClose }) => {
     const handleDeleteCategory = async () => {
         setIsLoading(true);
         try {
+            const url = API_DELETE_CATEGORY.replace("{categoryId}", category.id);
             await axios.delete(
-                `${API_DELETE_CATEGORY}/${category.id}`,
+                url,
                 { headers: { "Auth-token": authToken } }
             );
             toast.success("Категория успешно удалена");

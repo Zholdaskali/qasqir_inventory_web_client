@@ -63,6 +63,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         `${API_GET_INVENTORY_ITEMS_BY_ZONE.replace("{warehouseZoneId}", zoneId)}`,
         { headers: { "Auth-token": authToken } }
       );
+      
       const newItems = (response.data.body || []).map((item) => ({
         nomenclatureId: item.nomenclatureId,
         nomenclatureName: item.nomenclatureName,
@@ -71,8 +72,21 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         quantity: item.quantity,
         actualQuantity: item.quantity,
         warehouseZoneId: parseInt(zoneId, 10),
+        warehouseContainerId: item.warehouseContainer?.id || null,
+        warehouseContainerSerial: item.warehouseContainer?.serialNumber || null
       }));
-      setInventoryItems((prevItems) => [...prevItems, ...newItems]);
+      
+      setInventoryItems((prevItems) => {
+        // Фильтруем дубликаты (если товар с тем же ID и контейнером уже есть)
+        const filteredNewItems = newItems.filter(newItem => 
+          !prevItems.some(existingItem => 
+            existingItem.nomenclatureId === newItem.nomenclatureId && 
+            existingItem.warehouseContainerId === newItem.warehouseContainerId
+          )
+        );
+        return [...prevItems, ...filteredNewItems];
+      });
+      
       toast.success(`Товары из зоны ${zoneId} успешно добавлены`);
     } catch (error) {
       toast.error(`Ошибка загрузки товаров для зоны ${zoneId}`);
@@ -118,16 +132,21 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     }
     try {
       setLoading(true);
+      
+      // Формируем payload согласно требуемому формату
       const payload = inventoryItems.map((item) => ({
         nomenclatureId: parseInt(item.nomenclatureId, 10),
         warehouseZoneId: parseInt(item.warehouseZoneId, 10),
+        containerId: item.warehouseContainerId ? parseInt(item.warehouseContainerId, 10) : null,
         actualQuantity: parseFloat(item.actualQuantity),
-      }));
+      })).filter(item => item.actualQuantity !== item.quantity); // Отправляем только измененные позиции
+      
       const response = await axios.post(
         `${API_PROCESS_INVENTORY_CHECK.replace("{inventoryId}", inventoryId)}`,
         payload,
         { headers: { "Auth-token": authToken } }
       );
+      
       toast.success(response.data.message);
       setInventoryItems([]);
       setSelectedZones([]);
@@ -136,7 +155,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
       setZones([]);
       setCurrentPage(1);
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.error(error.response?.data?.message || "Ошибка при сохранении инвентаризации");
     } finally {
       setLoading(false);
     }
@@ -155,7 +174,9 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     const zoneIdStr = String(zoneId);
     if (selectedZones.includes(zoneIdStr)) {
       setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneIdStr));
-      setInventoryItems((prevItems) => prevItems.filter((item) => item.warehouseZoneId !== zoneId));
+      setInventoryItems((prevItems) => 
+        prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
+      );
     } else {
       setSelectedZones((prevZones) => [...prevZones, zoneIdStr]);
       fetchItemsForZone(zoneIdStr);
@@ -165,13 +186,15 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
 
   const handleRemoveZone = (zoneId) => {
     setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneId));
-    setInventoryItems((prevItems) => prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10)));
+    setInventoryItems((prevItems) => 
+      prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
+    );
     setCurrentPage(1);
   };
 
   const handleQuantityChange = (index, value) => {
     const newItems = [...inventoryItems];
-    newItems[index].actualQuantity = parseFloat(value);
+    newItems[index].actualQuantity = parseFloat(value) || 0;
     setInventoryItems(newItems);
   };
 
@@ -319,6 +342,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                   <th className="text-left px-2">Ед. измерения</th>
                   <th className="text-left px-2">Код</th>
                   <th className="text-left px-2">Зона</th>
+                  <th className="text-left px-2">Контейнер</th>
                   <th className="text-left px-2">Количество</th>
                   <th className="text-left px-2">Фактическое количество</th>
                 </tr>
@@ -331,6 +355,9 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                     <td className="py-3 px-2">{item.code}</td>
                     <td className="py-3 px-2">
                       {zones.find((z) => z.id === item.warehouseZoneId)?.name || item.warehouseZoneId}
+                    </td>
+                    <td className="py-3 px-2">
+                      {item.warehouseContainerSerial || "Без контейнера"}
                     </td>
                     <td className="py-3 px-2">{item.quantity}</td>
                     <td className="py-3 px-2">

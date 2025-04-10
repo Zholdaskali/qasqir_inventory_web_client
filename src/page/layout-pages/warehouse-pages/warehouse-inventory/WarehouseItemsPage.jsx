@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
@@ -9,54 +9,71 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { API_GET_INVENTORY_ITEMS_BY_WAREHOUSE } from "../../../../api/API";
+import { 
+  fetchWarehouseItemsStart, 
+  fetchWarehouseItemsSuccess, 
+  fetchWarehouseItemsFailure 
+} from "../../../../store/slices/warehouseSlice/warehouse-structure/warehouseItemsSlice";
 
 const WarehouseItemsPage = () => {
   const { warehouseId } = useParams();
   const { state: { warehouse } = {} } = useLocation();
-  const [zones, setZones] = useState([]);
+  const dispatch = useDispatch();
+  const warehouseItems = useSelector((state) => state.warehouseItems || {});
+  const { zones = [], currentWarehouseId, loading } = warehouseItems;
   const [filteredZones, setFilteredZones] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const authToken = useSelector((state) => state.token.token);
+  const authToken = useSelector((state) => state.token?.token || "");
 
   useEffect(() => {
     const fetchItems = async () => {
       if (!warehouseId || !authToken) {
-        setLoading(false);
+        dispatch(fetchWarehouseItemsFailure("Отсутствует warehouseId или authToken"));
         return;
       }
+
+      // Проверяем, есть ли данные для текущего склада
+      if (currentWarehouseId === warehouseId && Array.isArray(zones) && zones.length > 0) {
+        setFilteredZones(zones);
+        return;
+      }
+
+      dispatch(fetchWarehouseItemsStart());
       try {
         const { data: { body: { inventory = [] } = {} } = {} } = await axios.get(
           API_GET_INVENTORY_ITEMS_BY_WAREHOUSE.replace("{warehouseId}", warehouseId),
           { headers: { "Auth-token": authToken } }
         );
         const groupedZones = groupItemsByZones(inventory);
-        setZones(groupedZones);
+        dispatch(fetchWarehouseItemsSuccess({ 
+          zones: groupedZones, 
+          warehouseId 
+        }));
         setFilteredZones(groupedZones);
       } catch (err) {
         console.error("Ошибка при загрузке элементов склада:", err);
-      } finally {
-        setLoading(false);
+        dispatch(fetchWarehouseItemsFailure(err.message));
       }
     };
     fetchItems();
-  }, [warehouseId, authToken]);
+  }, [warehouseId, authToken, dispatch, currentWarehouseId]); // Убрали zones из зависимостей
 
   useEffect(() => {
+    if (!Array.isArray(zones)) return;
     setFilteredZones(
       zones
         .map((zone) => ({
           ...zone,
           items: zone.items.filter(
             (item) =>
-              item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              item.code.toLowerCase().includes(searchQuery.toLowerCase())
+              item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              item.code?.toLowerCase().includes(searchQuery.toLowerCase())
           ),
         }))
         .filter(
           (zone) =>
             zone.items.length > 0 ||
-            zone.name.toLowerCase().includes(searchQuery.toLowerCase())
+            zone.name?.toLowerCase().includes(searchQuery.toLowerCase())
         )
     );
   }, [searchQuery, zones]);
@@ -141,6 +158,7 @@ const WarehouseItemsPage = () => {
   );
 };
 
+// ZoneCard остается без изменений
 const ZoneCard = ({ zone }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [page, setPage] = useState(1);

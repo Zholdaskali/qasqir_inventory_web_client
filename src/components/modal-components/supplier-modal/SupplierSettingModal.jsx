@@ -14,8 +14,9 @@ const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
 
     const handleUpdate = async () => {
         try {
+            const url = API_UPDATE_SUPPLIER.replace("{supplierId}", supplier.id);
             await axios.put(
-                `${API_UPDATE_SUPPLIER}/${supplier.id}`, // Замена на константу
+                url, 
                 { name, contactInfo },
                 {
                     headers: { "Auth-token": authToken },

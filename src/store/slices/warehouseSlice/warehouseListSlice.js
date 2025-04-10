@@ -1,31 +1,36 @@
-import { createSlice } from "@reduxjs/toolkit";
-
-const formatDate = (isoString) => {
-  const match = isoString.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) {
-    return "Неправильная дата";
-  }
-  const [, year, month, day] = match;
-  return `${month}/${day}/${year}`;
-};
-
-const initialState = [];
+import { createSlice } from '@reduxjs/toolkit';
 
 const warehouseListSlice = createSlice({
-  name: "warehouseList",
-  initialState,
+  name: 'warehouseList',
+  initialState: {
+    warehouses: [],
+    loading: false,
+    error: null,
+  },
   reducers: {
-    saveWarehouseList: (state, action) => {
-      const formattedWarehouseList = action.payload.map((warehouse) => ({
-        ...warehouse,
-        createdAt: formatDate(warehouse.createdAt),
-        updatedAt: formatDate(warehouse.updatedAt), 
-    }));
-      return formattedWarehouserList;
+    fetchWarehousesStart(state) {
+      state.loading = true;
+      state.error = null;
     },
-    clearWarehouseList:()=>initialState
+    fetchWarehousesSuccess(state, action) {
+      state.warehouses = action.payload;
+      state.loading = false;
+    },
+    fetchWarehousesFailure(state, action) {
+      state.error = action.payload;
+      state.loading = false;
+    },
+    saveWarehouseList(state, action) {
+      state.warehouses = action.payload;
+    },
   },
 });
 
-export const { saveWarehouseList,clearWarehouseList } = warehouseListSlice.actions;
+export const { 
+  fetchWarehousesStart, 
+  fetchWarehousesSuccess, 
+  fetchWarehousesFailure,
+  saveWarehouseList 
+} = warehouseListSlice.actions;
+
 export default warehouseListSlice.reducer;

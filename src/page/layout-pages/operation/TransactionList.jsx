@@ -1,21 +1,37 @@
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { HiRefresh, HiDownload } from "react-icons/hi";
 import Notification from "../../../components/notification/Notification";
-import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API"; // Импортируем нужный API
+import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API";
+import {
+  fetchDocumentsStart,
+  fetchDocumentsSuccess,
+  fetchDocumentsFailure,
+  downloadDocumentStart,
+  downloadDocumentSuccess,
+  downloadDocumentFailure,
+  clearDocuments,
+} from "../../../store/slices/layout/operation/transactionListSlice";
 
 const TransactionList = () => {
   const authToken = useSelector((state) => state.token.token);
-  const [loading, setLoading] = useState(true);
-  const [documents, setDocuments] = useState([]);
+  const { documents, loading, error, downloadLoading } = useSelector((state) => state.transactionList);
+  const dispatch = useDispatch();
+
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
 
   const fetchDocumentsWithTransactions = async () => {
+    if (!authToken) {
+      toast.error("Токен авторизации отсутствует");
+      return;
+    }
+
     try {
-      setLoading(true);
+      dispatch(fetchDocumentsStart());
+      console.log("Запрос с датами:", { startDate, endDate }); // Отладка
       const response = await axios.get(API_GET_DOCUMENTS_WITH_TRANSACTIONS, {
         headers: { "Auth-token": authToken },
         params: { startDate, endDate },
@@ -26,27 +42,34 @@ const TransactionList = () => {
           transactions: doc.transactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
         }))
         .sort((a, b) => new Date(b.document.createdAt) - new Date(a.document.createdAt));
-      setDocuments(sortedDocuments);
+      dispatch(fetchDocumentsSuccess(sortedDocuments));
       toast.success("Документы с транзакциями успешно загружены");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Ошибка загрузки данных");
+      const errorMessage = error.response?.data?.message || "Ошибка загрузки данных";
+      dispatch(fetchDocumentsFailure(errorMessage));
+      toast.error(errorMessage);
       console.error("Ошибка загрузки документов с транзакциями:", error);
-      setDocuments([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocumentsWithTransactions();
-  }, [startDate, endDate]);
+    console.log("useEffect вызван с датами:", { startDate, endDate });
+    if (Array.isArray(documents) && documents.length === 0) {
+      fetchDocumentsWithTransactions(); // Загружаем данные только если их нет
+    }
+  }, [authToken, startDate, endDate]);
 
   const handleRefresh = () => {
     fetchDocumentsWithTransactions();
   };
 
   const handleDownloadDocument = async (documentId) => {
+    if (!authToken) {
+      toast.error("Токен авторизации отсутствует");
+      return;
+    }
     try {
+      dispatch(downloadDocumentStart());
       const response = await axios.get(
         `http://localhost:8081/api/v1/warehouse-manager/document/${documentId}/download`,
         {
@@ -68,22 +91,25 @@ const TransactionList = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      dispatch(downloadDocumentSuccess());
       toast.success("Документ успешно скачан");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Ошибка при скачивании документа");
+      const errorMessage = error.response?.data?.message || "Ошибка при скачивании документа";
+      dispatch(downloadDocumentFailure(errorMessage));
+      toast.error(errorMessage);
       console.error("Ошибка скачивания PDF:", error.message || error);
     }
   };
 
   const exportDocumentToCSV = (docWithTransactions) => {
     try {
-      const document = docWithTransactions.document;
+      const doc = docWithTransactions.document; // Измените имя с document на doc
       const transactions = docWithTransactions.transactions;
-
-      if (!document || !transactions || !Array.isArray(transactions)) {
+  
+      if (!doc || !transactions || !Array.isArray(transactions)) {
         throw new Error("Некорректные данные документа или транзакции отсутствуют");
       }
-
+  
       const headers = [
         "Номер документа",
         "Тип документа",
@@ -99,14 +125,14 @@ const TransactionList = () => {
         "Создатель",
         "Дата создания",
       ];
-
+  
       const rows = transactions.map((transaction) => [
-        `"${document.documentNumber || "N/A"}"`,
-        `"${document.documentType || "N/A"}"`,
-        document.documentDate ? `"${new Date(document.documentDate).toLocaleString()}"` : '"N/A"',
-        `"${document.status || "N/A"}"`,
-        `"${document.supplier || "N/A"}"`,
-        `"${document.customer || "N/A"}"`,
+        `"${doc.documentNumber || "N/A"}"`,
+        `"${doc.documentType || "N/A"}"`,
+        doc.documentDate ? `"${new Date(doc.documentDate).toLocaleString()}"` : '"N/A"',
+        `"${doc.status || "N/A"}"`,
+        `"${doc.supplier || "N/A"}"`,
+        `"${doc.customer || "N/A"}"`,
         `"${transaction.id || "N/A"}"`,
         `"${transaction.transactionType || "N/A"}"`,
         `"${transaction.nomenclatureName || "N/A"}"`,
@@ -115,7 +141,7 @@ const TransactionList = () => {
         `"${transaction.createdBy || "N/A"}"`,
         transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
       ]);
-
+  
       const csvContent =
         "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
       const encodedUri = encodeURI(csvContent);
@@ -123,16 +149,25 @@ const TransactionList = () => {
       link.setAttribute("href", encodedUri);
       link.setAttribute(
         "download",
-        `document_${document.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`
+        `document_${doc.documentNumber || "unknown"}_${new Date().toISOString().split("T")[0]}.csv`
       );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast.success(`Экспорт документа #${document.documentNumber || "unknown"} выполнен успешно`);
+      toast.success(`Экспорт документа #${doc.documentNumber || "unknown"} выполнен успешно`);
     } catch (error) {
       toast.error("Ошибка при экспорте в CSV: " + (error.message || "Неизвестная ошибка"));
       console.error("Ошибка экспорта CSV:", error);
     }
+  };
+  
+  // Функция для вывода дат и запуска запроса
+  const handleShowDates = () => {
+    const datesInfo = `Start Date: ${startDate}, End Date: ${endDate}`;
+    console.log(datesInfo);
+    toast.info(datesInfo);
+    dispatch(clearDocuments()); // Очищаем данные, чтобы запрос выполнился
+    fetchDocumentsWithTransactions(); // Выполняем запрос с новыми датами
   };
 
   const getStatusStyles = (status) => {
@@ -180,8 +215,17 @@ const TransactionList = () => {
                 onClick={handleRefresh}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                 title="Обновить"
+                disabled={loading}
               >
                 <HiRefresh className="w-6 h-6 text-gray-600" />
+              </button>
+              <button
+                onClick={handleShowDates}
+                className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                title="Вывести даты и обновить"
+                disabled={loading}
+              >
+                Вывод
               </button>
             </div>
             <div className="flex items-center gap-4 mt-4 md:mt-0">
@@ -192,6 +236,7 @@ const TransactionList = () => {
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="ml-2 p-1 border rounded-md shadow-sm focus:ring focus:ring-blue-200"
+                  disabled={loading}
                 />
               </div>
               <div>
@@ -201,6 +246,7 @@ const TransactionList = () => {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   className="ml-2 p-1 border rounded-md shadow-sm focus:ring focus:ring-blue-200"
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -264,12 +310,14 @@ const TransactionList = () => {
                           onClick={() => handleDownloadDocument(document.id)}
                           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                           title="Скачать документ (PDF)"
+                          disabled={downloadLoading}
                         >
                           <HiDownload className="w-6 h-6 text-gray-600" />
                         </button>
                         <button
                           onClick={() => exportDocumentToCSV(docWithTransactions)}
                           className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                          disabled={downloadLoading}
                         >
                           Экспорт в CSV
                         </button>
@@ -331,7 +379,7 @@ const TransactionList = () => {
             </div>
           ) : (
             <div className="text-center py-4 text-gray-500">
-              Документы с транзакциями отсутствуют за выбранный период
+              {error ? `Ошибка: ${error}` : "Документы с транзакциями отсутствуют за выбранный период"}
             </div>
           )}
         </div>

@@ -97,7 +97,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                 <IoBarChartSharp size={24} /> <p>Аналитика</p>
                             </NavLink>
                             <NavLink to="/ticket-tabs" className="flex items-center gap-2 text-sm">
-                                <HiTicket size={27} /> <p>Заявки</p>
+                                <HiTicket size={27} /> <p>Входящие заявки</p>
                             </NavLink>
                             <button
                                 onClick={() => setOperationLogsList(!operationLogsList)}
