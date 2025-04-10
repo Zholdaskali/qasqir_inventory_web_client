@@ -23,7 +23,7 @@ const WelcomeScreen = ({ onBack }) => {
                 <img src="/logo.svg" alt="Logo" className="w-20 h-20 mb-3" />
                 <h1 className="text-3xl md:text-4xl font-bold text-center">QASQIR INVENTORY</h1>
                 <p className="text-lg mt-3 text-center">
-                    Система управления складом с <span className="text-main-purp-dark font-medium">AI-аналитикой</span> и <span className="text-main-purp-dark font-medium">3D визуализацией</span>
+                    Система управления складом с <span className="text-main-purp-dark font-medium">БИТРИКС 24 - интеграцией</span> и <span className="text-main-purp-dark font-medium">3D визуализацией</span>
                 </p>
             </div>
             
@@ -88,9 +88,9 @@ const WelcomeScreen = ({ onBack }) => {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm border border-main-dull-blue/10 mb-8 w-full max-w-2xl">
-                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Детальный контроль локаций</h3>
+                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Детальный контроль структурой склада и размещением товаров</h3>
                 <div className="flex flex-wrap justify-center gap-2">
-                    {["Здание", "Этаж", "Секция", "Ряд", "Стеллаж", "Полка", "Ячейка"].map((item, i) => (
+                    {["Секция", "Ряд", "Стеллаж", "Полка", "Ячейка"].map((item, i) => (
                         <div 
                             key={i}
                             className="px-4 py-2 bg-main-light-gray rounded border border-main-dull-blue/10 text-sm"
