@@ -7,6 +7,7 @@ const initialState = {
   documentNumber: `RET-${Date.now()}`,
   quantity: "",
   reason: "",
+  loading: false, // Добавляем поле loading
 };
 
 const returnSlice = createSlice({
@@ -24,6 +25,10 @@ const returnSlice = createSlice({
       state.documentNumber = `RET-${Date.now()}`;
       state.quantity = "";
       state.reason = "";
+      state.loading = false; // Сбрасываем loading
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload; // Устанавливаем состояние loading
     },
   },
 });

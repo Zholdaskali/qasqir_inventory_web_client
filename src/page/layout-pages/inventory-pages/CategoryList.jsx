@@ -6,21 +6,19 @@ import { useNavigate } from "react-router-dom";
 import { FiSettings } from "react-icons/fi";
 import { HiOutlineArrowRight } from "react-icons/hi";
 
-import { API_GET_CATEGORIES } from "../../../api/API"; // Убедитесь, что путь правильный
+import { API_GET_CATEGORIES } from "../../../api/API";
 import {
   fetchCategoriesStart,
   fetchCategoriesSuccess,
   fetchCategoriesFailure,
-} from "../../../store/slices/inventorySlice/categoryListSlice"; // Путь к вашему slice
+} from "../../../store/slices/inventorySlice/categoryListSlice";
 import CategorySaveModal from "../../../components/modal-components/category-modal/CategorySaveModal";
 import CategorySettingsModal from "../../../components/modal-components/category-modal/CategorySettingsModal";
 
 const CategoryList = () => {
-  // Получаем token из Redux (предполагается, что он хранится в state.token.token)
   const authToken = useSelector((state) => state.token?.token || "");
-  // Получаем состояние категорий
   const { categories, loading, error } = useSelector((state) => {
-    console.log("Redux state.categoryList:", state.categoryList); // Отладка
+    console.log("Redux state.categoryList:", state.categoryList);
     return state.categoryList || { categories: [], loading: false, error: null };
   });
   const dispatch = useDispatch();
@@ -43,8 +41,8 @@ const CategoryList = () => {
       const response = await axios.get(API_GET_CATEGORIES, {
         headers: { "Auth-token": authToken },
       });
-      console.log("API response:", response.data); // Отладка
-      const categoryData = response.data.body || response.data.categories || []; // Гибкость для структуры API
+      console.log("API response:", response.data);
+      const categoryData = response.data.body || response.data.categories || [];
       dispatch(fetchCategoriesSuccess(categoryData));
       toast.success(response.data.message || "Категории успешно загружены");
     } catch (err) {
@@ -80,13 +78,10 @@ const CategoryList = () => {
     navigate(`/nomenclature/${categoryId}`);
   };
 
-  // Закрытие модального окна с возможным обновлением данных
-  const handleModalClose = (shouldRefresh) => {
+  // Закрытие модального окна
+  const handleModalClose = () => {
     setIsModalOpen(false);
     setSelectedCategory(null);
-    if (shouldRefresh) {
-      fetchCategoryList();
-    }
   };
 
   // Фильтрация категорий по поисковому запросу
@@ -96,10 +91,8 @@ const CategoryList = () => {
       )
     : [];
 
-  // Отладка перед рендерингом
   console.log("Rendering with categories:", categories, "filtered:", filteredCategories);
 
-  // Рендеринг состояния загрузки
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[90vh]">
@@ -108,10 +101,8 @@ const CategoryList = () => {
     );
   }
 
-  // Основной рендеринг
   return (
     <div className="h-[90vh] w-full flex flex-col p-4">
-      {/* Заголовок и поиск */}
       <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-3 gap-3">
         <h1 className="text-xl font-semibold">Категории</h1>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -125,7 +116,6 @@ const CategoryList = () => {
         </div>
       </div>
 
-      {/* Таблица категорий */}
       <div className="flex-1 overflow-auto mt-4 rounded-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         <table className="w-full table-auto border-separate border-spacing-y-1">
           <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
@@ -189,7 +179,6 @@ const CategoryList = () => {
         </table>
       </div>
 
-      {/* Кнопка создания категории */}
       <button
         className="fixed bottom-6 right-6 w-12 h-12 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center"
         onClick={handleCreateCategoryModal}
@@ -197,12 +186,18 @@ const CategoryList = () => {
         +
       </button>
 
-      {/* Модальные окна */}
       {isModalOpen && (
         selectedCategory ? (
-          <CategorySettingsModal onClose={handleModalClose} category={selectedCategory} />
+          <CategorySettingsModal
+            onClose={handleModalClose}
+            category={selectedCategory}
+            onUpdate={fetchCategoryList} // Передаем колбэк для обновления после изменения
+          />
         ) : (
-          <CategorySaveModal onClose={handleModalClose} />
+          <CategorySaveModal
+            onClose={handleModalClose}
+            onSave={fetchCategoryList} // Передаем колбэк для обновления после создания
+          />
         )
       )}
     </div>

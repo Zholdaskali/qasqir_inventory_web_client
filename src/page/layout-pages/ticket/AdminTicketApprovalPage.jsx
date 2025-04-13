@@ -25,38 +25,47 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const { tickets, loading, error } = useSelector((state) => state.ticketApproval);
   const dispatch = useDispatch();
 
-  // Установка начальных дат: сегодня и 3 дня назад
-  const today = new Date();
+  // Установка начальных дат: завтра и 3 дня назад
+  const tomorrow = new Date();
   const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(today.getDate() - 3);
+  threeDaysAgo.setDate(tomorrow.getDate() - 3);
 
   const [startDate, setStartDate] = useState(threeDaysAgo.toISOString().slice(0, 10));
-  const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(tomorrow.toISOString().slice(0, 10));
 
   const fetchTickets = useCallback(async () => {
     if (!authToken) {
       toast.error("Токен авторизации отсутствует");
+      dispatch(fetchTicketsFailure("Токен авторизации отсутствует"));
       return;
     }
+
+    // Валидация дат
+    if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
+      toast.error("Пожалуйста, выберите корректный диапазон дат");
+      dispatch(fetchTicketsFailure("Некорректный диапазон дат"));
+      return;
+    }
+
     try {
       dispatch(fetchTicketsStart());
-      console.log("Запрос с датами:", { startDate, endDate, ticketType }); // Отладка
+      console.log("Запрос заявок:", { ticketType, startDate, endDate });
       const response = await axios.get(
         API_GET_TICKETS_BY_TYPE.replace("{type}", ticketType),
         {
           headers: { "Auth-token": authToken },
           params: {
-            startDate: startDate || undefined,
-            endDate: endDate || undefined,
+            startDate,
+            endDate,
           },
         }
       );
       console.log(`Ответ API по заявкам (${ticketType}):`, response.data);
       const ticketData = Array.isArray(response.data.body) ? response.data.body : [];
       dispatch(fetchTicketsSuccess(ticketData));
-      toast.success("Заявки успешно загружены");
+      toast.success(`Заявки на ${ticketType === "sales" ? "продажу" : "списание"} загружены`);
     } catch (err) {
-      const errorMessage = err.response?.data?.message || `Ошибка при загрузке заявок (${ticketType})`;
+      const errorMessage = err.response?.data?.message || `Ошибка загрузки заявок на ${ticketType === "sales" ? "продажу" : "списание"}`;
       dispatch(fetchTicketsFailure(errorMessage));
       toast.error(errorMessage);
       console.error(`Ошибка загрузки заявок (${ticketType}):`, err);
@@ -64,9 +73,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   }, [authToken, ticketType, startDate, endDate, dispatch]);
 
   useEffect(() => {
-    dispatch(clearTickets()); // Очищаем слайс при смене ticketType
-    fetchTickets(); // Загружаем новые данные
-  }, [fetchTickets, ticketType]); // Добавляем ticketType в зависимости
+    dispatch(clearTickets());
+    fetchTickets();
+  }, [fetchTickets, ticketType]);
 
   const handleCancelTicket = async (ticketId) => {
     try {
@@ -79,7 +88,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
       dispatch(deleteTicket(ticketId));
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при отмене заявки");
-      console.error(`Cancel ${ticketType} error:`, error);
+      console.error(`Ошибка отмены (${ticketType}):`, error);
     }
   };
 
@@ -101,7 +110,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
       );
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при одобрении заявки");
-      console.error(`Ошибка одобрения заявки (${ticketType}):`, error);
+      console.error(`Ошибка одобрения (${ticketType}):`, error);
     }
   };
 
@@ -165,10 +174,8 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
     toast.success("Экспорт в CSV выполнен");
   };
 
-  const handleShowDates = () => {
-    const datesInfo = `Start Date: ${startDate}, End Date: ${endDate}`;
-    console.log(datesInfo);
-    toast.info(datesInfo);
+  const handleApplyDates = () => {
+    console.log("Применённые даты:", { startDate, endDate });
     dispatch(clearTickets());
     fetchTickets();
   };
@@ -337,35 +344,35 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
               Одобрение заявок на {actionTitle}
             </h1>
             <button
-              onClick={handleShowDates}
+              onClick={handleApplyDates}
               className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
               disabled={loading}
             >
-              Вывод
+              Применить фильтр
             </button>
           </div>
           <div className="flex gap-2 sm:w-auto mt-4 md:mt-0">
             <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm">
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
                 <CiCalendarDate /> Начало
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border px-2 py-1 rounded-md w-full text-sm"
+                className="border px-2 py-1 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 disabled={loading}
               />
             </div>
             <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm">
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
                 <CiCalendarDate /> Конец
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border px-2 py-1 rounded-md w-full text-sm"
+                className="border px-2 py-1 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 disabled={loading}
               />
             </div>

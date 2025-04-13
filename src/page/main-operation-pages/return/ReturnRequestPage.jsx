@@ -52,10 +52,9 @@ const ReturnRequestPage = () => {
     if (!authToken || warehouses.length > 0) return;
     try {
       dispatch(setLoading(true));
-      const response = await axios.get(API_GET_ALL_WAREHOUSES, {
-        headers: { "Auth-token": authToken },
-      });
-      dispatch(setWarehouses(response.data.body || []));
+      const response = await axios.get(API_GET_ALL_WAREHOUSES, { headers: { "Auth-token": authToken } })
+
+      dispatch(setWarehouses(response.data.body));
     } catch (error) {
       toast.error("Ошибка загрузки складов");
     } finally {

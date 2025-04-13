@@ -206,7 +206,7 @@ const TransferRequestPage = () => {
       const items = Array.from(state.transferItems.values());
       const isInternalTransfer = state.fromWarehouse === state.toWarehouse;
       const payload = {
-        documentType: isInternalTransfer ? "INTERNAL_TRANSFER" : "TRANSFER",
+        documentType: isInternalTransfer ? "TRANSFER" : "TRANSFER",
         documentNumber: `${isInternalTransfer ? "IT" : "TR"}-${Date.now()}`,
         documentDate: new Date().toISOString(),
         fromWarehouseId: parseInt(state.fromWarehouse, 10),

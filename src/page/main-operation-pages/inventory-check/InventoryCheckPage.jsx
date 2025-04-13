@@ -26,6 +26,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   const [inventoryId, setInventoryId] = useState(initialInventoryId || null);
   const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [processedZoneIds, setProcessedZoneIds] = useState([]); // Новое состояние для ID обработанных зон
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -63,7 +64,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         `${API_GET_INVENTORY_ITEMS_BY_ZONE.replace("{warehouseZoneId}", zoneId)}`,
         { headers: { "Auth-token": authToken } }
       );
-      
+
       const newItems = (response.data.body || []).map((item) => ({
         nomenclatureId: item.nomenclatureId,
         nomenclatureName: item.nomenclatureName,
@@ -73,20 +74,21 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         actualQuantity: item.quantity,
         warehouseZoneId: parseInt(zoneId, 10),
         warehouseContainerId: item.warehouseContainer?.id || null,
-        warehouseContainerSerial: item.warehouseContainer?.serialNumber || null
+        warehouseContainerSerial: item.warehouseContainer?.serialNumber || null,
       }));
-      
+
       setInventoryItems((prevItems) => {
-        // Фильтруем дубликаты (если товар с тем же ID и контейнером уже есть)
-        const filteredNewItems = newItems.filter(newItem => 
-          !prevItems.some(existingItem => 
-            existingItem.nomenclatureId === newItem.nomenclatureId && 
-            existingItem.warehouseContainerId === newItem.warehouseContainerId
-          )
+        const filteredNewItems = newItems.filter(
+          (newItem) =>
+            !prevItems.some(
+              (existingItem) =>
+                existingItem.nomenclatureId === newItem.nomenclatureId &&
+                existingItem.warehouseContainerId === newItem.warehouseContainerId
+            )
         );
         return [...prevItems, ...filteredNewItems];
       });
-      
+
       toast.success(`Товары из зоны ${zoneId} успешно добавлены`);
     } catch (error) {
       toast.error(`Ошибка загрузки товаров для зоны ${zoneId}`);
@@ -102,14 +104,10 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     }
     try {
       setLoading(true);
-      const response = await axios.post(
-        API_START_INVENTORY_CHECK,
-        null,
-        {
-          params: { warehouseId: parseInt(selectedWarehouse, 10), createdBy: userId },
-          headers: { "Auth-token": authToken },
-        }
-      );
+      const response = await axios.post(API_START_INVENTORY_CHECK, null, {
+        params: { warehouseId: parseInt(selectedWarehouse, 10), createdBy: userId },
+        headers: { "Auth-token": authToken },
+      });
       const newInventoryId = response.data.body?.inventoryId || response.data.inventoryId;
       setInventoryId(newInventoryId);
       await fetchZonesForWarehouse(selectedWarehouse);
@@ -132,27 +130,29 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     }
     try {
       setLoading(true);
-      
-      // Формируем payload согласно требуемому формату
-      const payload = inventoryItems.map((item) => ({
-        nomenclatureId: parseInt(item.nomenclatureId, 10),
-        warehouseZoneId: parseInt(item.warehouseZoneId, 10),
-        containerId: item.warehouseContainerId ? parseInt(item.warehouseContainerId, 10) : null,
-        actualQuantity: parseFloat(item.actualQuantity),
-      })).filter(item => item.actualQuantity !== item.quantity); // Отправляем только измененные позиции
-      
+
+      const payload = inventoryItems
+        .map((item) => ({
+          nomenclatureId: parseInt(item.nomenclatureId, 10),
+          warehouseZoneId: parseInt(item.warehouseZoneId, 10),
+          containerId: item.warehouseContainerId ? parseInt(item.warehouseContainerId, 10) : null,
+          actualQuantity: parseFloat(item.actualQuantity),
+        }))
+        .filter((item) => item.actualQuantity !== item.quantity);
+
       const response = await axios.post(
         `${API_PROCESS_INVENTORY_CHECK.replace("{inventoryId}", inventoryId)}`,
         payload,
         { headers: { "Auth-token": authToken } }
       );
-      
+
       toast.success(response.data.message);
       setInventoryItems([]);
       setSelectedZones([]);
       setSelectedWarehouse("");
       setInventoryId(null);
       setZones([]);
+      setProcessedZoneIds([]); // Очищаем обработанные зоны
       setCurrentPage(1);
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при сохранении инвентаризации");
@@ -165,6 +165,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     setSelectedWarehouse(warehouseId);
     setSelectedZones([]);
     setInventoryItems([]);
+    setProcessedZoneIds([]); // Очищаем при выборе нового склада
     setIsWarehouseDropdownOpen(false);
     setCurrentPage(1);
     if (!inventoryId) setZones([]);
@@ -174,7 +175,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     const zoneIdStr = String(zoneId);
     if (selectedZones.includes(zoneIdStr)) {
       setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneIdStr));
-      setInventoryItems((prevItems) => 
+      setInventoryItems((prevItems) =>
         prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
       );
     } else {
@@ -186,7 +187,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
 
   const handleRemoveZone = (zoneId) => {
     setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneId));
-    setInventoryItems((prevItems) => 
+    setInventoryItems((prevItems) =>
       prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
     );
     setCurrentPage(1);
@@ -202,19 +203,42 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     if (initialInventoryId) {
       const fetchInventoryData = async () => {
         try {
+          console.log("Fetching inventory data for ID:", initialInventoryId); // Лог для отладки
           const response = await axios.get(
             `${API_GET_INVENTORY_CHECK_BY_ID.replace("{inventoryId}", initialInventoryId)}`,
             { headers: { "Auth-token": authToken } }
           );
-          const { warehouseId, items } = response.data.body;
+  
+          console.log("API Response:", response.data); // Лог ответа API
+          const { warehouseId, items, result } = response.data.body || {};
+  
+          if (!warehouseId) {
+            throw new Error("Warehouse ID is missing in response");
+          }
+  
           setSelectedWarehouse(warehouseId);
           setInventoryId(initialInventoryId);
           setInventoryItems(items || []);
+  
+          // Извлекаем ID зон из результатов инвентаризации
+          const checkedZoneIds = [
+            ...new Set((result || []).map((item) => String(item.zoneId)).filter(Boolean)),
+          ];
+          setProcessedZoneIds(checkedZoneIds);
+  
+          // Загружаем зоны для склада
           await fetchZonesForWarehouse(warehouseId);
-          const zoneIds = [...new Set(items.map((item) => item.warehouseZoneId))];
+  
+          // Устанавливаем выбранные зоны
+          const zoneIds = [...new Set((items || []).map((item) => item.warehouseZoneId))];
           setSelectedZones(zoneIds.map(String));
+  
+          console.log("Processed zones:", checkedZoneIds, "Selected zones:", zoneIds); // Лог для проверки
         } catch (error) {
-          toast.error("Ошибка загрузки данных инвентаризации");
+          console.error("Error fetching inventory data:", error); // Лог ошибки
+          toast.error(
+            error.response?.data?.message || "Ошибка загрузки данных инвентаризации"
+          );
         }
       };
       fetchInventoryData();
@@ -239,11 +263,13 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             <div className="relative">
               <button
                 onClick={() => setIsWarehouseDropdownOpen(!isWarehouseDropdownOpen)}
-                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${loading || inventoryId ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${loading || inventoryId ? "cursor-not-allowed opacity-50" : ""
+                  }`}
                 disabled={loading || inventoryId}
               >
                 {selectedWarehouse
-                  ? warehouses.find((w) => w.id === parseInt(selectedWarehouse))?.name || "Выберите склад"
+                  ? warehouses.find((w) => w.id === parseInt(selectedWarehouse))?.name ||
+                  "Выберите склад"
                   : "Выберите склад"}
               </button>
               {isWarehouseDropdownOpen && (
@@ -271,24 +297,30 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             <div className="p-2 border rounded-lg max-h-32 overflow-y-auto bg-white shadow-sm">
               {inventoryId && zones.length > 0 ? (
                 zones.map((zone) => (
-                  <div key={zone.id} className="flex items-center py-1 px-2 hover:bg-gray-100 rounded">
+                  <div
+                    key={zone.id}
+                    className="flex items-center py-1 px-2 hover:bg-gray-100 rounded"
+                  >
                     <input
                       type="checkbox"
                       id={`zone-${zone.id}`}
                       checked={selectedZones.includes(String(zone.id))}
                       onChange={() => handleZoneToggle(zone.id)}
-                      disabled={loading}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      disabled={loading || processedZoneIds.includes(String(zone.id))} // Отключаем обработанные зоны
+                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                     />
                     <label
                       htmlFor={`zone-${zone.id}`}
-                      className="ml-2 text-sm text-gray-700 cursor-pointer"
+                      className={`ml-2 text-sm text-gray-700 ${processedZoneIds.includes(String(zone.id))
+                          ? "text-red-500 cursor-not-allowed"
+                          : "cursor-pointer"
+                        }`}
                     >
-                      {zone.name}
+                      {zone.name} {processedZoneIds.includes(String(zone.id)) && "(Обработана)"}
                     </label>
                   </div>
                 ))
-              ) : (
+              ) : ( 
                 <p className="text-sm text-gray-500">
                   {inventoryId ? "Зоны отсутствуют" : "Начните инвентаризацию для выбора зон"}
                 </p>
@@ -364,7 +396,9 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                       <input
                         type="number"
                         value={item.actualQuantity}
-                        onChange={(e) => handleQuantityChange((currentPage - 1) * itemsPerPage + index, e.target.value)}
+                        onChange={(e) =>
+                          handleQuantityChange((currentPage - 1) * itemsPerPage + index, e.target.value)
+                        }
                         className="p-1 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </td>

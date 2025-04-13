@@ -8,7 +8,7 @@ import { API_UPDATE_WAREHOUSE_ZONE } from "../../../api/API";
 const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, onSave }) => {
     const isExisting = !!zone?.id; // Проверяем, редактируем ли существующую зону
     const [name, setName] = useState(zone?.name || "");
-    const [width, setWidth] = useState(zone?.width || 1); // Минимальное значение 1 для новых зон
+    const [width, setWidth] = useState(zone?.width || 1);
     const [height, setHeight] = useState(zone?.height || 1);
     const [length, setLength] = useState(zone?.length || 1);
     const [canStoreItems, setCanStoreItems] = useState(zone?.canStoreItems ?? true);
@@ -48,7 +48,6 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
             name: validateField("name", name),
         };
         if (!isExisting) {
-            // Валидация размеров только для новых зон
             errors.width = validateField("width", width);
             errors.height = validateField("height", height);
             errors.length = validateField("length", length);
@@ -68,7 +67,6 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
             parentId,
         };
 
-        // Добавляем размеры только для новых зон
         if (!isExisting) {
             updatedZone.width = parseFloat(width);
             updatedZone.height = parseFloat(height);
@@ -86,6 +84,7 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
             if (onSave) {
                 onSave(updatedZone);
             }
+            setIsSettingModalOpen(false);
             onClose();
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при сохранении");
@@ -94,9 +93,23 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
         }
     };
 
+    // Обработчик клика по фону для закрытия модалки
+    const handleBackdropClick = (e) => {
+        if (e.target === e.currentTarget) {
+            setIsSettingModalOpen(false);
+            onClose();
+        }
+    };
+
     return (
-        <div className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-1/2 lg:w-1/3">
+        <div
+            className="fixed top-0 left-0 w-full h-full bg-gray-800 bg-opacity-60 flex items-center justify-center z-50"
+            onClick={handleBackdropClick}
+        >
+            <div
+                className="bg-white rounded-xl shadow-lg p-8 w-full sm:w-3/4 md:w-1/2 lg:w-1/3"
+                onClick={(e) => e.stopPropagation()} // Предотвращаем закрытие при клике внутри
+            >
                 <h2 className="text-2xl font-semibold text-main-dull-gray mb-6 text-center">
                     {isExisting ? "Настройки зоны" : "Создание зоны"}
                 </h2>
@@ -105,19 +118,25 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                         <label className="block text-left mb-2 text-main-dull-blue">Название</label>
                         <input
                             type="text"
-                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${formErrors.name ? "border-red-500" : "border-main-dull-blue"}`}
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${
+                                formErrors.name ? "border-red-500" : "border-main-dull-blue"
+                            }`}
                             value={name}
                             onChange={handleInputChange(setName, "name")}
                             placeholder="Введите название зоны"
                             disabled={loading}
                         />
-                        {formErrors.name && <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>}
+                        {formErrors.name && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.name}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-left mb-2 text-main-dull-blue">Ширина (м)</label>
                         <input
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${formErrors.width ? "border-red-500" : "border-main-dull-blue"}`}
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${
+                                formErrors.width ? "border-red-500" : "border-main-dull-blue"
+                            }`}
                             value={width}
                             onChange={handleInputChange(setWidth, "width")}
                             placeholder="Ширина зоны"
@@ -126,13 +145,17 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                             readOnly={isExisting}
                             disabled={loading || isExisting}
                         />
-                        {formErrors.width && <p className="text-red-500 text-sm mt-1">{formErrors.width}</p>}
+                        {formErrors.width && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.width}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-left mb-2 text-main-dull-blue">Высота (м)</label>
                         <input
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${formErrors.height ? "border-red-500" : "border-main-dull-blue"}`}
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${
+                                formErrors.height ? "border-red-500" : "border-main-dull-blue"
+                            }`}
                             value={height}
                             onChange={handleInputChange(setHeight, "height")}
                             placeholder="Высота зоны"
@@ -141,13 +164,17 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                             readOnly={isExisting}
                             disabled={loading || isExisting}
                         />
-                        {formErrors.height && <p className="text-red-500 text-sm mt-1">{formErrors.height}</p>}
+                        {formErrors.height && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.height}</p>
+                        )}
                     </div>
                     <div>
                         <label className="block text-left mb-2 text-main-dull-blue">Длина (м)</label>
                         <input
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${formErrors.length ? "border-red-500" : "border-main-dull-blue"}`}
+                            className={`w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-main-dull-blue transition ${
+                                formErrors.length ? "border-red-500" : "border-main-dull-blue"
+                            }`}
                             value={length}
                             onChange={handleInputChange(setLength, "length")}
                             placeholder="Длина зоны"
@@ -156,7 +183,9 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                             readOnly={isExisting}
                             disabled={loading || isExisting}
                         />
-                        {formErrors.length && <p className="text-red-500 text-sm mt-1">{formErrors.length}</p>}
+                        {formErrors.length && (
+                            <p className="text-red-500 text-sm mt-1">{formErrors.length}</p>
+                        )}
                         {isExisting && (
                             <p className="text-xs text-gray-500 mt-1">
                                 Размеры нельзя изменить для существующей зоны
@@ -164,7 +193,9 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                         )}
                     </div>
                     <div>
-                        <label className="block text-left mb-2 text-main-dull-blue">Может хранить предметы</label>
+                        <label className="block text-left mb-2 text-main-dull-blue">
+                            Может хранить предметы
+                        </label>
                         <select
                             className="w-full border rounded-lg px-4 py-2 border-main-dull-blue focus:ring-2 focus:ring-main-dull-blue transition"
                             value={canStoreItems ? "true" : "false"}
@@ -179,7 +210,10 @@ const ZoneSettingModal = ({ setIsSettingModalOpen, zone, onClose, warehouseId, o
                 <div className="flex justify-end mt-6 space-x-4">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={() => {
+                            setIsSettingModalOpen(false);
+                            onClose();
+                        }}
                         className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition disabled:opacity-50"
                         disabled={loading}
                     >

@@ -9,7 +9,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     const rolesList = [
         { id: 1, name: "Админ" },
         { id: 2, name: "Кладовщик" },
-        { id: 3, name: "Управляющий складом" }, // Изменено с "Продавец"
+        { id: 3, name: "Управляющий складом" },
         { id: 4, name: "Сотрудник" },
     ];
 
@@ -75,13 +75,15 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                 { headers: { "Auth-token": authToken } }
             );
             toast.success(response.data.message || "Приглашение успешно создано");
-            setCreateInviteModal(false);
+            setCreateInviteModal(false); // Закрываем модалку при успехе
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при создании приглашения");
+            // Модалка остаётся открытой для исправления ошибок
         }
     };
 
     const handleBackdropClick = (e) => {
+        // Закрываем модалку только если клик был на фоне
         if (e.target === e.currentTarget) {
             setCreateInviteModal(false);
         }
@@ -91,10 +93,17 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
         <div
             className="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center z-50"
             onClick={handleBackdropClick}
+            role="dialog" // Для доступности
+            aria-modal="true"
         >
-            <div className="bg-white rounded-lg p-5 w-full max-w-lg z-20">
+            <div
+                className="bg-white rounded-lg p-5 w-full max-w-lg z-50"
+                onClick={(e) => e.stopPropagation()} // Предотвращаем закрытие при клике внутри модалки
+            >
                 <form onSubmit={createInvite} className="space-y-4">
-                    <h1 className="text-xl font-semibold text-main-dull-gray text-center">Новое приглашение</h1>
+                    <h1 className="text-xl font-semibold text-main-dull-gray text-center">
+                        Новое приглашение
+                    </h1>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-sm text-main-dull-blue mb-1">Имя</label>
@@ -167,7 +176,9 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                             Выбрать роли
                         </button>
                         <p className="mt-1 text-xs text-gray-500">
-                            Роли: {selectedRoles.length > 0 ? selectedRoles.map((id) => rolesList.find((r) => r.id === id)?.name).join(", ") : "Не выбраны"}
+                            Роли: {selectedRoles.length > 0
+                                ? selectedRoles.map((id) => rolesList.find((r) => r.id === id)?.name).join(", ")
+                                : "Не выбраны"}
                         </p>
                     </div>
                     <button
