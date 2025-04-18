@@ -7,8 +7,8 @@ import { useNavigate } from 'react-router-dom';
 import avatar from '../assets/placeholders/avatar.png';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { IoSettings } from "react-icons/io5";
-import { IoMdClose } from "react-icons/io";
+import { IoSettings, IoMdClose } from 'react-icons/io5';
+import ConfirmationWrapper from '../../ui/ConfirmationWrapper'; // Added import
 
 const ProfileModal = ({ setShowProfile }) => {
     const user = useSelector((state) => state.user);
@@ -37,7 +37,7 @@ const ProfileModal = ({ setShowProfile }) => {
             const response = await axios.post(
                 API_SIGN_OUT,
                 {},
-                { headers: { "Auth-token": authToken } }
+                { headers: { 'Auth-token': authToken } }
             );
             toast.success(response.data.message || 'Вы успешно вышли из системы');
             dispatch(clearUser());
@@ -105,14 +105,20 @@ const ProfileModal = ({ setShowProfile }) => {
                 </div>
             </div>
 
-            {/* Sign Out Button */}
-            <button
-                className="w-full mt-6 bg-main-purp py-2 px-5 text-white rounded-lg hover:bg-opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={fetchSignOut}
-                disabled={isSigningOut}
+            {/* Sign Out Button with Confirmation */}
+            <ConfirmationWrapper
+                title="Подтверждение выхода"
+                message="Вы уверены, что хотите выйти из системы?"
+                onConfirm={fetchSignOut}
             >
-                {isSigningOut ? 'Выход...' : 'Выйти'}
-            </button>
+                <button
+                    className="w-full mt-6 bg-main-purp py-2 px-5 text-white rounded-lg hover:bg-opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSigningOut}
+                    aria-label="Выйти из системы"
+                >
+                    {isSigningOut ? 'Выход...' : 'Выйти'}
+                </button>
+            </ConfirmationWrapper>
         </div>
     );
 };

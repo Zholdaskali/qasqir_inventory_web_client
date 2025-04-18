@@ -7,6 +7,7 @@ import ContainerCard from "./ContainerCard";
 import WarehouseContainerSaveModal from "../../../../components/modal-components/warehouse-modal/WarehouseContainerSaveModal";
 import WarehouseZoneCreateModal from "../../../../components/modal-components/WarehouseZoneCreateModal";
 import ZoneSettingModal from "../../../../components/modal-components/warehouse-modal/ZoneSettingModal";
+import ConfirmationWrapper from "../../../../components/ui/ConfirmationWrapper";
 import { toast } from "react-toastify";
 import {
   FaRulerCombined,
@@ -16,7 +17,6 @@ import {
   FaPercentage,
 } from "react-icons/fa";
 import { API_DELETE_WAREHOUSE_ZONE, API_DELETE_WAREHOUSE_CONTAINER } from "../../../../api/API";
-
 
 const ZoneCard = ({ zone, warehouse, allZones }) => {
   const authToken = useSelector((state) => state.token.token);
@@ -28,7 +28,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
   const [isContainerModalOpen, setIsContainerModalOpen] = useState(false);
   const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [selectedZoneId, setSelectedZoneId] = useState(null);
+  const [selectedZone, setSelectedZone] = useState(null); // Храним объект зоны
 
   const fetchShelves = useCallback(() => {
     const subZones = allZones.filter((z) => z.parentId === zone.id);
@@ -112,24 +112,24 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
 
   const dimensions = `${zone.length || "-"} × ${zone.width || "-"} × ${zone.height || "-"}`;
 
-  const ZoneMenu = ({ zoneId, isParent }) => (
+  const ZoneMenu = ({ zoneObj, isParent }) => (
     <div className="relative flex items-center gap-2">
       <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
-        #{zoneId}
+        #{zoneObj.id}
       </span>
       <button
         className="p-1 hover:bg-gray-200 rounded-full transition-colors duration-150"
-        onClick={() => setMenuOpen(menuOpen === zoneId ? null : zoneId)}
+        onClick={() => setMenuOpen(menuOpen === zoneObj.id ? null : zoneObj.id)}
       >
         <BiDotsVerticalRounded size={18} className="text-gray-500" />
       </button>
-      {menuOpen === zoneId && (
+      {menuOpen === zoneObj.id && (
         <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-20 p-1">
           {isParent && (
             <button
               className="flex items-center gap-2 w-full px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors duration-150"
               onClick={() => {
-                setSelectedZoneId(zoneId);
+                setSelectedZone(zoneObj);
                 setIsZoneModalOpen(true);
                 setMenuOpen(false);
               }}
@@ -140,7 +140,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
           <button
             className="flex items-center gap-2 w-full px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors duration-150"
             onClick={() => {
-              setSelectedZoneId(zoneId);
+              setSelectedZone(zoneObj);
               setIsContainerModalOpen(true);
               setMenuOpen(false);
             }}
@@ -150,22 +150,27 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
           <button
             className="flex items-center gap-2 w-full px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded transition-colors duration-150"
             onClick={() => {
-              setSelectedZoneId(zoneId);
+              setSelectedZone(zoneObj);
               setIsSettingsModalOpen(true);
               setMenuOpen(false);
             }}
           >
             <BiCog size={14} className="text-gray-500" /> Настройки
           </button>
-          <button
-            className="flex items-center gap-2 w-full px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
-            onClick={() => {
-              handleDeleteZone(zoneId);
+          <ConfirmationWrapper
+            title="Подтверждение удаления"
+            message={`Вы уверены, что хотите удалить зону "${zoneObj.name}"?`}
+            onConfirm={() => {
+              handleDeleteZone(zoneObj.id);
               setMenuOpen(false);
             }}
           >
-            <BiTrash size={14} /> Удалить
-          </button>
+            <button
+              className="flex items-center gap-2 w-full px-2 py-1 text-sm text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
+            >
+              <BiTrash size={14} /> Удалить
+            </button>
+          </ConfirmationWrapper>
         </div>
       )}
     </div>
@@ -186,9 +191,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
         : 0;
     }, [shelf.capacity, shelfFreeCapacity]);
 
-    const shelfDimensions = `${shelf.length || "-"} × ${shelf.width || "-"} × ${
-            shelf.height || "-"
-    }`
+    const shelfDimensions = `${shelf.length || "-"} × ${shelf.width || "-"} × ${shelf.height || "-"}`;
 
     return (
       <div className="p-3 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
@@ -199,14 +202,12 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
               className="p-1 hover:bg-gray-100 rounded-full transition-colors duration-150"
             >
               <HiArrowSmDown
-                className={`w-5 h-5 text-gray-500 ${
-                  openContainers[shelf.id] ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 text-gray-500 ${openContainers[shelf.id] ? "rotate-180" : ""}`}
               />
             </button>
             <div>
               <div className="text-sm font-medium text-gray-800 flex items-center gap-1">
-                <FaLayerGroup size={12} className="text-gray-400" />{shelf.name}
+                <FaLayerGroup size={12} className="text-gray-400" /> {shelf.name}
                 <span className="text-xs text-gray-500 ml-1">
                   ({(containers[shelf.id] || shelf.containers || []).length} конт.)
                 </span>
@@ -226,13 +227,12 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
                   {shelfFreeCapacity} м³
                 </span>
                 <span className="flex items-center gap-1">
-                  <FaPercentage size={10} className="text-purple-500" />{" "}
-                  {shelfFillPercentage}%
+                  <FaPercentage size={10} className="text-purple-500" /> {shelfFillPercentage}%
                 </span>
               </div>
             </div>
           </div>
-          <ZoneMenu zoneId={shelf.id} isParent={false} />
+          <ZoneMenu zoneObj={shelf} isParent={false} />
         </div>
         {openContainers[shelf.id] && (
           <div className="mt-2 pl-6">
@@ -271,8 +271,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
           </button>
           <div>
             <div className="text-base font-medium text-gray-900 flex items-center gap-1">
-              <FaLayerGroup size={14} className="text-gray-400" />
-              {zone.name}
+              <FaLayerGroup size={14} className="text-gray-400" /> {zone.name}
               <span className="text-xs text-gray-500 ml-1">({shelves.length} подзон)</span>
             </div>
             <div className="text-xs text-gray-600 mt-1 flex flex-wrap gap-2">
@@ -295,7 +294,7 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
             </div>
           </div>
         </div>
-        <ZoneMenu zoneId={zone.id} isParent={true} />
+        <ZoneMenu zoneObj={zone} isParent={true} />
       </div>
 
       {openShelves && (
@@ -317,10 +316,10 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
       {isContainerModalOpen && (
         <WarehouseContainerSaveModal
           setIsContainerSaveModalOpen={setIsContainerModalOpen}
-          warehouseZoneId={selectedZoneId}
+          warehouseZoneId={selectedZone?.id}
           onClose={() => {
             setIsContainerModalOpen(false);
-            initializeContainers(selectedZoneId);
+            initializeContainers(selectedZone?.id);
           }}
         />
       )}
@@ -340,12 +339,16 @@ const ZoneCard = ({ zone, warehouse, allZones }) => {
       )}
       {isSettingsModalOpen && (
         <ZoneSettingModal
-          zone={zone}
+          zone={selectedZone}
+          setIsSettingModalOpen={setIsSettingsModalOpen}
           onClose={() => {
             setIsSettingsModalOpen(false);
             fetchShelves();
           }}
           warehouseId={warehouse.id}
+          onSave={() => {
+            fetchShelves();
+          }}
         />
       )}
     </div>

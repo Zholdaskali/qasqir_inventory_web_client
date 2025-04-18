@@ -31,7 +31,7 @@ const TransactionList = () => {
 
     try {
       dispatch(fetchDocumentsStart());
-      console.log("Запрос с датами:", { startDate, endDate }); // Отладка
+      console.log("Запрос с датами:", { startDate, endDate });
       const response = await axios.get(API_GET_DOCUMENTS_WITH_TRANSACTIONS, {
         headers: { "Auth-token": authToken },
         params: { startDate, endDate },
@@ -55,7 +55,7 @@ const TransactionList = () => {
   useEffect(() => {
     console.log("useEffect вызван с датами:", { startDate, endDate });
     if (Array.isArray(documents) && documents.length === 0) {
-      fetchDocumentsWithTransactions(); // Загружаем данные только если их нет
+      fetchDocumentsWithTransactions();
     }
   }, [authToken, startDate, endDate]);
 
@@ -103,13 +103,13 @@ const TransactionList = () => {
 
   const exportDocumentToCSV = (docWithTransactions) => {
     try {
-      const doc = docWithTransactions.document; // Измените имя с document на doc
+      const doc = docWithTransactions.document;
       const transactions = docWithTransactions.transactions;
-  
+
       if (!doc || !transactions || !Array.isArray(transactions)) {
         throw new Error("Некорректные данные документа или транзакции отсутствуют");
       }
-  
+
       const headers = [
         "Номер документа",
         "Тип документа",
@@ -125,14 +125,14 @@ const TransactionList = () => {
         "Создатель",
         "Дата создания",
       ];
-  
+
       const rows = transactions.map((transaction) => [
         `"${doc.documentNumber || "N/A"}"`,
         `"${doc.documentType || "N/A"}"`,
         doc.documentDate ? `"${new Date(doc.documentDate).toLocaleString()}"` : '"N/A"',
         `"${doc.status || "N/A"}"`,
-        `"${doc.supplier || "N/A"}"`,
-        `"${doc.customer || "N/A"}"`,
+        `"${doc.supplier?.name || "N/A"}"`,
+        `"${doc.customer?.name || "N/A"}"`,
         `"${transaction.id || "N/A"}"`,
         `"${transaction.transactionType || "N/A"}"`,
         `"${transaction.nomenclatureName || "N/A"}"`,
@@ -141,7 +141,7 @@ const TransactionList = () => {
         `"${transaction.createdBy || "N/A"}"`,
         transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
       ]);
-  
+
       const csvContent =
         "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
       const encodedUri = encodeURI(csvContent);
@@ -160,14 +160,79 @@ const TransactionList = () => {
       console.error("Ошибка экспорта CSV:", error);
     }
   };
-  
-  // Функция для вывода дат и запуска запроса
+
+  const exportAllDocumentsToCSV = () => {
+    try {
+      if (!documents || !Array.isArray(documents) || documents.length === 0) {
+        throw new Error("Нет данных для экспорта");
+      }
+
+      const headers = [
+        "Номер документа",
+        "Тип документа",
+        "Дата документа",
+        "Статус",
+        "Поставщик",
+        "Клиент",
+        "ID транзакции",
+        "Тип транзакции",
+        "Номенклатура",
+        "Количество",
+        "Дата транзакции",
+        "Создатель",
+        "Дата создания",
+      ];
+
+      const rows = documents.flatMap((docWithTransactions) => {
+        const doc = docWithTransactions.document;
+        const transactions = docWithTransactions.transactions || [];
+
+        return transactions.map((transaction) => [
+          `"${doc.documentNumber || "N/A"}"`,
+          `"${doc.documentType || "N/A"}"`,
+          doc.documentDate ? `"${new Date(doc.documentDate).toLocaleString()}"` : '"N/A"',
+          `"${doc.status || "N/A"}"`,
+          `"${doc.supplier?.name || "N/A"}"`,
+          `"${doc.customer?.name || "N/A"}"`,
+          `"${transaction.id || "N/A"}"`,
+          `"${transaction.transactionType || "N/A"}"`,
+          `"${transaction.nomenclatureName || "N/A"}"`,
+          transaction.quantity != null ? transaction.quantity.toString() : "N/A",
+          transaction.date ? `"${new Date(transaction.date).toLocaleString()}"` : '"N/A"',
+          `"${transaction.createdBy || "N/A"}"`,
+          transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
+        ]);
+      });
+
+      if (rows.length === 0) {
+        throw new Error("Нет транзакций для экспорта");
+      }
+
+      const csvContent =
+        "data:text/csv;charset=utf-8," + [headers, ...rows].map((row) => row.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute(
+        "download",
+        `transaction_list_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success("Экспорт всего списка выполнен успешно");
+    } catch (error) {
+      toast.error("Ошибка при экспорте списка: " + (error.message || "Неизвестная ошибка"));
+      console.error("Ошибка экспорта всего списка CSV:", error);
+    }
+  };
+
   const handleShowDates = () => {
     const datesInfo = `Start Date: ${startDate}, End Date: ${endDate}`;
     console.log(datesInfo);
     toast.info(datesInfo);
-    dispatch(clearDocuments()); // Очищаем данные, чтобы запрос выполнился
-    fetchDocumentsWithTransactions(); // Выполняем запрос с новыми датами
+    dispatch(clearDocuments());
+    fetchDocumentsWithTransactions();
   };
 
   const getStatusStyles = (status) => {
@@ -226,6 +291,14 @@ const TransactionList = () => {
                 disabled={loading}
               >
                 Вывод
+              </button>
+              <button
+                onClick={exportAllDocumentsToCSV}
+                className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                title="Экспорт всего списка в CSV"
+                disabled={loading || documents.length === 0}
+              >
+                Экспорт списка
               </button>
             </div>
             <div className="flex items-center gap-4 mt-4 md:mt-0">

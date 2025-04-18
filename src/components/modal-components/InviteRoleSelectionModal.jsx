@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 
 const rolesList = [
     { id: 1, name: "Админ" },
-    { id: 2, name: "Кладовщик" },
-    { id: 3, name: "Управляющий складом" },
+    { id: 2, name: "Управляющий складом" },
+    { id: 3, name: "Кладовщик" },
     { id: 4, name: "Сотрудник" },
 ];
 
@@ -19,8 +19,8 @@ const InviteRoleSelectionModal = ({ onClose, setSelectedRoles, selectedRoles }) 
     const handleRoleSelect = (roleId) => {
         let newRoles = [...localSelectedRoles];
         const employeeRoleId = 4; // Сотрудник
-        const warehousemanRoleId = 2; // Кладовщик
-        const managerRoleId = 3; // Управляющий складом
+        const warehousemanRoleId = 3; // Кладовщик
+        const managerRoleId = 2; // Управляющий складом
 
         if (!newRoles.includes(roleId)) {
             newRoles.push(roleId);

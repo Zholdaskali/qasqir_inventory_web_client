@@ -5,7 +5,7 @@ import { API_CREATE_INVITE } from "../../../api/API";
 import Notification from "../../notification/Notification";
 import InviteRoleSelectionModal from "../../modal-components/InviteRoleSelectionModal";
 
-const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
+const CreateInviteModal = ({ authToken, onClose }) => {
     const rolesList = [
         { id: 1, name: "Админ" },
         { id: 2, name: "Кладовщик" },
@@ -20,6 +20,7 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
     const [inviteUserNumber, setInviteUserNumber] = useState("");
     const [selectedRoles, setSelectedRoles] = useState([]);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const inviteUserName = `${inviteUserFirstName} ${inviteUserLastName}`.trim();
 
@@ -62,6 +63,8 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
             toast.error("Некорректный email");
             return;
         }
+
+        setLoading(true);
         try {
             const response = await axios.post(
                 API_CREATE_INVITE,
@@ -69,36 +72,40 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     userName: inviteUserName,
                     password: invitePassword,
                     email: inviteEmail,
-                    userNumber: inviteUserNumber,
+                    userNumber: inviteUserNumber, // Исправлено
                     userRoles: selectedRoles,
                 },
                 { headers: { "Auth-token": authToken } }
             );
             toast.success(response.data.message || "Приглашение успешно создано");
-            setCreateInviteModal(false); // Закрываем модалку при успехе
+            onClose(true); // Уведомляем о успешном создании
         } catch (error) {
             toast.error(error.response?.data?.message || "Ошибка при создании приглашения");
-            // Модалка остаётся открытой для исправления ошибок
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleBackdropClick = (e) => {
-        // Закрываем модалку только если клик был на фоне
         if (e.target === e.currentTarget) {
-            setCreateInviteModal(false);
+            onClose(false); // Закрытие без обновления
         }
+    };
+
+    const handleCancel = () => {
+        onClose(false); // Закрытие без обновления
     };
 
     return (
         <div
             className="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center z-50"
             onClick={handleBackdropClick}
-            role="dialog" // Для доступности
+            role="dialog"
             aria-modal="true"
         >
             <div
-                className="bg-white rounded-lg p-5 w-full max-w-lg z-50"
-                onClick={(e) => e.stopPropagation()} // Предотвращаем закрытие при клике внутри модалки
+                className="bg-white rounded-lg p-6 w-full max-w-lg z-50"
+                onClick={(e) => e.stopPropagation()}
             >
                 <form onSubmit={createInvite} className="space-y-4">
                     <h1 className="text-xl font-semibold text-main-dull-gray text-center">
@@ -109,20 +116,22 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                             <label className="block text-sm text-main-dull-blue mb-1">Имя</label>
                             <input
                                 type="text"
-                                className="w-full p-2 border rounded text-sm"
+                                className="w-full p-2 border rounded text-sm disabled:opacity-50"
                                 value={inviteUserFirstName}
                                 onChange={(e) => setInviteFirstName(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
                         <div>
                             <label className="block text-sm text-main-dull-blue mb-1">Фамилия</label>
                             <input
                                 type="text"
-                                className="w-full p-2 border rounded text-sm"
+                                className="w-full p-2 border rounded text-sm disabled:opacity-50"
                                 value={inviteUserLastName}
                                 onChange={(e) => setInviteLastName(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
                     </div>
@@ -131,20 +140,22 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                             <label className="block text-sm text-main-dull-blue mb-1">Телефон</label>
                             <input
                                 type="tel"
-                                className="w-full p-2 border rounded text-sm"
+                                className="w-full p-2 border rounded text-sm disabled:opacity-50"
                                 value={inviteUserNumber}
                                 onChange={(e) => setInviteUserNumber(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
                         <div>
                             <label className="block text-sm text-main-dull-blue mb-1">Email</label>
                             <input
                                 type="email"
-                                className="w-full p-2 border rounded text-sm"
+                                className="w-full p-2 border rounded text-sm disabled:opacity-50"
                                 value={inviteEmail}
                                 onChange={(e) => setInviteEmail(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                         </div>
                     </div>
@@ -153,15 +164,17 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                         <div className="flex gap-2">
                             <input
                                 type="password"
-                                className="w-full p-2 border rounded text-sm"
+                                className="w-full p-2 border rounded text-sm disabled:opacity-50"
                                 value={invitePassword}
                                 onChange={(e) => setInvitePassword(e.target.value)}
                                 required
+                                disabled={loading}
                             />
                             <button
                                 type="button"
-                                className="px-3 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
+                                className="px-3 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark disabled:opacity-50"
                                 onClick={generatePassword}
+                                disabled={loading}
                             >
                                 Сгенерировать
                             </button>
@@ -170,8 +183,9 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                     <div>
                         <button
                             type="button"
-                            className="w-full px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
+                            className="w-full px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark disabled:opacity-50"
                             onClick={() => setIsRoleModalOpen(true)}
+                            disabled={loading}
                         >
                             Выбрать роли
                         </button>
@@ -181,12 +195,23 @@ const CreateInviteModal = ({ authToken, setCreateInviteModal }) => {
                                 : "Не выбраны"}
                         </p>
                     </div>
-                    <button
-                        type="submit"
-                        className="w-full px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark"
-                    >
-                        Создать
-                    </button>
+                    <div className="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            className="px-4 py-1 bg-gray-300 text-gray-800 rounded text-sm hover:bg-gray-400 disabled:opacity-50"
+                            onClick={handleCancel}
+                            disabled={loading}
+                        >
+                            Отмена
+                        </button>
+                        <button
+                            type="submit"
+                            className="px-4 py-1 bg-main-dull-blue text-white rounded text-sm hover:bg-main-purp-dark disabled:opacity-50"
+                            disabled={loading}
+                        >
+                            {loading ? "Создание..." : "Создать"}
+                        </button>
+                    </div>
                 </form>
             </div>
             <Notification />

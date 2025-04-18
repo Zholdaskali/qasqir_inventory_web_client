@@ -12,31 +12,199 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
     const [showGrid, setShowGrid] = useState(true);
     const [isEditMode, setIsEditMode] = useState(false);
     const [isSettingModalOpen, setIsSettingModalOpen] = useState(false);
+    const [showSubZones, setShowSubZones] = useState(true);
+    const [showLabels, setShowLabels] = useState(true);
+
     const sceneRef = useRef(null);
     const cameraRef = useRef(null);
     const rendererRef = useRef(null);
     const controlsRef = useRef(null);
     const transformControlsRef = useRef(null);
     const warehouseGroupRef = useRef(null);
-    const connectionsRef = useRef([]);
     const isDraggingRef = useRef(false);
 
     const highlightColor = new THREE.Color(0x00ff00);
-    const defaultZoneColor = 0x3498db;
     const restrictedZoneColor = 0xe74c3c;
     const containerColor = 0x2ecc71;
+    const hierarchyColors = [0x3498db, 0x1abc9c, 0x9b59b6, 0xe67e22, 0xf1c40f];
+
+    // Создание текстового спрайта
+    const createTextSprite = (text) => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        const fontSize = 16; // Уменьшенный размер шрифта
+        context.font = `${fontSize}px Roboto, Arial, sans-serif`;
+        const textWidth = context.measureText(text).width;
+        canvas.width = textWidth + 10;
+        canvas.height = fontSize + 10;
+
+        context.font = `${fontSize}px Roboto, Arial, sans-serif`;
+        context.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.fillStyle = 'black';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: 0.8 });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.scale.set(canvas.width / 30, canvas.height / 30, 1);
+        return sprite;
+    };
+
+    // Создание линии связи между зонами
+    const createConnectionLine = (startPos, endPos) => {
+        const material = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+        const points = [startPos, endPos];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        return new THREE.Line(geometry, material);
+    };
+
+    // Создание зоны
+    const createZone = (zone, parentGroup, level, parentPosition = { x: 0, y: 0, z: 0 }) => {
+        console.log(`Creating zone ${zone.id}:`, { name: zone.name, level, parentPosition });
+
+        const zoneWidth = zone.width || 4;
+        const zoneHeight = zone.height || 2;
+        const zoneLength = zone.length || 4;
+
+        const geometry = new THREE.BoxGeometry(zoneWidth, zoneHeight, zoneLength);
+        const material = new THREE.MeshPhongMaterial({
+            color: zone.canStoreItems ? hierarchyColors[level % hierarchyColors.length] : restrictedZoneColor,
+            wireframe: isWireframe,
+            transparent: true,
+            opacity: 0.7,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        const verticalOffset = level * (zoneHeight + 0.5);
+        mesh.position.set(
+            parentPosition.x,
+            parentPosition.y + zoneHeight / 2 + verticalOffset,
+            parentPosition.z
+        );
+
+        mesh.userData = {
+            id: zone.id,
+            type: 'zone',
+            name: zone.name,
+            width: zoneWidth,
+            height: zoneHeight,
+            length: zoneLength,
+            canStoreItems: zone.canStoreItems,
+            level: level,
+        };
+
+        const edgesGeometry = new THREE.EdgesGeometry(geometry);
+        const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+        const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+        mesh.add(edges);
+
+        parentGroup.add(mesh);
+        console.log(`Zone ${zone.id} added at position:`, mesh.position);
+
+        const label = createTextSprite(zone.name || `Zone ${zone.id}`);
+        label.position.set(
+            mesh.position.x,
+            mesh.position.y + zoneHeight / 2 + 0.5,
+            mesh.position.z
+        );
+        label.userData = { level: level };
+        parentGroup.add(label);
+
+        const subZones = warehouseData.zones.filter(z => z.parentId === zone.id);
+        console.log(`Subzones for zone ${zone.id}:`, subZones);
+
+        subZones.forEach((subZone, index) => {
+            const subZoneWidth = subZone.width || 2;
+            const subZoneLength = subZone.length || 2;
+            const subOffsetX = (index % 2) * (subZoneWidth + 0.5) - zoneWidth / 4;
+            const subOffsetZ = Math.floor(index / 2) * (subZoneLength + 0.5) - zoneLength / 4;
+
+            const subZoneMesh = createZone(subZone, parentGroup, level + 1, {
+                x: parentPosition.x + subOffsetX,
+                y: parentPosition.y + verticalOffset,
+                z: parentPosition.z + subOffsetZ,
+            });
+
+            const line = createConnectionLine(
+                new THREE.Vector3(mesh.position.x, mesh.position.y + zoneHeight / 2, mesh.position.z),
+                new THREE.Vector3(subZoneMesh.position.x, subZoneMesh.position.y - subZoneMesh.userData.height / 2, subZoneMesh.position.z)
+            );
+            parentGroup.add(line);
+        });
+
+        return mesh;
+    };
+
+    // Создание контейнера
+    const createContainer = (container, parentGroup) => {
+        console.log(`Creating container ${container.id}:`, container);
+
+        const containerWidth = container.width || 1;
+        const containerHeight = container.height || 1;
+        const containerLength = container.length || 1;
+        const geometry = new THREE.BoxGeometry(containerWidth, containerHeight, containerLength);
+        const material = new THREE.MeshPhongMaterial({
+            color: containerColor,
+            wireframe: isWireframe,
+            transparent: true,
+            opacity: 0.7,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        mesh.position.set(
+            container.positionX || 0,
+            containerHeight / 2,
+            container.positionZ || 0
+        );
+
+        mesh.userData = {
+            id: container.id,
+            type: 'container',
+            name: container.name || `Container ${container.id}`,
+            width: containerWidth,
+            height: containerHeight,
+            length: containerLength,
+            level: 0,
+        };
+
+        const edgesGeometry = new THREE.EdgesGeometry(geometry);
+        const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+        const edges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+        mesh.add(edges);
+
+        parentGroup.add(mesh);
+        console.log(`Container ${container.id} added at position:`, mesh.position);
+
+        const label = createTextSprite(container.name || `Container ${container.id}`);
+        label.position.set(
+            mesh.position.x,
+            mesh.position.y + containerHeight / 2 + 0.5,
+            mesh.position.z
+        );
+        label.userData = { level: 0 };
+        parentGroup.add(label);
+
+        return mesh;
+    };
 
     useEffect(() => {
-        if (!warehouseData || !mountRef.current) return;
+        if (!warehouseData || !mountRef.current) {
+            console.error('warehouseData or mountRef is missing');
+            return;
+        }
 
-        // Инициализация сцены
+        console.log('warehouseData:', warehouseData);
+
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xf0f0f0);
         sceneRef.current = scene;
 
         const aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
         const camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-        camera.position.set(50, 50, 50);
+        camera.position.set(20, 20, 20);
         cameraRef.current = camera;
 
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -44,20 +212,17 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
         rendererRef.current = renderer;
         mountRef.current.appendChild(renderer.domElement);
 
-        // Освещение
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
         directionalLight.position.set(10, 20, 10);
         directionalLight.castShadow = true;
         scene.add(directionalLight);
 
-        // Сетка
-        const gridHelper = new THREE.GridHelper(50, 50);
+        const gridHelper = new THREE.GridHelper(100, 100);
         gridHelper.visible = showGrid;
         scene.add(gridHelper);
 
-        // Управление камерой
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
@@ -68,69 +233,45 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
         };
         controlsRef.current = controls;
 
-        // Управление трансформацией
         const transformControls = new TransformControls(camera, renderer.domElement);
         transformControlsRef.current = transformControls;
         transformControls.setMode('translate');
-        transformControls.enabled = false;
-        scene.add(transformControls);
+        transformControls.enabled = isEditMode;
 
-        // Группа для зон склада
+        transformControls.addEventListener('dragging-changed', (event) => {
+            controls.enabled = !event.value;
+        });
+
         const warehouseGroup = new THREE.Group();
         warehouseGroupRef.current = warehouseGroup;
         scene.add(warehouseGroup);
 
-        // Функция создания зоны
-        const createZone = (zone, parentGroup, level, offsetX, offsetZ) => {
-            const geometry = new THREE.BoxGeometry(zone.width || 2, zone.height || 4, zone.length || 2);
-            const material = new THREE.MeshPhongMaterial({
-                color: zone.canStoreItems ? defaultZoneColor : restrictedZoneColor,
-                wireframe: isWireframe,
-                transparent: true,
-                opacity: 0.8,
-            });
-            const mesh = new THREE.Mesh(geometry, material);
-
-            mesh.position.set(
-                offsetX + (zone.width || 2) / 2,
-                (zone.height || 4) / 2,
-                offsetZ + (zone.length || 2) / 2
-            );
-
-            mesh.userData = {
-                id: zone.id,
-                type: 'zone',
-                name: zone.name,
-                width: zone.width || 2,
-                height: zone.height || 4,
-                length: zone.length || 2,
-                canStoreItems: zone.canStoreItems,
-            };
-
-            parentGroup.add(mesh);
-
-            // Создание дочерних зон
-            const subZones = warehouseData.zones.filter(z => z.parentId === zone.id);
-            subZones.forEach(subZone => {
-                createZone(subZone, parentGroup, level + 1, offsetX, offsetZ);
-            });
-
-            return mesh;
-        };
-
-        // Загрузка корневых зон
         let rootOffsetX = 0;
-        let rootOffsetZ = 0;
-        warehouseData.zones.filter(zone => zone.parentId === null).forEach(zone => {
-            createZone(zone, warehouseGroup, 0, rootOffsetX, rootOffsetZ);
-            rootOffsetX += (zone.width || 2) + 2;
-            if (rootOffsetX + (zone.width || 2) > 50) {
-                rootOffsetX = 0;
-                rootOffsetZ += (zone.length || 2) + 2;
-            }
+        const rootPadding = 6;
+        const rootZones = warehouseData.zones.filter(zone => zone.parentId === null);
+        console.log('Root zones:', rootZones);
+        rootZones.forEach(zone => {
+            createZone(zone, warehouseGroup, 0, { x: rootOffsetX, y: 0, z: 0 });
+            rootOffsetX += (zone.width || 4) + rootPadding;
         });
 
-        // Raycaster для выбора объектов
+        if (warehouseData.containers) {
+            console.log('Containers:', warehouseData.containers);
+            warehouseData.containers.forEach(container => {
+                createContainer(container, warehouseGroup);
+            });
+        } else {
+            console.warn('No containers found in warehouseData');
+        }
+
+        const box = new THREE.Box3().setFromObject(warehouseGroup);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        camera.position.set(center.x + maxDim, center.y + maxDim, center.z + maxDim);
+        camera.lookAt(center);
+        console.log('Camera centered at:', center, 'with offset:', maxDim);
+
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
 
@@ -161,10 +302,11 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
                     child.material.color.setHex(
                         child.userData.type === 'zone'
                             ? child.userData.canStoreItems
-                                ? defaultZoneColor
+                                ? hierarchyColors[child.userData.level % hierarchyColors.length]
                                 : restrictedZoneColor
                             : containerColor
                     );
+                    child.material.opacity = 0.7;
                 }
             });
         };
@@ -189,6 +331,7 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
 
                 resetColors();
                 object.material.color.copy(highlightColor);
+                object.material.opacity = 1.0;
                 setSelectedObject(targetGroup.userData);
 
                 if (isEditMode) {
@@ -237,16 +380,30 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
             handleObjectChange();
         };
 
-        // Анимация
         let animationFrameId;
         const animate = () => {
             animationFrameId = requestAnimationFrame(animate);
             controls.update();
+
+            if (showLabels) {
+                warehouseGroup.traverse(child => {
+                    if (child.isSprite && child.userData.level !== undefined) {
+                        const distance = camera.position.distanceTo(child.position);
+                        child.visible = distance > 5;
+                    }
+                });
+            } else {
+                warehouseGroup.traverse(child => {
+                    if (child.isSprite && child.userData.level !== undefined) {
+                        child.visible = false;
+                    }
+                });
+            }
+
             renderer.render(scene, camera);
         };
         animate();
 
-        // Обработка изменения размера
         const handleResize = () => {
             const width = mountRef.current.clientWidth;
             const height = mountRef.current.clientHeight;
@@ -255,31 +412,17 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
             camera.updateProjectionMatrix();
         };
 
-        // Обработка клавиш
         const onKeyDown = (event) => {
             if (!isEditMode) return;
-            switch (event.key) {
-                case 't':
-                    transformControls.setMode('translate');
-                    break;
-                case 'r':
-                    transformControls.setMode('rotate');
-                    break;
-                case 's':
-                    transformControls.setMode('scale');
-                    break;
-                case 'Escape':
-                    transformControls.detach();
-                    controls.enabled = true;
-                    setSelectedObject(null);
-                    setIsSettingModalOpen(false);
-                    break;
-                default:
-                    break;
+            if (event.key === 'Escape') {
+                transformControls.detach();
+                controls.enabled = true;
+                setSelectedObject(null);
+                setIsSettingModalOpen(false);
+                resetColors();
             }
         };
 
-        // Добавление слушателей событий
         renderer.domElement.addEventListener('dblclick', onDoubleClick);
         renderer.domElement.addEventListener('mousedown', onMouseDown);
         renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -287,7 +430,6 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
         window.addEventListener('resize', handleResize);
         window.addEventListener('keydown', onKeyDown);
 
-        // Очистка
         return () => {
             renderer.domElement.removeEventListener('dblclick', onDoubleClick);
             renderer.domElement.removeEventListener('mousedown', onMouseDown);
@@ -303,14 +445,28 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
             scene.clear();
             controls.dispose();
             transformControls.dispose();
-            connectionsRef.current = [];
         };
-    }, [warehouseData, isWireframe, onUpdateWarehouse]);
+    }, [warehouseData, isWireframe, onUpdateWarehouse, isEditMode]);
+
+    useEffect(() => {
+        if (!warehouseGroupRef.current) return;
+        console.log('Updating subzones and labels visibility:', { showSubZones, showLabels });
+        warehouseGroupRef.current.traverse(child => {
+            if (child.isMesh || child.isLine) {
+                if (child.userData.level > 0) {
+                    child.visible = showSubZones;
+                }
+            }
+            if (child.isSprite && child.userData.level !== undefined) {
+                child.visible = showLabels && showSubZones;
+            }
+        });
+    }, [showSubZones, showLabels]);
 
     const toggleWireframe = () => {
         setIsWireframe(prev => {
             warehouseGroupRef.current.traverse(child => {
-                if (child.isMesh && child.material) {
+                if (child.isMesh && child.material && !child.material.isSpriteMaterial) {
                     child.material.wireframe = !prev;
                 }
             });
@@ -321,6 +477,7 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
     const toggleEditMode = () => {
         setIsEditMode(prev => {
             const newState = !prev;
+            transformControlsRef.current.enabled = newState;
             if (!newState) {
                 transformControlsRef.current.detach();
                 controlsRef.current.enabled = true;
@@ -331,58 +488,50 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
         });
     };
 
+    const toggleSubZones = () => {
+        setShowSubZones(prev => {
+            console.log('Toggling subzones visibility to:', !prev);
+            return !prev;
+        });
+    };
+
     const handleSaveZone = (updatedZone) => {
+        console.log('Saving zone:', updatedZone);
+        
+        const cameraPosition = cameraRef.current.position.clone();
+        const cameraTarget = controlsRef.current.target.clone();
+
         const updatedZones = warehouseData.zones.map(z =>
             z.id === updatedZone.id ? { ...z, ...updatedZone } : z
         );
         onUpdateWarehouse({ ...warehouseData, zones: updatedZones });
         warehouseGroupRef.current.clear();
         let rootOffsetX = 0;
-        let rootOffsetZ = 0;
-        updatedZones.filter(zone => zone.parentId === null).forEach(zone => {
-            const createZone = (zone, parentGroup, level, offsetX, offsetZ) => {
-                const geometry = new THREE.BoxGeometry(zone.width || 2, zone.height || 4, zone.length || 2);
-                const material = new THREE.MeshPhongMaterial({
-                    color: zone.canStoreItems ? defaultZoneColor : restrictedZoneColor,
-                    wireframe: isWireframe,
-                    transparent: true,
-                    opacity: 0.8,
-                });
-                const mesh = new THREE.Mesh(geometry, material);
+        const rootPadding = 6;
 
-                mesh.position.set(
-                    offsetX + (zone.width || 2) / 2,
-                    (zone.height || 4) / 2,
-                    offsetZ + (zone.length || 2) / 2
-                );
+        const rootZones = updatedZones.filter(zone => zone.parentId === null);
+        console.log('Root zones after save:', rootZones);
+        rootZones.forEach(zone => {
+            createZone(zone, warehouseGroupRef.current, 0, { x: rootOffsetX, y: 0, z: 0 });
+            rootOffsetX += (zone.width || 4) + rootPadding;
+        });
 
-                mesh.userData = {
-                    id: zone.id,
-                    type: 'zone',
-                    name: zone.name,
-                    width: zone.width || 2,
-                    height: zone.height || 4,
-                    length: zone.length || 2,
-                    canStoreItems: zone.canStoreItems,
-                };
+        if (warehouseData.containers) {
+            console.log('Recreating containers:', warehouseData.containers);
+            warehouseData.containers.forEach(container => {
+                createContainer(container, warehouseGroupRef.current);
+            });
+        }
 
-                parentGroup.add(mesh);
-
-                const subZones = updatedZones.filter(z => z.parentId === zone.id);
-                subZones.forEach(subZone => {
-                    createZone(subZone, parentGroup, level + 1, offsetX, offsetZ);
-                });
-
-                return mesh;
-            };
-
-            createZone(zone, warehouseGroupRef.current, 0, rootOffsetX, rootOffsetZ);
-            rootOffsetX += (zone.width || 2) + 2;
-            if (rootOffsetX + (zone.width || 2) > 50) {
-                rootOffsetX = 0;
-                rootOffsetZ += (zone.length || 2) + 2;
+        warehouseGroupRef.current.traverse(child => {
+            if ((child.isMesh || child.isSprite || child.isLine) && child.userData.level > 0) {
+                child.visible = showSubZones;
             }
         });
+
+        cameraRef.current.position.copy(cameraPosition);
+        controlsRef.current.target.copy(cameraTarget);
+        cameraRef.current.lookAt(controlsRef.current.target);
     };
 
     return (
@@ -429,9 +578,43 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
                         )}
                     </button>
                     <button
+                        onClick={toggleSubZones}
+                        className="w-full flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-all duration-150 text-xs font-medium"
+                    >
+                        {showSubZones ? (
+                            <>
+                                <FaEyeSlash className="w-3 h-3" /> Скрыть подзоны
+                            </>
+                        ) : (
+                            <>
+                                <FaEye className="w-3 h-3" /> Показать подзоны
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => setShowLabels(prev => !prev)}
+                        className="w-full flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-all duration-150 text-xs font-medium"
+                    >
+                        {showLabels ? (
+                            <>
+                                <FaEyeSlash className="w-3 h-3" /> Скрыть метки
+                            </>
+                        ) : (
+                            <>
+                                <FaEye className="w-3 h-3" /> Показать метки
+                            </>
+                        )}
+                    </button>
+                    <button
                         onClick={() => {
-                            cameraRef.current.position.set(50, 50, 50);
-                            controlsRef.current.reset();
+                            const box = new THREE.Box3().setFromObject(warehouseGroupRef.current);
+                            const center = box.getCenter(new THREE.Vector3());
+                            const size = box.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            cameraRef.current.position.set(center.x + maxDim, center.y + maxDim, center.z + maxDim);
+                            cameraRef.current.lookAt(center);
+                            controlsRef.current.target.copy(center);
+                            controlsRef.current.update();
                         }}
                         className="w-full flex items-center gap-1 px-2 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-all duration-150 text-xs font-medium"
                     >
@@ -469,6 +652,10 @@ const Warehouse3DViewer = ({ warehouseData, warehouseId, onUpdateWarehouse }) =>
                             <span className="text-gray-900">
                                 {selectedObject.width}×{selectedObject.height}×{selectedObject.length}
                             </span>
+                        </p>
+                        <p className="text-sm">
+                            <strong className="font-semibold">Уровень:</strong>{' '}
+                            <span className="text-gray-900">{selectedObject.level}</span>
                         </p>
                     </div>
                 </div>

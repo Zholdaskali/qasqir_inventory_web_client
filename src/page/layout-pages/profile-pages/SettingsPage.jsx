@@ -13,8 +13,9 @@ import Notification from '../../../components/notification/Notification';
 import { toast } from 'react-toastify';
 import { setUser } from '../../../store/slices/userSlice';
 import { NavLink } from 'react-router-dom';
+import ConfirmationWrapper from '../../../components/ui/ConfirmationWrapper';
 
-// Функция для перевода ролей
+// Функция для перевода ролей (unchanged)
 const translateRole = (role) => {
   const roleTranslations = {
     'employee': 'Сотрудник',
@@ -62,6 +63,7 @@ const SettingsPage = () => {
     };
 
     const emailVerify = async () => {
+        setLoading(true);
         const code = Object.values(verificationCode).join('');
         try {
             const response = await axios.post(
@@ -72,19 +74,43 @@ const SettingsPage = () => {
             dispatch(setUser({ ...user, emailVerified: response.data }));
             toast.success(response.data || 'Успешно');
             setEmailVerifyModal(false);
+            setVerificationCode({
+                firstDigit: '',
+                secondDigit: '',
+                thirdDigit: '',
+                fourthDigit: '',
+                fifthDigit: '',
+                sixthDigit: '',
+            });
         } catch (error) {
             toast.error(error.response?.data?.message || 'Ошибка при проверке кода');
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleInputChange = (e, fieldName, nextInput, prevInput) => {
         const value = e.target.value;
-        if (value.length === 1) {
+        if (/^[0-9]?$/.test(value)) { // Allow only digits
             setVerificationCode((prevState) => ({ ...prevState, [fieldName]: value }));
-            if (nextInput) nextInput.focus();
-        } else if (value.length === 0 && e.key === "Backspace" && prevInput) {
+            if (value.length === 1 && nextInput) {
+                nextInput.focus();
+            }
+        }
+    };
+
+    const handleKeyDown = (e, fieldName, prevInput) => {
+        if (e.key === "Backspace" && !verificationCode[fieldName] && prevInput) {
             prevInput.focus();
         }
+    };
+
+    // Check if all digits are filled
+    const isCodeComplete = Object.values(verificationCode).every((digit) => digit.length === 1);
+
+    // Prevent backdrop click from propagating when clicking inside modal
+    const handleModalClick = (e) => {
+        e.stopPropagation();
     };
 
     return (
@@ -176,13 +202,16 @@ const SettingsPage = () => {
             </div>
 
             {emailVerifyModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className={`bg-white rounded-2xl shadow-xl z-20 flex flex-col items-center ${loading ? 'w-32 py-12' : 'w-full max-w-md p-8'}`}>
+                <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black bg-opacity-40 backdrop-blur-sm">
+                    <div
+                        className={`bg-white rounded-2xl shadow-xl z-50 flex flex-col items-center ${loading ? 'w-32 py-12' : 'w-full max-w-md p-8'}`}
+                        onClick={handleModalClick}
+                    >
                         {loading ? (
                             <Spinner className="w-12 h-12 fill-main-dull-blue" />
                         ) : (
                             <div className="flex flex-col items-center gap-y-6">
-                                <img src={emailVerifyIllustr} alt="Email Verify" className="w-1/3" />
+                                <img src={emailVerifyIllustr} alt="Email Verification Illustration" className="w-1/3" />
                                 <h1 className="text-xl font-semibold text-gray-800">Подтвердите Email</h1>
                                 <p className="text-sm text-gray-600 text-center">
                                     Мы выслали 6-значный код на <span className="font-bold">{user.email}</span>
@@ -193,6 +222,7 @@ const SettingsPage = () => {
                                             key={field}
                                             type="text"
                                             maxLength={1}
+                                            value={verificationCode[field]}
                                             onChange={(e) =>
                                                 handleInputChange(
                                                     e,
@@ -201,33 +231,43 @@ const SettingsPage = () => {
                                                     document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0]
                                                 )
                                             }
-                                            onKeyDown={(e) => {
-                                                if (e.key === "Backspace" && e.target.value === "") {
-                                                    const prevInput = document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0];
-                                                    if (prevInput) prevInput.focus();
-                                                }
-                                            }}
+                                            onKeyDown={(e) =>
+                                                handleKeyDown(
+                                                    e,
+                                                    field,
+                                                    document.getElementsByName(['firstDigit', 'secondDigit', 'thirdDigit', 'fourthDigit', 'fifthDigit', 'sixthDigit'][index - 1])?.[0]
+                                                )
+                                            }
                                             className="w-12 h-12 border border-main-dull-blue rounded-lg text-center text-xl focus:outline-none focus:ring-2 focus:ring-main-dull-blue shadow-sm"
                                             name={field}
+                                            aria-label={`Verification code digit ${index + 1}`}
+                                            autoFocus={index === 0} // Auto-focus first input
                                         />
                                     ))}
                                 </div>
-                                <button
-                                    className="bg-main-dull-blue text-white px-6 py-2 rounded-lg hover:bg-main-purp-dark transition-all duration-200 shadow-md"
-                                    onClick={emailVerify}
+                                <ConfirmationWrapper
+                                    title="Подтверждение кода"
+                                    message="Вы уверены, что хотите подтвердить этот код?"
+                                    onConfirm={emailVerify}
                                 >
-                                    Проверить
-                                </button>
+                                    <button
+                                        className="bg-main-dull-blue text-white px-6 py-2 rounded-lg hover:bg-main-purp-dark transition-all duration-200 shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                        disabled={!isCodeComplete || loading}
+                                    >
+                                        Проверить
+                                    </button>
+                                </ConfirmationWrapper>
                                 <button
-                                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200"
+                                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-all duration-200 shadow-md"
                                     onClick={() => setEmailVerifyModal(false)}
+                                    aria-label="Close email verification modal"
+                                    disabled={loading}
                                 >
                                     Закрыть
                                 </button>
                             </div>
                         )}
                     </div>
-                    <div className="fixed inset-0 bg-black opacity-40 backdrop-blur-sm z-40" onClick={() => setEmailVerifyModal(false)}></div>
                 </div>
             )}
             <Notification />
