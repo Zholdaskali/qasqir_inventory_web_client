@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -29,12 +29,7 @@ const CategoryList = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Функция для загрузки категорий
-  const fetchCategoryList = async () => {
-    if (Array.isArray(categories) && categories.length > 0) {
-      console.log("Данные категорий уже загружены:", categories);
-      return;
-    }
-
+  const fetchCategoryList = useCallback(async () => {
     console.log("Загружаем категории...");
     dispatch(fetchCategoriesStart());
     try {
@@ -50,7 +45,7 @@ const CategoryList = () => {
       dispatch(fetchCategoriesFailure(errorMessage));
       toast.error(errorMessage);
     }
-  };
+  }, [authToken, dispatch]);
 
   // Загружаем категории при монтировании или изменении authToken
   useEffect(() => {
@@ -59,7 +54,30 @@ const CategoryList = () => {
       return;
     }
     fetchCategoryList();
-  }, [authToken, dispatch]);
+  }, [authToken, fetchCategoryList]);
+
+  // Обновление после создания категории
+  const handleCategoryCreated = useCallback(() => {
+    fetchCategoryList(); // Перезагружаем данные с сервера
+    setIsModalOpen(false);
+    toast.success("Категория успешно создана");
+  }, [fetchCategoryList]);
+
+  // Обновление после изменения категории
+  const handleCategoryUpdated = useCallback(() => {
+    fetchCategoryList(); // Перезагружаем данные с сервера
+    setIsModalOpen(false);
+    setSelectedCategory(null);
+    toast.success("Категория успешно обновлена");
+  }, [fetchCategoryList]);
+
+  // Обновление после удаления категории
+  const handleCategoryDeleted = useCallback(() => {
+    fetchCategoryList(); // Перезагружаем данные с сервера
+    setIsModalOpen(false);
+    setSelectedCategory(null);
+    toast.success("Категория успешно удалена");
+  }, [fetchCategoryList]);
 
   // Открытие модального окна для создания категории
   const handleCreateCategoryModal = () => {
@@ -191,12 +209,13 @@ const CategoryList = () => {
           <CategorySettingsModal
             onClose={handleModalClose}
             category={selectedCategory}
-            onUpdate={fetchCategoryList} // Передаем колбэк для обновления после изменения
+            onUpdate={handleCategoryUpdated}
+            onDelete={handleCategoryDeleted} 
           />
         ) : (
           <CategorySaveModal
             onClose={handleModalClose}
-            onSave={fetchCategoryList} // Передаем колбэк для обновления после создания
+            onSave={handleCategoryCreated}
           />
         )
       )}

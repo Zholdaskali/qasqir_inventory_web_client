@@ -32,8 +32,9 @@ const SupplierSettingModal = ({ supplier, onClose, fetchSupplierList }) => {
 
     const handleDelete = async () => {
         try {
+            const url = API_DELETE_SUPPLIER.replace("{supplierId}", supplier.id);
             await axios.delete(
-                `${API_DELETE_SUPPLIER}/${supplier.id}`, // Замена на константу
+                url, 
                 {
                     headers: { "Auth-token": authToken },
                 }

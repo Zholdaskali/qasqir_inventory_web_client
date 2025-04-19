@@ -22,7 +22,10 @@ import {
 const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const authToken = useSelector((state) => state.token.token);
   const adminId = useSelector((state) => state.user.userId);
-  const { tickets, loading, error } = useSelector((state) => state.ticketApproval);
+  const { ticketsByType, loading, error } = useSelector(
+    (state) => state.ticketApproval
+  );
+  const tickets = ticketsByType[ticketType] || [];
   const dispatch = useDispatch();
 
   // Установка начальных дат: завтра и 3 дня назад
@@ -30,52 +33,79 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const threeDaysAgo = new Date();
   threeDaysAgo.setDate(tomorrow.getDate() - 3);
 
-  const [startDate, setStartDate] = useState(threeDaysAgo.toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(
+    threeDaysAgo.toISOString().slice(0, 10)
+  );
   const [endDate, setEndDate] = useState(tomorrow.toISOString().slice(0, 10));
+  const [hasFetchedByType, setHasFetchedByType] = useState({}); // Храним флаг для каждого ticketType
 
-  const fetchTickets = useCallback(async () => {
-    if (!authToken) {
-      toast.error("Токен авторизации отсутствует");
-      dispatch(fetchTicketsFailure("Токен авторизации отсутствует"));
-      return;
-    }
+  const fetchTickets = useCallback(
+    async (forceFetch = false) => {
+      console.log("Текущее состояние ticketsByType:", ticketsByType);
 
-    // Валидация дат
-    if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
-      toast.error("Пожалуйста, выберите корректный диапазон дат");
-      dispatch(fetchTicketsFailure("Некорректный диапазон дат"));
-      return;
-    }
+      // Проверяем, нужно ли выполнять запрос
+      if (!forceFetch && hasFetchedByType[ticketType]) {
+        console.log(
+          `Данные для ${ticketType} уже запрошены, запрос к API не отправляется`
+        );
+        return;
+      }
 
-    try {
-      dispatch(fetchTicketsStart());
-      console.log("Запрос заявок:", { ticketType, startDate, endDate });
-      const response = await axios.get(
-        API_GET_TICKETS_BY_TYPE.replace("{type}", ticketType),
-        {
-          headers: { "Auth-token": authToken },
-          params: {
-            startDate,
-            endDate,
-          },
-        }
-      );
-      console.log(`Ответ API по заявкам (${ticketType}):`, response.data);
-      const ticketData = Array.isArray(response.data.body) ? response.data.body : [];
-      dispatch(fetchTicketsSuccess(ticketData));
-      toast.success(`Заявки на ${ticketType === "sales" ? "продажу" : "списание"} загружены`);
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || `Ошибка загрузки заявок на ${ticketType === "sales" ? "продажу" : "списание"}`;
-      dispatch(fetchTicketsFailure(errorMessage));
-      toast.error(errorMessage);
-      console.error(`Ошибка загрузки заявок (${ticketType}):`, err);
-    }
-  }, [authToken, ticketType, startDate, endDate, dispatch]);
+      if (!authToken) {
+        toast.error("Токен авторизации отсутствует");
+        dispatch(fetchTicketsFailure("Токен авторизации отсутствует"));
+        return;
+      }
+
+      // Валидация дат
+      if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
+        toast.error("Пожалуйста, выберите корректный диапазон дат");
+        dispatch(fetchTicketsFailure("Некорректный диапазон дат"));
+        return;
+      }
+
+      try {
+        dispatch(fetchTicketsStart());
+        console.log("Запрос заявок:", { ticketType, startDate, endDate });
+        const response = await axios.get(
+          API_GET_TICKETS_BY_TYPE.replace("{type}", ticketType),
+          {
+            headers: { "Auth-token": authToken },
+            params: {
+              startDate,
+              endDate,
+            },
+          }
+        );
+        console.log(`Ответ API по заявкам (${ticketType}):`, response.data);
+        const ticketData = Array.isArray(response.data.body)
+          ? response.data.body
+          : [];
+        dispatch(fetchTicketsSuccess({ ticketType, tickets: ticketData }));
+        setHasFetchedByType((prev) => ({ ...prev, [ticketType]: true })); // Устанавливаем флаг для текущего ticketType
+        console.log(`Билеты для ${ticketType} сохранены в состояние:`, ticketData);
+        toast.success(
+          `Заявки на ${ticketType === "sales" ? "продажу" : "списание"} загружены`
+        );
+      } catch (err) {
+        const errorMessage =
+          err.response?.data?.message ||
+          `Ошибка загрузки заявок на ${
+            ticketType === "sales" ? "продажу" : "списание"
+          }`;
+        dispatch(fetchTicketsFailure(errorMessage));
+        setHasFetchedByType((prev) => ({ ...prev, [ticketType]: true })); // Устанавливаем флаг даже при ошибке
+        toast.error(errorMessage);
+        console.error(`Ошибка загрузки заявок (${ticketType}):`, err);
+      }
+    },
+    [authToken, ticketType, startDate, endDate, dispatch] // Убрали ticketsByType и hasFetched из зависимостей
+  );
 
   useEffect(() => {
-    dispatch(clearTickets());
+    console.log(`useEffect вызван для ticketType: ${ticketType}`);
     fetchTickets();
-  }, [fetchTickets, ticketType]);
+  }, [fetchTickets, ticketType]); // Зависимости оптимизированы
 
   const handleCancelTicket = async (ticketId) => {
     try {
@@ -85,7 +115,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
         { headers: { "Auth-token": authToken } }
       );
       toast.success(response?.data?.message || "Заявка успешно отменена");
-      dispatch(deleteTicket(ticketId));
+      dispatch(deleteTicket({ ticketId, ticketType }));
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при отмене заявки");
       console.error(`Ошибка отмены (${ticketType}):`, error);
@@ -106,6 +136,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
           status: "ALLOWED",
           managerId: adminId,
           managedAt: new Date().toISOString(),
+          ticketType,
         })
       );
     } catch (error) {
@@ -142,7 +173,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
       ticket.type,
       `${ticket.createdByName} (ID: ${ticket.createdBy})`,
       new Date(ticket.createdAt).toLocaleString(),
-      ticket.managerName ? `${ticket.managerName} (ID: ${ticket.managerId})` : "—",
+      ticket.managerName
+        ? `${ticket.managerName} (ID: ${ticket.managerId})`
+        : "—",
       ticket.managedAt ? new Date(ticket.managedAt).toLocaleString() : "—",
       ticket.comment || "Нет",
       ticket.document.documentNumber,
@@ -176,8 +209,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
 
   const handleApplyDates = () => {
     console.log("Применённые даты:", { startDate, endDate });
-    dispatch(clearTickets());
-    fetchTickets();
+    dispatch(clearTickets(ticketType));
+    setHasFetchedByType((prev) => ({ ...prev, [ticketType]: false })); // Сбрасываем флаг только для текущего ticketType
+    fetchTickets(true); // Принудительный запрос
   };
 
   const getStatusStyles = (status) => {
@@ -263,7 +297,8 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
             Создано: {new Date(ticket.createdAt).toLocaleString()}
           </p>
           <p className="text-xs text-gray-600">
-            Одобрил: {ticket.managerName || "Не одобрено"} (ID: {ticket.managerId || "—"})
+            Одобрил: {ticket.managerName || "Не одобрено"} (ID:{" "}
+            {ticket.managerId || "—"})
           </p>
           <p className="text-xs text-gray-500">
             Дата одобрения:{" "}
@@ -311,7 +346,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
 
           {ticket.status === "ACTIVE" && (
             <ConfirmationWrapper
-              title="Подтверждение одобрения"
+              title="Подтвеждение одобрения"
               message="Вы уверены, что хотите одобрить эту заявку?"
               onConfirm={() => handleApproveTicket(ticket.id)}
             >
@@ -328,9 +363,13 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
     );
   };
 
+  console.log(`Билеты для рендеринга (${ticketType}):`, tickets);
+
   const activeTickets = tickets.filter((ticket) => ticket.status === "ACTIVE");
   const allowedTickets = tickets.filter((ticket) => ticket.status === "ALLOWED");
-  const completedTickets = tickets.filter((ticket) => ticket.status === "COMPLETED");
+  const completedTickets = tickets.filter(
+    (ticket) => ticket.status === "COMPLETED"
+  );
 
   const actionTitle = ticketType === "sales" ? "продажу" : "списание";
 

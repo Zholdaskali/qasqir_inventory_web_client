@@ -1,39 +1,49 @@
-// store/slices/ticketApprovalSlice.js
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice } from "@reduxjs/toolkit";
+
+const initialState = {
+  ticketsByType: {
+    sales: [],
+    "write-off": [],
+  },
+  loading: false,
+  error: null,
+};
 
 const ticketApprovalSlice = createSlice({
-  name: 'ticketApproval',
-  initialState: {
-    tickets: [], // Список заявок
-    loading: false, // Состояние загрузки
-    error: null, // Ошибка загрузки
-  },
+  name: "ticketApproval",
+  initialState,
   reducers: {
     fetchTicketsStart(state) {
       state.loading = true;
       state.error = null;
     },
     fetchTicketsSuccess(state, action) {
+      const { ticketType, tickets } = action.payload;
+      state.ticketsByType[ticketType] = tickets;
       state.loading = false;
-      state.tickets = action.payload;
     },
     fetchTicketsFailure(state, action) {
       state.loading = false;
       state.error = action.payload;
-      state.tickets = [];
     },
     updateTicket(state, action) {
-      const updatedTicket = action.payload;
-      state.tickets = state.tickets.map((ticket) =>
-        ticket.id === updatedTicket.id ? updatedTicket : ticket
+      const { id, status, managerId, managedAt, ticketType } = action.payload;
+      state.ticketsByType[ticketType] = state.ticketsByType[ticketType].map(
+        (ticket) =>
+          ticket.id === id
+            ? { ...ticket, status, managerId, managedAt }
+            : ticket
       );
     },
     deleteTicket(state, action) {
-      const ticketId = action.payload;
-      state.tickets = state.tickets.filter((ticket) => ticket.id !== ticketId);
+      const { ticketId, ticketType } = action.payload;
+      state.ticketsByType[ticketType] = state.ticketsByType[ticketType].filter(
+        (ticket) => ticket.id !== ticketId
+      );
     },
-    clearTickets(state) {
-      state.tickets = [];
+    clearTickets(state, action) {
+      const ticketType = action.payload;
+      state.ticketsByType[ticketType] = [];
       state.loading = false;
       state.error = null;
     },
