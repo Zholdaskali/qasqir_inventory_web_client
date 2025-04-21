@@ -255,6 +255,7 @@ const TicketExecutionPage = () => {
                 <option value="WRITE-OFF">Утилизация</option>
                 <option value="SALES">Продажа</option>
                 <option value="PRODUCTION">Производство</option>
+                <option value="1C-SALES">1C-Продажа</option>
               </select>
             </div>
             <div>

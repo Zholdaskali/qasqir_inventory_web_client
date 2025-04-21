@@ -20,8 +20,12 @@ const TransactionList = () => {
   const { documents, loading, error, downloadLoading } = useSelector((state) => state.transactionList);
   const dispatch = useDispatch();
 
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const [startDate, setStartDate] = useState(today.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(tomorrow.toISOString().split("T")[0]);
 
   const fetchDocumentsWithTransactions = async () => {
     if (!authToken) {
@@ -250,6 +254,8 @@ const TransactionList = () => {
 
   const getTransactionTypeStyles = (type) => {
     switch (type) {
+      case "1C-SALES":
+        return { className: "bg-green-100 text-green-600", label: "1С-Продажа" };
       case "INCOMING":
         return { className: "bg-blue-100 text-blue-600", label: "Поступление" };
       case "TRANSFER":

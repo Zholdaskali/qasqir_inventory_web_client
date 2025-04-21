@@ -17,6 +17,12 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   const authToken = useSelector((state) => state.token.token);
   const userId = useSelector((state) => state.user.userId);
 
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const [startDate, setStartDate] = useState(today.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(tomorrow.toISOString().split("T")[0]);
   const [loading, setLoading] = useState(false);
   const [warehouses, setWarehouses] = useState([]);
   const [zones, setZones] = useState([]);
@@ -26,7 +32,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   const [inventoryId, setInventoryId] = useState(initialInventoryId || null);
   const [isWarehouseDropdownOpen, setIsWarehouseDropdownOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [processedZoneIds, setProcessedZoneIds] = useState([]); // Новое состояние для ID обработанных зон
+  const [processedZoneIds, setProcessedZoneIds] = useState([]);
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -83,13 +89,12 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             !prevItems.some(
               (existingItem) =>
                 existingItem.nomenclatureId === newItem.nomenclatureId &&
-                existingItem.warehouseContainerId === newItem.warehouseContainerId
+                existingItem.warehouseContainerId === newItem.warehouseContainerId &&
+                existingItem.warehouseZoneId === newItem.warehouseZoneId
             )
         );
         return [...prevItems, ...filteredNewItems];
       });
-
-      toast.success(`Товары из зоны ${zoneId} успешно добавлены`);
     } catch (error) {
       toast.error(`Ошибка загрузки товаров для зоны ${zoneId}`);
     } finally {
@@ -152,7 +157,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
       setSelectedWarehouse("");
       setInventoryId(null);
       setZones([]);
-      setProcessedZoneIds([]); // Очищаем обработанные зоны
+      setProcessedZoneIds([]);
       setCurrentPage(1);
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при сохранении инвентаризации");
@@ -165,23 +170,44 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     setSelectedWarehouse(warehouseId);
     setSelectedZones([]);
     setInventoryItems([]);
-    setProcessedZoneIds([]); // Очищаем при выборе нового склада
+    setProcessedZoneIds([]);
     setIsWarehouseDropdownOpen(false);
     setCurrentPage(1);
     if (!inventoryId) setZones([]);
   };
 
-  const handleZoneToggle = (zoneId) => {
+  const handleZoneToggle = async (zoneId) => {
     const zoneIdStr = String(zoneId);
+    let updatedZones;
+
     if (selectedZones.includes(zoneIdStr)) {
-      setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneIdStr));
+      updatedZones = selectedZones.filter((id) => id !== zoneIdStr);
+      setSelectedZones(updatedZones);
       setInventoryItems((prevItems) =>
         prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
       );
     } else {
-      setSelectedZones((prevZones) => [...prevZones, zoneIdStr]);
-      fetchItemsForZone(zoneIdStr);
+      updatedZones = [...selectedZones, zoneIdStr];
+      setSelectedZones(updatedZones);
     }
+
+    // Загружаем товары для всех выбранных зон
+    setInventoryItems([]); // Очищаем перед загрузкой
+    if (updatedZones.length > 0) {
+      setLoading(true);
+      try {
+        await Promise.all(
+          updatedZones.map(async (zoneId) => {
+            await fetchItemsForZone(zoneId);
+          })
+        );
+      } catch (error) {
+        toast.error("Ошибка загрузки товаров для выбранных зон");
+      } finally {
+        setLoading(false);
+      }
+    }
+
     setCurrentPage(1);
   };
 
@@ -203,39 +229,36 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     if (initialInventoryId) {
       const fetchInventoryData = async () => {
         try {
-          console.log("Fetching inventory data for ID:", initialInventoryId); // Лог для отладки
+          console.log("Fetching inventory data for ID:", initialInventoryId);
           const response = await axios.get(
             `${API_GET_INVENTORY_CHECK_BY_ID.replace("{inventoryId}", initialInventoryId)}`,
             { headers: { "Auth-token": authToken } }
           );
-  
-          console.log("API Response:", response.data); // Лог ответа API
+
+          console.log("API Response:", response.data);
           const { warehouseId, items, result } = response.data.body || {};
-  
+
           if (!warehouseId) {
             throw new Error("Warehouse ID is missing in response");
           }
-  
+
           setSelectedWarehouse(warehouseId);
           setInventoryId(initialInventoryId);
           setInventoryItems(items || []);
-  
-          // Извлекаем ID зон из результатов инвентаризации
+
           const checkedZoneIds = [
             ...new Set((result || []).map((item) => String(item.zoneId)).filter(Boolean)),
           ];
           setProcessedZoneIds(checkedZoneIds);
-  
-          // Загружаем зоны для склада
+
           await fetchZonesForWarehouse(warehouseId);
-  
-          // Устанавливаем выбранные зоны
+
           const zoneIds = [...new Set((items || []).map((item) => item.warehouseZoneId))];
           setSelectedZones(zoneIds.map(String));
-  
-          console.log("Processed zones:", checkedZoneIds, "Selected zones:", zoneIds); // Лог для проверки
+
+          console.log("Processed zones:", checkedZoneIds, "Selected zones:", zoneIds);
         } catch (error) {
-          console.error("Error fetching inventory data:", error); // Лог ошибки
+          console.error("Error fetching inventory data:", error);
           toast.error(
             error.response?.data?.message || "Ошибка загрузки данных инвентаризации"
           );
@@ -263,13 +286,14 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
             <div className="relative">
               <button
                 onClick={() => setIsWarehouseDropdownOpen(!isWarehouseDropdownOpen)}
-                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${loading || inventoryId ? "cursor-not-allowed opacity-50" : ""
-                  }`}
+                className={`w-full p-2 border rounded-lg bg-white text-left text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  loading || inventoryId ? "cursor-not-allowed opacity-50" : ""
+                }`}
                 disabled={loading || inventoryId}
               >
                 {selectedWarehouse
                   ? warehouses.find((w) => w.id === parseInt(selectedWarehouse))?.name ||
-                  "Выберите склад"
+                    "Выберите склад"
                   : "Выберите склад"}
               </button>
               {isWarehouseDropdownOpen && (
@@ -306,21 +330,22 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                       id={`zone-${zone.id}`}
                       checked={selectedZones.includes(String(zone.id))}
                       onChange={() => handleZoneToggle(zone.id)}
-                      disabled={loading || processedZoneIds.includes(String(zone.id))} // Отключаем обработанные зоны
+                      disabled={loading || processedZoneIds.includes(String(zone.id))}
                       className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                     />
                     <label
                       htmlFor={`zone-${zone.id}`}
-                      className={`ml-2 text-sm text-gray-700 ${processedZoneIds.includes(String(zone.id))
+                      className={`ml-2 text-sm text-gray-700 ${
+                        processedZoneIds.includes(String(zone.id))
                           ? "text-red-500 cursor-not-allowed"
                           : "cursor-pointer"
-                        }`}
+                      }`}
                     >
                       {zone.name} {processedZoneIds.includes(String(zone.id)) && "(Обработана)"}
                     </label>
                   </div>
                 ))
-              ) : ( 
+              ) : (
                 <p className="text-sm text-gray-500">
                   {inventoryId ? "Зоны отсутствуют" : "Начните инвентаризацию для выбора зон"}
                 </p>
@@ -386,7 +411,8 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                     <td className="py-3 px-2">{item.measurementUnit}</td>
                     <td className="py-3 px-2">{item.code}</td>
                     <td className="py-3 px-2">
-                      {zones.find((z) => z.id === item.warehouseZoneId)?.name || item.warehouseZoneId}
+                      {zones.find((z) => z.id === item.warehouseZoneId)?.name ||
+                        item.warehouseZoneId}
                     </td>
                     <td className="py-3 px-2">
                       {item.warehouseContainerSerial || "Без контейнера"}
@@ -397,7 +423,10 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                         type="number"
                         value={item.actualQuantity}
                         onChange={(e) =>
-                          handleQuantityChange((currentPage - 1) * itemsPerPage + index, e.target.value)
+                          handleQuantityChange(
+                            (currentPage - 1) * itemsPerPage + index,
+                            e.target.value
+                          )
                         }
                         className="p-1 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />

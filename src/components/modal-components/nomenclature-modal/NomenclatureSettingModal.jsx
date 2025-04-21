@@ -126,9 +126,12 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
 
     const handleDelete = async () => {
         try {
-            await axios.delete(`${API_DELETE_NOMENCLATURE}/${nomenclature.id}/nomenclatures`, {
+            const url = API_DELETE_NOMENCLATURE.replace("{nomenclatureId}", nomenclature.id);
+            await axios.delete(
+                url, 
+                {
                 headers: { "Auth-token": authToken },
-            });
+                });
             toast.success("Номенклатура удалена");
             onClose();
         } catch (error) {

@@ -85,7 +85,6 @@ const TransferRequestPage = () => {
         items.forEach((item) => newItems.set(item.id, item));
         return { ...prev, availableItems: newItems, loading: false };
       });
-      toast.success(`Товары из зоны ${zoneId} загружены`);
     } catch (error) {
       toast.error(`Ошибка загрузки товаров для зоны ${zoneId}`);
       setState((prev) => ({ ...prev, loading: false }));
@@ -168,39 +167,7 @@ const TransferRequestPage = () => {
     });
   }, []);
 
-  const validateTransfer = useCallback(() => {
-    const items = Array.from(state.transferItems.values());
-    if (!state.fromWarehouse) {
-      toast.error("Выберите склад-источник");
-      return false;
-    }
-    if (!state.toWarehouse) {
-      toast.error("Выберите склад-назначение");
-      return false;
-    }
-    if (items.length === 0) {
-      toast.error("Выберите товары для перемещения");
-      return false;
-    }
-    if (items.some((item) => !item.toWarehouseZoneId)) {
-      toast.error("Укажите зоны назначения для всех товаров");
-      return false;
-    }
-    if (items.some((item) => item.transferQuantity <= 0)) {
-      toast.error("Укажите корректное количество для всех товаров");
-      return false;
-    }
-    if (state.fromWarehouse === state.toWarehouse) {
-      if (items.some((item) => item.fromWarehouseZoneId === item.toWarehouseZoneId)) {
-        toast.error("Зоны источник и назначение не могут совпадать при перемещении внутри склада");
-        return false;
-      }
-    }
-    return true;
-  }, [state.fromWarehouse, state.toWarehouse, state.transferItems]);
-
   const handleSubmitTransfer = useCallback(async () => {
-    if (!validateTransfer()) return;
     try {
       setState((prev) => ({ ...prev, loading: true }));
       const items = Array.from(state.transferItems.values());
@@ -242,7 +209,7 @@ const TransferRequestPage = () => {
     } finally {
       setState((prev) => ({ ...prev, loading: false }));
     }
-  }, [authToken, userId, state.fromWarehouse, state.toWarehouse, state.transferItems, validateTransfer]);
+  }, [authToken, userId, state.fromWarehouse, state.toWarehouse, state.transferItems]);
 
   const toggleDropdown = (type) => {
     setState((prev) => ({
@@ -440,7 +407,7 @@ const TransferRequestPage = () => {
               onConfirm={handleSubmitTransfer}
             >
               <button
-                disabled={state.loading || !validateTransfer()}
+                disabled={state.loading}
                 className="w-full sm:w-48 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-400 transition-colors text-sm font-medium"
               >
                 {state.loading ? "Обработка..." : "Создать перемещение"}

@@ -28,15 +28,12 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const tickets = ticketsByType[ticketType] || [];
   const dispatch = useDispatch();
 
-  // Установка начальных дат: завтра и 3 дня назад
-  const tomorrow = new Date();
-  const threeDaysAgo = new Date();
-  threeDaysAgo.setDate(tomorrow.getDate() - 3);
-
-  const [startDate, setStartDate] = useState(
-    threeDaysAgo.toISOString().slice(0, 10)
-  );
-  const [endDate, setEndDate] = useState(tomorrow.toISOString().slice(0, 10));
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  
+  const [startDate, setStartDate] = useState(today.toISOString().split("T")[0]);
+  const [endDate, setEndDate] = useState(tomorrow.toISOString().split("T")[0]);
   const [hasFetchedByType, setHasFetchedByType] = useState({}); // Храним флаг для каждого ticketType
 
   const fetchTickets = useCallback(
