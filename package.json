@@ -17,7 +17,7 @@
     "@reduxjs/toolkit": "^2.3.0",
     "axios": "^1.8.3",
     "flowbite-react": "^0.10.2",
-    "framer-motion": "^11.11.13",
+    "framer-motion": "^11.18.2",
     "gsap": "^3.12.7",
     "js-cookie": "^3.0.5",
     "jspdf": "^3.0.0",
