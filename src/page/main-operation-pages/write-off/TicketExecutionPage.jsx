@@ -4,12 +4,14 @@ import { useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CiCalendarDate } from "react-icons/ci";
+import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 
 import {
   API_GET_TICKETS_BY_TYPE,
   API_COMPLETE_WRITE_OFF_TICKET,
   API_DELETE_TICKET,
+  API_COMPLETE_BATCH_TICKETS,
 } from "../../../api/API";
 
 const TicketExecutionPage = () => {
@@ -19,6 +21,7 @@ const TicketExecutionPage = () => {
   const [loading, setLoading] = useState(false);
   const [tickets, setTickets] = useState([]);
   const [ticketType, setTicketType] = useState("WRITE-OFF");
+  const [expandedDocs, setExpandedDocs] = useState({});
 
   // Установка начальных дат: сегодня и 3 дня назад
   const today = new Date();
@@ -28,7 +31,7 @@ const TicketExecutionPage = () => {
   const [startDate, setStartDate] = useState(threeDaysAgo.toISOString().slice(0, 10));
   const [endDate, setEndDate] = useState(today.toISOString().slice(0, 10));
 
-  // Проверка валидности формы (обязательные поля: startDate и endDate)
+  // Проверка валидности формы
   const isFormValid = useCallback(() => {
     return startDate && endDate && new Date(startDate) <= new Date(endDate);
   }, [startDate, endDate]);
@@ -78,6 +81,36 @@ const TicketExecutionPage = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при выполнении заявки");
       console.error(`Execute ${ticketType} error:`, error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBatchExecute = async (ticketIds) => {
+    try {
+      setLoading(true);
+      const payload = {
+        ticketIds,
+        managedId: userId,
+      };
+      const response = await axios.put(
+        API_COMPLETE_BATCH_TICKETS,
+        payload,
+        {
+          headers: { "Auth-token": authToken },
+        }
+      );
+      toast.success(response?.data?.message || "Заявки успешно выполнены");
+      setTickets((prev) =>
+        prev.map((ticket) =>
+          ticketIds.includes(ticket.id)
+            ? { ...ticket, status: "COMPLETED" }
+            : ticket
+        )
+      );
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Ошибка при массовом выполнении заявок");
+      console.error(`Batch execute ${ticketType} error:`, error);
     } finally {
       setLoading(false);
     }
@@ -135,6 +168,27 @@ const TicketExecutionPage = () => {
           label: "НЕ РАСПОЗНАН СТАТУС ЗАЯВКИ",
         };
     }
+  };
+
+  const groupTicketsByDocument = (tickets) => {
+    return tickets.reduce((acc, ticket) => {
+      const docId = ticket.document?.id || "unknown";
+      if (!acc[docId]) {
+        acc[docId] = {
+          document: ticket.document || { documentNumber: "Неизвестный документ" },
+          tickets: [],
+        };
+      }
+      acc[docId].tickets.push(ticket);
+      return acc;
+    }, {});
+  };
+
+  const toggleDocument = (docId) => {
+    setExpandedDocs((prev) => ({
+      ...prev,
+      [docId]: !prev[docId],
+    }));
   };
 
   const renderTicketCard = (ticket) => {
@@ -219,9 +273,73 @@ const TicketExecutionPage = () => {
     );
   };
 
-  const activeTickets = tickets.filter((ticket) => ticket.status === "ACTIVE");
-  const allowedTickets = tickets.filter((ticket) => ticket.status === "ALLOWED");
-  const completedTickets = tickets.filter((ticket) => ticket.status === "COMPLETED");
+  const renderDocumentGroup = (documentGroup, status) => {
+    const allowedTicketIds = documentGroup.tickets
+      .filter((ticket) => ticket.status === "ALLOWED")
+      .map((ticket) => ticket.id);
+    const docId = documentGroup.document.id || "unknown";
+    const isExpanded = expandedDocs[docId] ?? true;
+
+    return (
+      <div key={docId} className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200">
+        <div
+          className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+          onClick={() => toggleDocument(docId)}
+        >
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Документ #{documentGroup.document.documentNumber}
+            </h3>
+            <p className="text-sm text-gray-600">
+              Тип: {documentGroup.document.documentType || "—"} | Дата:{" "}
+              {documentGroup.document.documentDate || "—"}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            {allowedTicketIds.length > 0 && status === "ALLOWED" && (
+              <ConfirmationWrapper
+                title="Подтверждение массового выполнения"
+                message={`Вы уверены, что хотите выполнить все одобренные заявки (${allowedTicketIds.length}) для этого документа?`}
+                onConfirm={() => handleBatchExecute(allowedTicketIds)}
+              >
+                <button
+                  className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors text-sm"
+                  disabled={loading || !isFormValid()}
+                >
+                  Выполнить все ({allowedTicketIds.length})
+                </button>
+              </ConfirmationWrapper>
+            )}
+            {isExpanded ? (
+              <FaChevronUp className="text-gray-600" />
+            ) : (
+              <FaChevronDown className="text-gray-600" />
+            )}
+          </div>
+        </div>
+        {isExpanded && (
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {documentGroup.tickets
+                .filter((ticket) => ticket.status === status)
+                .map(renderTicketCard)}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const groupedTickets = groupTicketsByDocument(tickets);
+  const activeDocuments = Object.values(groupedTickets).filter((group) =>
+    group.tickets.some((ticket) => ticket.status === "ACTIVE")
+  );
+  const allowedDocuments = Object.values(groupedTickets).filter((group) =>
+    group.tickets.some((ticket) => ticket.status === "ALLOWED")
+  );
+  const completedDocuments = Object.values(groupedTickets).filter((group) =>
+    group.tickets.some((ticket) => ticket.status === "COMPLETED")
+  );
 
   const actionTitle = ticketType === "SALES" ? "продажу" : "списание";
 
@@ -295,10 +413,8 @@ const TicketExecutionPage = () => {
               <h2 className="text-sm font-medium text-gray-700 mb-3">
                 Ожидающие выполнения
               </h2>
-              {activeTickets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {activeTickets.map(renderTicketCard)}
-                </div>
+              {activeDocuments.length > 0 ? (
+                activeDocuments.map((group) => renderDocumentGroup(group, "ACTIVE"))
               ) : (
                 <p className="text-sm text-gray-500 text-center">
                   Ожидающие заявки отсутствуют
@@ -311,10 +427,8 @@ const TicketExecutionPage = () => {
               <h2 className="text-sm font-medium text-gray-700 mb-3">
                 Одобренные заявки
               </h2>
-              {allowedTickets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {allowedTickets.map(renderTicketCard)}
-                </div>
+              {allowedDocuments.length > 0 ? (
+                allowedDocuments.map((group) => renderDocumentGroup(group, "ALLOWED"))
               ) : (
                 <p className="text-sm text-gray-500 text-center">
                   Одобренные заявки отсутствуют
@@ -327,10 +441,8 @@ const TicketExecutionPage = () => {
               <h2 className="text-sm font-medium text-gray-700 mb-3">
                 Выполненные заявки
               </h2>
-              {completedTickets.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {completedTickets.map(renderTicketCard)}
-                </div>
+              {completedDocuments.length > 0 ? (
+                completedDocuments.map((group) => renderDocumentGroup(group, "COMPLETED"))
               ) : (
                 <p className="text-sm text-gray-500 text-center">
                   Выполненные заявки отсутствуют

@@ -26,51 +26,32 @@ const WelcomeScreen = ({ onBack }) => {
                     Система управления складом с <span className="text-main-purp-dark font-medium">БИТРИКС 24 - интеграцией</span> и <span className="text-main-purp-dark font-medium">3D визуализацией</span>
                 </p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 w-full max-w-5xl">
-                {[
-                    {
-                        icon: "📊",
-                        title: "Аналитика",
-                        items: [
-                            "Логирование активностей, ошибок и входов",
-                            "Масштабируемый и понятный Dashboard",
-                            "Генерация отчетов в реальном времени"
-                        ]
-                    },
-                    {
-                        icon: "🏗️",
-                        title: "Эффективное управление помещением",
-                        items: [
-                            "3D визулизация зон склада",
-                            "Динамическое зонирование и контейнеризация склада ",
-                            "Контроль объемов товаров и зон"
-                        ]
-                    },
-                    {
-                        icon: "📱",
-                        title: "Управление зонами",
-                        items: [
-                            "Динамическое зонирование",
-                            "Контроль объемов",
-                            "Рекомендации по размещению"
-                        ]
-                    },
-                    {
-                        icon: "⚡",
-                        title: "Эффективное управление",
-                        items: [
-                            "Админ",
-                            "Кладовщик",
-                            "Менеджер склада",
-                            "Сотрудник"
-                        ]
-                    }
-                ].map((feature, index) => (
-                    <div 
-                        key={index}
-                        className="bg-white p-4 rounded-lg shadow-sm border border-main-dull-blue/10 hover:border-main-purp-dark/30 transition-colors"
-                    >
+                {[{
+                    icon: "📊", title: "Аналитика", items: [
+                        "Логирование активностей, ошибок и входов",
+                        "Масштабируемый и понятный Dashboard",
+                        "Генерация отчетов в реальном времени"
+                    ]
+                }, {
+                    icon: "🏗️", title: "Управление помещением", items: [
+                        "3D визуализация зон склада",
+                        "Контейнеризация и динамика",
+                        "Контроль объема товаров"
+                    ]
+                }, {
+                    icon: "📱", title: "Управление зонами", items: [
+                        "Динамическое зонирование",
+                        "Контроль объемов",
+                        "Рекомендации по размещению"
+                    ]
+                }, {
+                    icon: "⚡", title: "Эффективное управление", items: [
+                        "Админ", "Кладовщик", "Менеджер", "Сотрудник"
+                    ]
+                }].map((feature, index) => (
+                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-main-dull-blue/10 hover:border-main-purp-dark/30 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <span className="text-2xl">{feature.icon}</span>
                             <h3 className="text-xl font-semibold text-main-dull-blue">{feature.title}</h3>
@@ -78,7 +59,7 @@ const WelcomeScreen = ({ onBack }) => {
                         <ul className="space-y-1.5 text-base">
                             {feature.items.map((item, i) => (
                                 <li key={i} className="flex items-start">
-                                    <span className="text-main-purp-dark mr-1.5 text-xs mt-1">•</span> 
+                                    <span className="text-main-purp-dark mr-1.5 text-xs mt-1">•</span>
                                     <span>{item}</span>
                                 </li>
                             ))}
@@ -88,13 +69,10 @@ const WelcomeScreen = ({ onBack }) => {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm border border-main-dull-blue/10 mb-8 w-full max-w-2xl">
-                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Детальный контроль структурой склада и размещением товаров</h3>
+                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Контроль структуры склада</h3>
                 <div className="flex flex-wrap justify-center gap-2">
                     {["Секция", "Ряд", "Стеллаж", "Полка", "Ячейка"].map((item, i) => (
-                        <div 
-                            key={i}
-                            className="px-4 py-2 bg-main-light-gray rounded border border-main-dull-blue/10 text-sm"
-                        >
+                        <div key={i} className="px-4 py-2 bg-main-light-gray rounded border border-main-dull-blue/10 text-sm">
                             {item}
                         </div>
                     ))}
@@ -122,170 +100,115 @@ const SignInPage = ({ setIsAuthenticated }) => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    const handleForgotPass = () => {
-        setForgotPass((prev) => !prev);
-    };
-
-    const handleLearnMore = () => {
-        setShowWelcome(true);
-    };
-
-    const handleBackToLogin = () => {
-        setShowWelcome(false);
-    };
+    const handleForgotPass = () => setForgotPass(prev => !prev);
+    const handleLearnMore = () => setShowWelcome(true);
+    const handleBackToLogin = () => setShowWelcome(false);
 
     useEffect(() => {
-        const checkAuthToken = async () => {
-            const token = Cookies.get("authToken");
-            if (token) {
-                dispatch(saveToken(token));
-                try {
-                    const response = await axios.get(API_GET_PROFILE, {
-                        headers: {
-                            "Auth-token": token,
-                        },
-                    });
-
-                    dispatch(setUser(response.data.body));
-                    setIsAuthenticated(true);
-                    navigate("/");
-                    toast.success("Успешный вход");
-                } catch (error) {
-                    toast.error("Ошибка при получении данных пользователя");
-                }
-            }
-        };
-        checkAuthToken();
+        const token = Cookies.get("authToken");
+        if (token) {
+            dispatch(saveToken(token));
+            axios.get(API_GET_PROFILE, {
+                headers: { "Auth-token": token }
+            }).then((res) => {
+                dispatch(setUser(res.data.body));
+                setIsAuthenticated(true);
+                navigate("/");
+                toast.success("Успешный вход");
+            }).catch(() => toast.error("Ошибка при получении данных пользователя"));
+        }
     }, [dispatch, setIsAuthenticated, navigate]);
 
     const handleSignIn = async (e) => {
         e.preventDefault();
-
         try {
-            const response = await axios.post(API_SIGN_IN, {
-                userEmail,
-                password,
-            });
-
+            const response = await axios.post(API_SIGN_IN, { userEmail, password });
             const token = response.headers["auth-token"];
 
             if (token) {
-                Cookies.set("authToken", token, { secure: true, sameSite: "Strict" });
+                Cookies.set("authToken", token, {
+                    secure: window.location.protocol === "https:",
+                    sameSite: "Lax"
+                });
+
                 dispatch(saveToken(token));
                 setIsAuthenticated(true);
+
+                const userData = await axios.get(API_GET_PROFILE, {
+                    headers: { "Auth-token": token }
+                });
+
+                dispatch(setUser(userData.data.body));
+                toast.success("Успешный вход");
                 navigate("/");
-
-                try {
-                    const userData = await axios.get(API_GET_PROFILE, {
-                        headers: {
-                            "Auth-token": token,
-                        },
-                    });
-
-                    dispatch(setUser(userData.data.body));
-                    toast.success("Успешный вход");
-                } catch (error) {
-                    toast.error("Ошибка при получении данных пользователя");
-                }
             }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при входе");
+        } catch (err) {
+            toast.error(err.response?.data?.message || "Ошибка при входе");
         }
     };
 
     return (
-        <div className="w-full h-screen relative overflow-hidden flex flex-row bg-white">
-            {/* WelcomeScreen - появляется слева */}
-            <div className={`absolute top-0 left-0 w-2/3 h-full bg-gradient-to-b from-main-dull-white to-blue-900 transition-all duration-500 ease-in-out transform ${showWelcome ? "translate-x-0" : "-translate-x-full"}`}>
+        <div className="w-full h-screen relative overflow-hidden bg-white">
+            <div className={`absolute top-0 left-0 w-full md:w-2/3 h-full bg-gradient-to-b from-main-dull-white to-blue-900 transition-all duration-500 ease-in-out transform ${showWelcome ? "translate-x-0" : "-translate-x-full"}`}>
                 <WelcomeScreen onBack={handleBackToLogin} />
             </div>
 
-            {/* Основной контент */}
-            <div className={`w-full h-full flex transition-all duration-500 ease-in-out ${showWelcome ? "translate-x-2/3" : "translate-x-0"}`}>
-                {/* Левая часть (синяя) */}
-                <div className="w-2/3 h-full bg-[url('/sign-in-page.png')] bg-cover bg-center flex items-center justify-start text-white p-5">
-                    <div className="mx-20 text-start space-y-5">
+            <div className={`flex flex-col md:flex-row w-full h-full transition-all duration-500 ease-in-out ${showWelcome ? "md:translate-x-2/3" : "translate-x-0"}`}>
+                <div className="hidden md:flex w-full md:w-2/3 bg-[url('/sign-in-page.png')] bg-cover bg-center items-center justify-start text-white p-5">
+                    <div className="mx-10 text-start space-y-5">
                         <h1 className="text-3xl font-medium">QASQIR INVENTORY</h1>
-                        <p className="text-xl">Ваш надежный помощник в управлении складом и учетами!</p>
+                        <p className="text-xl">Ваш помощник в управлении складом!</p>
                         <button
                             onClick={showWelcome ? handleBackToLogin : handleLearnMore}
-                            className="bg-main-dull-blue px-8 py-3 text-xl rounded-full shadow-xl flex items-center gap-x-2 hover:bg-white-700 transition-colors"
+                            className="bg-main-dull-blue px-6 py-2 text-lg rounded-full shadow-xl flex items-center gap-x-2 hover:bg-white-700 transition-colors"
                         >
-                            {showWelcome ? (
-                                <>
-                                    <p>Назад</p>
-                                    <img src={arrowRight} alt="" className="w-5 h-5 mt-1" />
-                                </>
-                            ) : (
-                                <>
-                                    <p>Узнать больше</p>
-                                    <img src={arrowRight} alt="" className="w-5 h-5 mt-1" />
-                                </>
-                            )}
+                            {showWelcome ? "Назад" : "Узнать больше"}
+                            <img src={arrowRight} alt="" className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
 
-                {/* Правая часть (форма логина) */}
-                <div className="w-1/3 h-full flex justify-center items-center flex-col">
-                    <div className="w-2/4 flex flex-col items-center">
-                        <img src="/logo.svg" alt="" className="w-24 h-24" />
-                        <p className="my-5 text-main-dull-gray text-2xl text-center">
-                            <span className="font-bold text-main-dull-white">Войдите</span> в свою учетную запись
+                <div className="w-full md:w-1/3 h-full flex justify-center items-center px-4">
+                    <div className="w-full max-w-sm flex flex-col items-center">
+                        <img src="/logo.svg" alt="logo" className="w-20 h-20" />
+                        <p className="my-4 text-main-dull-gray text-xl text-center">
+                            <span className="font-bold text-main-dull-white">Войдите</span> в аккаунт
                         </p>
-                        <form
-                            onSubmit={handleSignIn}
-                            autoComplete="on"
-                            className="w-full text-start flex flex-col items-center gap-8 text-[#101540]"
-                        >
+
+                        <form onSubmit={handleSignIn} className="w-full flex flex-col gap-4">
                             <input
                                 type="email"
-                                name="login"
-                                onChange={(e) => setUserEmail(e.target.value)}
-                                value={userEmail}
                                 placeholder="Введите почту"
+                                value={userEmail}
+                                onChange={(e) => setUserEmail(e.target.value)}
                                 required
-                                className="w-full bg-white py-3 border border-main-dull-gray px-8 rounded-full focus:ring-2 focus:ring-main-dull-blue focus:border-main-dull-blue outline-none transition-all"
+                                className="w-full py-3 px-6 rounded-full border border-main-dull-gray outline-none focus:ring-2 focus:ring-main-dull-blue"
                             />
                             <input
                                 type={showPassword ? "text" : "password"}
-                                name="password"
-                                onChange={(e) => setPassword(e.target.value)}
-                                value={password}
                                 placeholder="Введите пароль"
-                                className="w-full bg-white py-3 border border-main-dull-gray px-8 rounded-full focus:ring-2 focus:ring-main-dull-blue focus:border-main-dull-blue outline-none transition-all"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
+                                className="w-full py-3 px-6 rounded-full border border-main-dull-gray outline-none focus:ring-2 focus:ring-main-dull-blue"
                             />
-                            <label className="flex items-center gap-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    onChange={() => setShowPassword((prev) => !prev)}
-                                    className="w-4 h-4 text-main-dull-blue rounded focus:ring-main-dull-white"
-                                />
-                                <p className="text-xl">Показать пароль?</p>
+                            <label className="flex items-center gap-2">
+                                <input type="checkbox" onChange={() => setShowPassword(!showPassword)} />
+                                <span>Показать пароль?</span>
                             </label>
-                            <button
-                                className="bg-main-dull-blue text-xl font-bold w-full self-center text-white py-3 rounded-full hover:bg-white-700 transition-colors"
-                                type="submit"
-                            >
+                            <button type="submit" className="bg-main-dull-blue text-white font-bold py-3 rounded-full hover:bg-main-purp-dark transition">
                                 Войти
                             </button>
                         </form>
-                        <button className="text-center my-5">
-                            Не можете вспомнить{" "}
-                            <span
-                                className="text-main-dull-gray hover:text-main-dull-white font-bold cursor-pointer transition-colors"
-                                onClick={handleForgotPass}
-                            >
-                                пароль?
-                            </span>
+
+                        <button className="mt-4 text-sm" onClick={handleForgotPass}>
+                            Не можете вспомнить <span className="font-bold text-main-dull-white">пароль?</span>
                         </button>
                         <Notification />
                     </div>
                 </div>
             </div>
 
-            {/* Модальное окно для сброса пароля */}
             {forgotPass && <ResetPasswordModal onClose={() => setForgotPass(false)} />}
         </div>
     );

@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import AdminTicketApprovalPage from "./AdminTicketApprovalPage";
+import React, { useState } from 'react';
+import AdminTicketApprovalPage from './AdminTicketApprovalPage';
 
 const tabs = [
-  { name: "УТИЛИЗАЦИЯ", page: "WRITE-OFF" },
-  { name: "ПРОДАЖА", page: "SALES" },
-  { name: "ПРОИЗВОДСТВО", page: "PRODUCTION" },
-  { name: "1C-SALES", page: "1C-SALES" },
+  { name: 'УТИЛИЗАЦИЯ', page: 'WRITE-OFF' },
+  { name: 'ПРОДАЖА', page: 'SALES' },
+  { name: 'ПРОИЗВОДСТВО', page: 'PRODUCTION' },
+  { name: '1C-ПРОДАЖА', page: '1C-SALES' },
 ];
 
 const WriteOffTicketTabsPage = () => {
@@ -13,32 +13,32 @@ const WriteOffTicketTabsPage = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "WRITE-OFF":
+      case 'WRITE-OFF':
         return <AdminTicketApprovalPage ticketType="WRITE-OFF" />;
-      case "SALES":
+      case 'SALES':
         return <AdminTicketApprovalPage ticketType="SALES" />;
-      case "PRODUCTION":
+      case 'PRODUCTION':
         return <AdminTicketApprovalPage ticketType="PRODUCTION" />;
-      case "1C-SALES":
+      case '1C-SALES':
         return <AdminTicketApprovalPage ticketType="1C-SALES" />;
       default:
-        return <div className="h-full text-gray-600">Выберите вкладку</div>;
+        return <div className="h-full text-gray-600 text-sm sm:text-base">Выберите вкладку</div>;
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-gray-50">
+    <div className="min-h-screen w-full flex flex-col bg-white sm:bg-gray-50">
       {/* Вкладки */}
-      <div className="flex-shrink-0 p-4 border-b bg-white shadow-sm">
-        <div className="flex gap-2 overflow-x-auto whitespace-nowrap">
+      <div className="flex-shrink-0 p-2 sm:p-4 border-b bg-white shadow-sm">
+        <div className="flex gap-1 sm:gap-2 overflow-x-auto whitespace-nowrap snap-x snap-mandatory">
           {tabs.map((tab) => (
             <button
               key={tab.page}
               onClick={() => setActiveTab(tab.page)}
-              className={`px-4 py-1 rounded-md text-sm font-medium transition-all ${
+              className={`px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-medium transition-all min-h-[36px] snap-center ${
                 tab.page === activeTab
-                  ? "bg-main-dull-blue text-white shadow-md"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? 'bg-main-dull-blue text-white shadow-md border-b-2 border-blue-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {tab.name}
@@ -48,7 +48,7 @@ const WriteOffTicketTabsPage = () => {
       </div>
 
       {/* Контент */}
-      <div className="flex-grow p-4 overflow-auto">{renderContent()}</div>
+      <div className="flex-grow p-2 sm:p-4 overflow-auto">{renderContent()}</div>
     </div>
   );
 };

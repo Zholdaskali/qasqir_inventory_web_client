@@ -5,7 +5,9 @@ const swagger = "http://localhost:8081/swagger-ui/index.html#/"
 
 // БАЗОВЫЕ API 
 
+// const API_BASE = 'http://192.168.1.5:8081'
 const API_BASE = 'http://localhost:8081'
+
 const API_PATH_ADMIN = "/api/v1/admin/"
 const API_PATH_USER = "/api/v1/user/"
 const API_PATH_EMPLOYEE = "/api/v1/employee/"
@@ -140,5 +142,4 @@ export const API_GET_ALL_DOCUMENTS = API_BASE + API_PATH_STOREKEEPER + "document
 export const API_COMPLETE_WRITE_OFF_TICKET = API_BASE + API_PATH_STOREKEEPER + "ticket/{ticketId}" // Завершить заявку на списание
 export const API_COMPLETE_BATCH_TICKETS = API_BASE + API_PATH_STOREKEEPER + "ticket/completed/batch" // Завершить групповые заявки
 export const API_ADD_BATCH_WRITE_OFF_TICKETS = API_BASE + API_PATH_STOREKEEPER + "ticket/batch" // Создать групповую заявку на списание
-
 // --------------------------------------------------------------------- //

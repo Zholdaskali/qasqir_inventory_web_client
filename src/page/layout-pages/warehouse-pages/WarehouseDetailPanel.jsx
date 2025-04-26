@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
-import { API_DELETE_WAREHOUSE } from "../../../api/API";
-import { useSelector } from "react-redux";
-import axios from "axios";
-import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
-import Notification from "../../../components/notification/Notification";
-import { NavLink } from "react-router-dom";
-import WarehouseZoneList from "./warehouse-structure/WarehouseZoneList";
-import WarehouseSettingsModal from "../../../components/modal-components/WarehouseSettingModal";
+import { useEffect, useState } from 'react';
+import { API_DELETE_WAREHOUSE } from '../../../api/API';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import ConfirmationWrapper from '../../../components/ui/ConfirmationWrapper';
+import Notification from '../../../components/notification/Notification';
+import { NavLink } from 'react-router-dom';
+import WarehouseZoneList from './warehouse-structure/WarehouseZoneList';
+import WarehouseSettingsModal from '../../../components/modal-components/WarehouseSettingModal';
 
 const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const [mapState, setMapState] = useState({
@@ -16,7 +16,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     const [loading, setLoading] = useState(true);
     const [showZoneSettings, setShowZoneSettings] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
-    const [address, setAddress] = useState("");
+    const [address, setAddress] = useState('');
 
     const setWarehouse = (updatedWarehouse) => {
         console.log('Updated warehouse:', updatedWarehouse);
@@ -44,11 +44,11 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
             if (data.display_name) {
                 setAddress(data.display_name);
             } else {
-                setAddress("Адрес не найден");
+                setAddress('Адрес не найден');
             }
         } catch (error) {
-            console.error("Ошибка при получении адреса:", error);
-            setAddress("Ошибка при получении адреса");
+            console.error('Ошибка при получении адреса:', error);
+            setAddress('Ошибка при получении адреса');
         }
     };
 
@@ -59,13 +59,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
             const response = await axios.delete(
                 `${API_DELETE_WAREHOUSE}${warehouse?.id}`,
                 {
-                    headers: { "Auth-token": authToken },
+                    headers: { 'Auth-token': authToken },
                 }
             );
             console.log(response.data.message);
             onClose(true);
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Ошибка при удалении склада";
+            const errorMessage = error.response?.data?.message || 'Ошибка при удалении склада';
             console.log(errorMessage);
         }
     };
@@ -76,15 +76,15 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
     if (!warehouse) {
         return (
             <div
-                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
-                    isOpen ? "translate-x-0" : "translate-x-full opacity-0"
+                className={`fixed inset-y-0 right-0 w-full sm:w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
+                    isOpen ? 'translate-x-0' : 'translate-x-full opacity-0'
                 }`}
             >
-                <div className="h-full flex flex-col justify-center items-center p-6">
-                    <p className="text-gray-600 text-lg">Данные о складе отсутствуют</p>
+                <div className="h-full flex flex-col justify-center items-center p-3 sm:p-6">
+                    <p className="text-gray-600 text-sm sm:text-lg">Данные о складе отсутствуют</p>
                     <button
                         onClick={onClose}
-                        className="mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg"
+                        className="mt-3 sm:mt-4 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs sm:text-sm"
                     >
                         Закрыть
                     </button>
@@ -97,80 +97,90 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
         <>
             <div
                 className={`fixed inset-0 bg-black transition-opacity duration-300 ease-out ${
-                    isOpen ? "opacity-30" : "opacity-0 pointer-events-none"
+                    isOpen ? 'opacity-30' : 'opacity-0 pointer-events-none'
                 }`}
                 onClick={onClose}
             />
 
             <div
-                className={`fixed inset-y-0 right-0 w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
-                    isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
+                className={`fixed inset-y-0 right-0 w-full sm:w-1/3 bg-white shadow-xl transform transition-all duration-300 ease-out ${
+                    isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
                 }`}
             >
                 <div className="h-full flex flex-col">
-                    <div className="flex items-center justify-between p-6 border-b">
-                        <h2 className="text-2xl font-bold">{warehouse.name}</h2>
+                    <div className="flex items-center justify-between p-3 sm:p-6 border-b">
+                        <h2 className="text-lg sm:text-2xl font-bold">{warehouse.name}</h2>
                         <button
                             onClick={onClose}
-                            className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full text-gray-500 text-2xl transition-colors"
+                            className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center hover:bg-gray-100 rounded-full text-gray-500 text-xl sm:text-2xl transition-colors"
                         >
                             ×
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-6">
                         {showZoneSettings ? (
                             <WarehouseZoneList warehouse={warehouse} />
                         ) : (
                             <>
-                                <div className="mb-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className="text-gray-600">Свободное пространство склада</span>
-                                        <span className="font-bold">{warehouse.warehouseCapacity || 0}%</span>
+                                <div className="mb-4 sm:mb-6">
+                                    <div className="flex justify-between items-center mb-1 sm:mb-2">
+                                        <span className="text-gray-600 text-xs sm:text-sm">
+                                            Свободное пространство склада
+                                        </span>
+                                        <span className="font-bold text-xs sm:text-sm">
+                                            {warehouse.warehouseCapacity || 0}%
+                                        </span>
                                     </div>
-                                    <div className="w-full h-2 bg-gray-200 rounded-full">
+                                    <div className="w-full h-1.5 sm:h-2 bg-gray-200 rounded-full">
                                         <div
                                             className="h-full rounded-full transition-all duration-500"
                                             style={{
                                                 width: `${warehouse.warehouseCapacity || 0}%`,
                                                 backgroundColor:
                                                     (warehouse.warehouseCapacity || 0) < 50
-                                                        ? "red"
+                                                        ? 'red'
                                                         : (warehouse.warehouseCapacity || 0) < 80
-                                                        ? "orange"
-                                                        : "green",
+                                                        ? 'orange'
+                                                        : 'green',
                                             }}
                                         />
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-3 sm:space-y-4">
                                     <div>
-                                        <h3 className="font-semibold mb-2">Информация о складе</h3>
-                                        <div className="space-y-2 text-gray-600">
-                                            <p>Локация: {address || "Не указано"}</p>
+                                        <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                                            Информация о складе
+                                        </h3>
+                                        <div className="space-y-1 sm:space-y-2 text-gray-600 text-xs sm:text-sm">
+                                            <p>Локация: {address || 'Не указано'}</p>
                                             <p>Зон на складе: {warehouse.zonesCount || 0}</p>
                                             <p>
-                                                Дата создания:{" "}
+                                                Дата создания:{' '}
                                                 {warehouse.createdAt
                                                     ? new Date(warehouse.createdAt).toLocaleDateString()
-                                                    : "Не указано"}
+                                                    : 'Не указано'}
                                             </p>
-                                            <p>
-                                                Последнее обновление:{" "}
+                                            <p className="hidden sm:block">
+                                                Последнее обновление:{' '}
                                                 {warehouse.updatedAt
                                                     ? new Date(warehouse.updatedAt).toLocaleDateString()
-                                                    : "Не указано"}
+                                                    : 'Не указано'}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="font-semibold mb-2">Расположение</h3>
-                                        <div className="h-96 rounded-lg overflow-hidden relative">
+                                        <h3 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">
+                                            Расположение
+                                        </h3>
+                                        <div className="h-64 sm:h-96 rounded-lg overflow-hidden relative">
                                             {loading && (
                                                 <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                                                    <p className="text-gray-600">Загрузка карты...</p>
+                                                    <p className="text-gray-600 text-xs sm:text-sm">
+                                                        Загрузка карты...
+                                                    </p>
                                                 </div>
                                             )}
                                             {!loading && warehouse.latitude && warehouse.longitude && (
@@ -178,7 +188,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                                     width="100%"
                                                     height="100%"
                                                     style={{ border: 0 }}
-                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${warehouse.longitude - 0.01}%2C${warehouse.latitude - 0.01}%2C${warehouse.longitude + 0.01}%2C${warehouse.latitude + 0.01}&layer=mapnik&marker=${warehouse.latitude}%2C${warehouse.longitude}`}
+                                                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                                                        warehouse.longitude - 0.01
+                                                    }%2C${warehouse.latitude - 0.01}%2C${
+                                                        warehouse.longitude + 0.01
+                                                    }%2C${warehouse.latitude + 0.01}&layer=mapnik&marker=${
+                                                        warehouse.latitude
+                                                    }%2C${warehouse.longitude}`}
                                                     allowFullScreen
                                                 />
                                             )}
@@ -189,13 +205,13 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                         )}
                     </div>
 
-                    <div className="p-6 border-t flex gap-x-5">
+                    <div className="p-3 sm:p-6 border-t flex flex-col sm:flex-row gap-2 sm:gap-5">
                         <NavLink
                             to="/warehouse-structure"
                             state={{ warehouse }}
                             className={({ isActive }) =>
-                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${
-                                    isActive ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
+                                `flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors duration-200 text-center text-xs sm:text-sm ${
+                                    isActive ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
                                 }`
                             }
                         >
@@ -206,19 +222,19 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                             to={`/warehouse-items/${warehouse.id}`}
                             state={{ warehouse }}
                             className={({ isActive }) =>
-                                `flex-1 px-4 py-2 rounded-lg transition-colors duration-200 text-center ${
-                                    isActive ? "bg-blue-500 text-white" : "bg-gray-100 hover:bg-gray-200"
+                                `flex-1 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors duration-200 text-center text-xs sm:text-sm ${
+                                    isActive ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'
                                 }`
                             }
                         >
                             Товары склада
                         </NavLink>
 
-                        {hasRole("warehouse_manager") && (
+                        {hasRole('warehouse_manager') && (
                             <>
                                 <button
                                     onClick={() => setShowSettingsModal(true)}
-                                    className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-center"
+                                    className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-center text-xs sm:text-sm"
                                 >
                                     Настройки
                                 </button>
@@ -226,7 +242,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                                     title="Все данные пользователя будут удалены !!!"
                                     onConfirm={handleDeleteWarehouse}
                                 >
-                                    <button className="bg-[#FFF2EA] hover:bg-red-300 text-center text-[#E84D43] px-4 py-2 rounded-lg">
+                                    <button className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#FFF2EA] hover:bg-red-300 text-center text-[#E84D43] rounded-lg text-xs sm:text-sm">
                                         Удалить склад
                                     </button>
                                 </ConfirmationWrapper>
@@ -235,7 +251,7 @@ const WarehouseDetailPanel = ({ warehouse, isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <div className="fixed top-0 right-0 z-20 p-4">
+                <div className="fixed top-0 right-0 z-20 p-3 sm:p-4">
                     <Notification />
                 </div>
             </div>

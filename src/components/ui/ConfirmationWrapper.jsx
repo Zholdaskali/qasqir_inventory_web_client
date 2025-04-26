@@ -1,8 +1,8 @@
 /* eslint-disable react/prop-types */
-import React, { useState, useEffect, useRef } from "react";
-import { toast } from "react-toastify";
-import PropTypes from "prop-types";
-import ReactDOM from "react-dom"; 
+import React, { useState, useEffect, useRef } from 'react';
+import { toast } from 'react-toastify';
+import PropTypes from 'prop-types';
+import ReactDOM from 'react-dom';
 
 const ConfirmationWrapper = ({ title, message, children, onConfirm }) => {
   const [isConfirmationOpen, setConfirmationOpen] = useState(false);
@@ -28,42 +28,50 @@ const ConfirmationWrapper = ({ title, message, children, onConfirm }) => {
     e.stopPropagation();
     try {
       await onConfirm();
-      toast.success("Операция выполнена успешно");
+      toast.success('Операция выполнена успешно');
     } catch (error) {
-      toast.error(error.message || "Ошибка при выполнении операции");
+      toast.error(error.message || 'Ошибка при выполнении операции');
     } finally {
       setConfirmationOpen(false);
     }
   };
 
-  // Создаем содержимое модального окна
   const modalContent = isConfirmationOpen ? (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-center px-4"
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 text-center px-2 sm:px-4 transition-opacity duration-300 ${
+        isConfirmationOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+      }`}
       onClick={handleCloseConfirmation}
       role="dialog"
       aria-labelledby="confirmation-title"
       aria-modal="true"
     >
       <div
-        className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg flex flex-col items-center"
+        className={`bg-white w-full max-w-[90%] sm:max-w-md p-4 sm:p-6 rounded-lg shadow-lg flex flex-col items-center transform transition-all duration-300 ${
+          isConfirmationOpen ? 'scale-100' : 'scale-95'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="confirmation-title" className="text-lg text-[#E84D43] font-bold mb-3">
+        <h2
+          id="confirmation-title"
+          className="text-base sm:text-lg text-[#E84D43] font-bold mb-2 sm:mb-3"
+        >
           {title}
         </h2>
-        {message && <p className="text-sm text-gray-600 mb-5">{message}</p>}
-        <hr className="w-full my-5" />
-        <div className="flex w-full justify-between gap-4">
+        {message && (
+          <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-5">{message}</p>
+        )}
+        <hr className="w-full my-3 sm:my-5" />
+        <div className="flex flex-col sm:flex-row w-full justify-between gap-2 sm:gap-4">
           <button
             ref={cancelButtonRef}
-            className="bg-[#FFF2EA] hover:bg-red-300 text-[#E84D43] px-4 py-2 rounded-lg w-1/2"
+            className="bg-[#FFF2EA] hover:bg-red-300 text-[#E84D43] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg w-full min-h-[44px] text-sm sm:text-base"
             onClick={handleCloseConfirmation}
           >
             Отмена
           </button>
           <button
-            className="bg-[#E3F3E9] hover:bg-green-300 text-[#11B066] px-4 py-2 rounded-lg w-1/2"
+            className="bg-[#E3F3E9] hover:bg-green-300 text-[#11B066] px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg w-full min-h-[44px] text-sm sm:text-base"
             onClick={handleConfirm}
           >
             Подтвердить
@@ -83,7 +91,6 @@ const ConfirmationWrapper = ({ title, message, children, onConfirm }) => {
           handleOpenConfirmation(e);
         },
       })}
-      {/* Рендерим модальное окно в body через createPortal */}
       {modalContent && ReactDOM.createPortal(modalContent, document.body)}
     </>
   );

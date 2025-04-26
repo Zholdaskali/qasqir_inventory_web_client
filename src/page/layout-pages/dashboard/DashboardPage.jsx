@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowUpRight, ArrowDownRight, Filter, Download, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useSelector } from "react-redux";
+import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { API_GET_DASHBOARD_STATS, API_GET_CURRENT_DASHBOARD, API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API";
-
-const API_DASHBOARD_STATS = 'http://localhost:8081/api/v1/employee/dashboard/stats';
-const API_DASHBOARD_CURRENT = 'http://localhost:8081/api/v1/employee/dashboard/current';
-const API_TRANSACTIONS = 'http://localhost:8081/api/v1/warehouse-manager/document/transaction';
+import { API_GET_DASHBOARD_STATS, API_GET_CURRENT_DASHBOARD, API_GET_DOCUMENTS_WITH_TRANSACTIONS } from '../../../api/API';
 
 const DashboardPage = () => {
     const [dashboardData, setDashboardData] = useState({
@@ -56,7 +52,7 @@ const DashboardPage = () => {
                 
                 return sortConfig.direction === 'asc' 
                     ? String(aValue).localeCompare(String(bValue))
-                    : String(bValue).localeCompare(String(aValue));
+                    : String(bValue).localeCompare(String(bValue));
             });
         }
         return zones;
@@ -200,48 +196,50 @@ const DashboardPage = () => {
         { title: 'Заполненность', value: `${(dashboardData.zoneFillPercentage || 0).toFixed(1)}%`, change: '+5%', increase: true },
     ];
 
-    if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Загрузка...</div>;
-    if (error) return <div className="flex items-center justify-center h-screen text-red-600">{error}</div>;
+    if (loading) return <div className="flex items-center justify-center h-screen text-gray-500 text-sm sm:text-base">Загрузка...</div>;
+    if (error) return <div className="flex items-center justify-center h-screen text-red-600 text-sm sm:text-base">{error}</div>;
 
     return (
-        <div className="container mx-auto p-4 bg-gray-50 min-h-screen">
+        <div className="w-full p-2 sm:p-4 bg-gray-50 min-h-screen">
             {/* Заголовок и фильтры */}
-            <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 className="text-2xl font-bold text-gray-800">Аналитика склада</h1>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:justify-between sm:items-center">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-800">Аналитика склада</h1>
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="p-2 border rounded-md text-sm"
+                        className="p-1.5 sm:p-2 border rounded-md text-xs sm:text-sm w-full sm:w-auto"
                     />
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="p-2 border rounded-md text-sm"
+                        className="p-1.5 sm:p-2 border rounded-md text-xs sm:text-sm w-full sm:w-auto"
                     />
-                    <button onClick={handleFilterApply} className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm flex items-center gap-1">
-                        <Filter size={16} /> Фильтр
-                    </button>
-                    <button onClick={fetchCurrentDashboardStats} className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm">
-                        Обновить
-                    </button>
-                    <button onClick={exportToCSV} className="p-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm flex items-center gap-1">
-                        <Download size={16} /> CSV
-                    </button>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                        <button onClick={handleFilterApply} className="flex-1 sm:flex-none p-1.5 sm:p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-xs sm:text-sm flex items-center justify-center gap-1">
+                            <Filter size={12} className="sm:w-4 sm:h-4" /> Фильтр
+                        </button>
+                        <button onClick={fetchCurrentDashboardStats} className="flex-1 sm:flex-none p-1.5 sm:p-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-xs sm:text-sm">
+                            Обновить
+                        </button>
+                        <button onClick={exportToCSV} className="flex-1 sm:flex-none p-1.5 sm:p-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-xs sm:text-sm flex items-center justify-center gap-1">
+                            <Download size={12} className="sm:w-4 sm:h-4" /> CSV
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Статистика */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
                 {stats.map((stat, index) => (
-                    <div key={index} className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                    <div key={index} className="bg-white p-3 sm:p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                         <p className="text-xs text-gray-600">{stat.title}</p>
                         <div className="flex items-center justify-between mt-1">
-                            <span className="text-xl font-bold text-gray-800">{stat.value}</span>
+                            <span className="text-base sm:text-xl font-bold text-gray-800">{stat.value}</span>
                             <span className={`text-xs ${stat.increase ? 'text-green-600' : 'text-red-600'} flex items-center gap-1`}>
-                                {stat.increase ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                {stat.increase ? <ArrowUpRight size={12} className="sm:w-4 sm:h-4" /> : <ArrowDownRight size={12} className="sm:w-4 sm:h-4" />}
                                 {stat.change}
                             </span>
                         </div>
@@ -250,33 +248,33 @@ const DashboardPage = () => {
             </div>
 
             {/* Графики */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Топ номенклатуры</h2>
-                    <div className="h-48 flex items-end gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Топ номенклатуры</h2>
+                    <div className="h-32 sm:h-48 overflow-x-auto flex items-end gap-1 sm:gap-2">
                         {dashboardData.topNomenclatures.slice(0, 6).map((item) => (
-                            <div key={item.id} className="flex-1 group relative">
+                            <div key={item.id} className="flex-none w-16 sm:flex-1 group relative">
                                 <div
                                     className="bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
-                                    style={{ height: `${((item.totalQuantity || 0) / 100) * 100}px` }}
+                                    style={{ height: `${((item.totalQuantity || 0) / 100) * 80}px`, minWidth: '16px' }}
                                     title={`${item.nomenclatureName}: ${item.totalQuantity || 0} ед.`}
                                 />
-                                <p className="text-xs text-center mt-1 text-gray-600 truncate">{item.nomenclatureName || '-'}</p>
+                                <p className="text-[10px] sm:text-xs text-center mt-1 text-gray-600 truncate">{item.nomenclatureName || '-'}</p>
                             </div>
                         ))}
                     </div>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Заполненность зон</h2>
-                    <div className="h-48 flex items-end gap-2">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Заполненность зон</h2>
+                    <div className="h-32 sm:h-48 overflow-x-auto flex items-end gap-1 sm:gap-2">
                         {dashboardData.zoneStats.slice(0, 6).map((zone) => (
-                            <div key={zone.id} className="flex-1 group relative">
+                            <div key={zone.id} className="flex-none w-16 sm:flex-1 group relative">
                                 <div
                                     className={`rounded-t transition-colors ${(zone.fillPercentage || 0) > 80 ? 'bg-red-500 hover:bg-red-600' : (zone.fillPercentage || 0) > 50 ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'}`}
-                                    style={{ height: `${(zone.fillPercentage || 0) * 1.5}px` }}
+                                    style={{ height: `${(zone.fillPercentage || 0) * 1.2}px`, minWidth: '16px' }}
                                     title={`${zone.zoneName}: ${(zone.fillPercentage || 0).toFixed(1)}%`}
                                 />
-                                <p className="text-xs text-center mt-1 text-gray-600 truncate">{zone.zoneName || '-'}</p>
+                                <p className="text-[10px] sm:text-xs text-center mt-1 text-gray-600 truncate">{zone.zoneName || '-'}</p>
                             </div>
                         ))}
                     </div>
@@ -284,17 +282,17 @@ const DashboardPage = () => {
             </div>
 
             {/* Таблица зон */}
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
-                <div className="flex justify-between items-center mb-3">
-                    <h2 className="text-sm font-semibold text-gray-800">Зоны склада</h2>
-                    <div className="relative">
-                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm mb-4 sm:mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-2 sm:mb-3 gap-2">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800">Зоны склада</h2>
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 sm:h-4 w-3 sm:w-4 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Поиск..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-8 pr-2 py-1 border rounded-md text-sm w-64"
+                            className="pl-7 sm:pl-8 pr-2 py-1 border rounded-md text-xs w-full"
                         />
                     </div>
                 </div>
@@ -302,90 +300,90 @@ const DashboardPage = () => {
                     <table className="w-full text-xs">
                         <thead>
                             <tr className="text-gray-600 border-b">
-                                <th className="text-left py-2 cursor-pointer" onClick={() => requestSort('zoneName')}>
+                                <th className="text-left py-1 sm:py-2 cursor-pointer" onClick={() => requestSort('zoneName')}>
                                     Зона {sortConfig.key === 'zoneName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                 </th>
-                                <th className="text-left py-2 cursor-pointer" onClick={() => requestSort('warehouseName')}>
+                                <th className="text-left py-1 sm:py-2 cursor-pointer hidden sm:table-cell" onClick={() => requestSort('warehouseName')}>
                                     Склад {sortConfig.key === 'warehouseName' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                 </th>
-                                <th className="text-left py-2 cursor-pointer" onClick={() => requestSort('fillPercentage')}>
+                                <th className="text-left py-1 sm:py-2 cursor-pointer" onClick={() => requestSort('fillPercentage')}>
                                     Заполн. {sortConfig.key === 'fillPercentage' && (sortConfig.direction === 'asc' ? '↑' : '↓')}
                                 </th>
-                                <th className="text-left py-2">Объем</th>
+                                <th className="text-left py-1 sm:py-2 hidden sm:table-cell">Объем</th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedZones.length > 0 ? (
                                 paginatedZones.map((zone) => (
                                     <tr key={zone.id} className="border-b hover:bg-gray-50">
-                                        <td className="py-2">{zone.zoneName || '-'}</td>
-                                        <td className="py-2">{zone.warehouseName || '-'}</td>
-                                        <td className="py-2">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-16 bg-gray-200 rounded h-1.5">
+                                        <td className="py-1 sm:py-2">{zone.zoneName || '-'}</td>
+                                        <td className="py-1 sm:py-2 hidden sm:table-cell">{zone.warehouseName || '-'}</td>
+                                        <td className="py-1 sm:py-2">
+                                            <div className="flex items-center gap-1 sm:gap-2">
+                                                <div className="w-12 sm:w-16 bg-gray-200 rounded h-1">
                                                     <div 
-                                                        className={`h-1.5 rounded ${(zone.fillPercentage || 0) > 80 ? 'bg-red-500' : (zone.fillPercentage || 0) > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
+                                                        className={`h-1 rounded ${(zone.fillPercentage || 0) > 80 ? 'bg-red-500' : (zone.fillPercentage || 0) > 50 ? 'bg-yellow-500' : 'bg-green-500'}`}
                                                         style={{ width: `${zone.fillPercentage || 0}%` }}
                                                     />
                                                 </div>
                                                 <span>{(zone.fillPercentage || 0).toFixed(0)}%</span>
                                             </div>
                                         </td>
-                                        <td className="py-2">{(zone.usedCapacity || 0).toFixed(1)}/{(zone.totalVolume || 0).toFixed(1)} м³</td>
+                                        <td className="py-1 sm:py-2 hidden sm:table-cell">{(zone.usedCapacity || 0).toFixed(1)}/{(zone.totalVolume || 0).toFixed(1)} м³</td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="4" className="py-2 text-center text-gray-500">Нет данных</td>
+                                    <td colSpan="4" className="py-1 sm:py-2 text-center text-gray-500 text-xs">Нет данных</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
                 </div>
                 {sortedZones.length > itemsPerPage && (
-                    <div className="flex justify-between items-center mt-3 text-xs">
+                    <div className="flex justify-between items-center mt-2 sm:mt-3 text-xs">
                         <button 
                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                             disabled={currentPage === 1}
-                            className="flex items-center gap-1 p-1 rounded border disabled:opacity-50"
+                            className="flex items-center gap-1 p-1 rounded border disabled:opacity-50 text-xs"
                         >
-                            <ChevronLeft size={14} /> Назад
+                            <ChevronLeft size={12} className="sm:w-4 sm:h-4" /> Назад
                         </button>
                         <span>{currentPage} / {Math.ceil(sortedZones.length / itemsPerPage)}</span>
                         <button 
                             onClick={() => setCurrentPage(p => Math.min(p + 1, Math.ceil(sortedZones.length / itemsPerPage)))}
                             disabled={currentPage === Math.ceil(sortedZones.length / itemsPerPage)}
-                            className="flex items-center gap-1 p-1 rounded border disabled:opacity-50"
+                            className="flex items-center gap-1 p-1 rounded border disabled:opacity-50 text-xs"
                         >
-                            Вперед <ChevronRight size={14} />
+                            Вперед <ChevronRight size={12} className="sm:w-4 sm:h-4" />
                         </button>
                     </div>
                 )}
             </div>
 
             {/* Низкий запас, транзакции, прогноз спроса и тенденции */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Низкий запас</h2>
-                    <div className="max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Низкий запас</h2>
+                    <div className="max-h-32 sm:max-h-48 overflow-y-auto">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="text-gray-600 border-b">
-                                    <th className="text-left py-2">Название</th>
-                                    <th className="text-left py-2">Кол-во</th>
+                                    <th className="text-left py-1 sm:py-2">Название</th>
+                                    <th className="text-left py-1 sm:py-2">Кол-во</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {dashboardData.lowStockItems.length > 0 ? (
                                     dashboardData.lowStockItems.map((item) => (
                                         <tr key={item.id} className="border-b hover:bg-gray-50">
-                                            <td className="py-2">{item.nomenclatureName || '-'}</td>
-                                            <td className="py-2 text-red-600">{item.totalQuantity || 0}</td>
+                                            <td className="py-1 sm:py-2">{item.nomenclatureName || '-'}</td>
+                                            <td className="py-1 sm:py-2 text-red-600">{item.totalQuantity || 0}</td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="2" className="py-2 text-center text-gray-500">Нет данных</td>
+                                        <td colSpan="2" className="py-1 sm:py-2 text-center text-gray-500 text-xs">Нет данных</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -393,31 +391,31 @@ const DashboardPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Последние транзакции</h2>
-                    <div className="max-h-48 overflow-y-auto">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Последние транзакции</h2>
+                    <div className="max-h-32 sm:max-h-48 overflow-y-auto">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="text-gray-600 border-b">
-                                    <th className="text-left py-2">Тип</th>
-                                    <th className="text-left py-2">Кол-во</th>
-                                    <th className="text-left py-2">Дата</th>
+                                    <th className="text-left py-1 sm:py-2">Тип</th>
+                                    <th className="text-left py-1 sm:py-2">Кол-во</th>
+                                    <th className="text-left py-1 sm:py-2">Дата</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {transactions.length > 0 ? (
                                     transactions.slice(0, 5).map((txn) => (
                                         <tr key={txn.id} className="border-b hover:bg-gray-50">
-                                            <td className="py-2">{txn.transactionType || '-'}</td>
-                                            <td className="py-2" style={{ color: txn.quantity > 0 ? 'green' : 'red' }}>
+                                            <td className="py-1 sm:py-2">{txn.transactionType || '-'}</td>
+                                            <td className="py-1 sm:py-2" style={{ color: txn.quantity > 0 ? 'green' : 'red' }}>
                                                 {txn.quantity > 0 ? `+${txn.quantity}` : txn.quantity}
                                             </td>
-                                            <td className="py-2">{txn.date ? new Date(txn.date).toLocaleDateString() : '-'}</td>
+                                            <td className="py-1 sm:py-2">{txn.date ? new Date(txn.date).toLocaleDateString() : '-'}</td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="3" className="py-2 text-center text-gray-500">Нет данных</td>
+                                        <td colSpan="3" className="py-1 sm:py-2 text-center text-gray-500 text-xs">Нет данных</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -425,27 +423,27 @@ const DashboardPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Прогноз спроса (след. месяц)</h2>
-                    <div className="max-h-48 overflow-y-auto">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Прогноз спроса (след. месяц)</h2>
+                    <div className="max-h-32 sm:max-h-48 overflow-y-auto">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="text-gray-600 border-b">
-                                    <th className="text-left py-2">Название</th>
-                                    <th className="text-left py-2">Кол-во</th>
+                                    <th className="text-left py-1 sm:py-2">Название</th>
+                                    <th className="text-left py-1 sm:py-2">Кол-во</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {dashboardData.demandForecast.length > 0 ? (
                                     dashboardData.demandForecast.map((item) => (
                                         <tr key={item.id} className="border-b hover:bg-gray-50">
-                                            <td className="py-2">{item.nomenclatureName || '-'}</td>
-                                            <td className="py-2">{item.totalQuantity?.toFixed(1) || 0}</td>
+                                            <td className="py-1 sm:py-2">{item.nomenclatureName || '-'}</td>
+                                            <td className="py-1 sm:py-2">{item.totalQuantity?.toFixed(1) || 0}</td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="2" className="py-2 text-center text-gray-500">Нет данных</td>
+                                        <td colSpan="2" className="py-1 sm:py-2 text-center text-gray-500 text-xs">Нет данных</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -453,29 +451,29 @@ const DashboardPage = () => {
                     </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h2 className="text-sm font-semibold text-gray-800 mb-3">Тенденции</h2>
-                    <div className="max-h-48 overflow-y-auto">
+                <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
+                    <h2 className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 sm:mb-3">Тенденции</h2>
+                    <div className="max-h-32 sm:max-h-48 overflow-y-auto">
                         <table className="w-full text-xs">
                             <thead>
                                 <tr className="text-gray-600 border-b">
-                                    <th className="text-left py-2">Название</th>
-                                    <th className="text-left py-2">Изменение</th>
+                                    <th className="text-left py-1 sm:py-2">Название</th>
+                                    <th className="text-left py-1 sm:py-2">Изменение</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {dashboardData.trendingItems.length > 0 ? (
                                     dashboardData.trendingItems.map((item) => (
                                         <tr key={item.id} className="border-b hover:bg-gray-50">
-                                            <td className="py-2">{item.nomenclatureName || '-'}</td>
-                                            <td className="py-2" style={{ color: item.totalQuantity > 0 ? 'green' : 'red' }}>
+                                            <td className="py-1 sm:py-2">{item.nomenclatureName || '-'}</td>
+                                            <td className="py-1 sm:py-2" style={{ color: item.totalQuantity > 0 ? 'green' : 'red' }}>
                                                 {item.totalQuantity > 0 ? `+${item.totalQuantity}` : item.totalQuantity}
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="2" className="py-2 text-center text-gray-500">Нет данных</td>
+                                        <td colSpan="2" className="py-1 sm:py-2 text-center text-gray-500 text-xs">Нет данных</td>
                                     </tr>
                                 )}
                             </tbody>
