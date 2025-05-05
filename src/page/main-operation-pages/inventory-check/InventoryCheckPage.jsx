@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useSelector } from "react-redux";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Select from "react-select"; // Импортируем react-select
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
 import {
   API_GET_ALL_WAREHOUSES,
@@ -34,6 +35,13 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [processedZoneIds, setProcessedZoneIds] = useState([]);
   const itemsPerPage = 50;
+
+  // Форматируем зоны для react-select
+  const zoneOptions = zones.map((zone) => ({
+    value: String(zone.id),
+    label: zone.name,
+    isDisabled: processedZoneIds.includes(String(zone.id)),
+  }));
 
   useEffect(() => {
     const fetchWarehouses = async () => {
@@ -176,46 +184,36 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     if (!inventoryId) setZones([]);
   };
 
-  const handleZoneToggle = async (zoneId) => {
-    const zoneIdStr = String(zoneId);
-    let updatedZones;
+  const handleZoneChange = useCallback(
+    async (selectedOptions) => {
+      const newSelectedZones = selectedOptions.map((option) => option.value);
+      setSelectedZones(newSelectedZones);
 
-    if (selectedZones.includes(zoneIdStr)) {
-      updatedZones = selectedZones.filter((id) => id !== zoneIdStr);
-      setSelectedZones(updatedZones);
-      setInventoryItems((prevItems) =>
-        prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
-      );
-    } else {
-      updatedZones = [...selectedZones, zoneIdStr];
-      setSelectedZones(updatedZones);
-    }
+      // Очищаем товары, если зоны изменились
+      setInventoryItems([]);
 
-    // Загружаем товары для всех выбранных зон
-    setInventoryItems([]); // Очищаем перед загрузкой
-    if (updatedZones.length > 0) {
-      setLoading(true);
-      try {
-        await Promise.all(
-          updatedZones.map(async (zoneId) => {
+      if (newSelectedZones.length > 0) {
+        setLoading(true);
+        try {
+          // Загружаем товары для каждой зоны последовательно
+          for (const zoneId of newSelectedZones) {
             await fetchItemsForZone(zoneId);
-          })
-        );
-      } catch (error) {
-        toast.error("Ошибка загрузки товаров для выбранных зон");
-      } finally {
-        setLoading(false);
+          }
+        } catch (error) {
+          toast.error("Ошибка загрузки товаров для выбранных зон");
+        } finally {
+          setLoading(false);
+        }
       }
-    }
 
-    setCurrentPage(1);
-  };
+      setCurrentPage(1);
+    },
+    [fetchItemsForZone]
+  );
 
-  const handleRemoveZone = (zoneId) => {
-    setSelectedZones((prevZones) => prevZones.filter((id) => id !== zoneId));
-    setInventoryItems((prevItems) =>
-      prevItems.filter((item) => item.warehouseZoneId !== parseInt(zoneId, 10))
-    );
+  const handleClearZones = () => {
+    setSelectedZones([]);
+    setInventoryItems([]);
     setCurrentPage(1);
   };
 
@@ -229,13 +227,11 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
     if (initialInventoryId) {
       const fetchInventoryData = async () => {
         try {
-          console.log("Fetching inventory data for ID:", initialInventoryId);
           const response = await axios.get(
             `${API_GET_INVENTORY_CHECK_BY_ID.replace("{inventoryId}", initialInventoryId)}`,
             { headers: { "Auth-token": authToken } }
           );
 
-          console.log("API Response:", response.data);
           const { warehouseId, items, result } = response.data.body || {};
 
           if (!warehouseId) {
@@ -255,10 +251,7 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
 
           const zoneIds = [...new Set((items || []).map((item) => item.warehouseZoneId))];
           setSelectedZones(zoneIds.map(String));
-
-          console.log("Processed zones:", checkedZoneIds, "Selected zones:", zoneIds);
         } catch (error) {
-          console.error("Error fetching inventory data:", error);
           toast.error(
             error.response?.data?.message || "Ошибка загрузки данных инвентаризации"
           );
@@ -318,39 +311,38 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
 
           <div className="w-full md:w-1/2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Выберите зоны</label>
-            <div className="p-2 border rounded-lg max-h-32 overflow-y-auto bg-white shadow-sm">
-              {inventoryId && zones.length > 0 ? (
-                zones.map((zone) => (
-                  <div
-                    key={zone.id}
-                    className="flex items-center py-1 px-2 hover:bg-gray-100 rounded"
-                  >
-                    <input
-                      type="checkbox"
-                      id={`zone-${zone.id}`}
-                      checked={selectedZones.includes(String(zone.id))}
-                      onChange={() => handleZoneToggle(zone.id)}
-                      disabled={loading || processedZoneIds.includes(String(zone.id))}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-                    />
-                    <label
-                      htmlFor={`zone-${zone.id}`}
-                      className={`ml-2 text-sm text-gray-700 ${
-                        processedZoneIds.includes(String(zone.id))
-                          ? "text-red-500 cursor-not-allowed"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      {zone.name} {processedZoneIds.includes(String(zone.id)) && "(Обработана)"}
-                    </label>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500">
-                  {inventoryId ? "Зоны отсутствуют" : "Начните инвентаризацию для выбора зон"}
-                </p>
-              )}
-            </div>
+            <Select
+              isMulti
+              options={zoneOptions}
+              value={zoneOptions.filter((option) => selectedZones.includes(option.value))}
+              onChange={handleZoneChange}
+              placeholder="Выберите зоны..."
+              isDisabled={loading || !inventoryId}
+              noOptionsMessage={() => "Зоны отсутствуют"}
+              className="basic-multi-select"
+              classNamePrefix="select"
+              styles={{
+                control: (base) => ({
+                  ...base,
+                  borderColor: "#d1d5db",
+                  padding: "2px",
+                  boxShadow: "none",
+                  "&:hover": { borderColor: "#3b82f6" },
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 20,
+                }),
+              }}
+            />
+            {selectedZones.length > 0 && (
+              <button
+                onClick={handleClearZones}
+                className="mt-2 text-sm text-red-500 hover:text-red-700"
+              >
+                Очистить все зоны
+              </button>
+            )}
           </div>
         </div>
 
@@ -365,7 +357,14 @@ const InventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                 >
                   {zones.find((z) => z.id === parseInt(zoneId))?.name || zoneId}
                   <button
-                    onClick={() => handleRemoveZone(zoneId)}
+                    onClick={() =>
+                      handleZoneChange(
+                        zoneOptions.filter(
+                          (option) =>
+                            selectedZones.includes(option.value) && option.value !== zoneId
+                        )
+                      )
+                    }
                     className="text-red-500 hover:text-red-700 font-bold"
                   >
                     ✕

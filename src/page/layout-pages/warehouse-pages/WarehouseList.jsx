@@ -23,7 +23,7 @@ const WarehouseList = () => {
   const [isWarehouseSaveModalOpen, setIsWarehouseSaveModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshButtonDisabled, setIsRefreshButtonDisabled] = useState(false);
-  const [hasFetched, setHasFetched] = useState(false); // Флаг для отслеживания, был ли выполнен запрос
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchWarehouseList = useCallback(async () => {
     if (!authToken) {
@@ -55,40 +55,37 @@ const WarehouseList = () => {
       toast.error(errorMessage);
     } finally {
       setIsRefreshButtonDisabled(false);
-      setHasFetched(true); // Устанавливаем флаг после завершения запроса
+      setHasFetched(true);
     }
   }, [authToken, dispatch]);
 
   useEffect(() => {
-    // Выполняем запрос только если:
-    // 1. Есть токен
-    // 2. Данные еще не загружены (warehouses пустой)
-    // 3. Запрос еще не выполнялся (hasFetched === false)
-    // 4. Нет активной загрузки
     if (authToken && warehouses.length === 0 && !hasFetched && !loading) {
       fetchWarehouseList();
     }
   }, [authToken, warehouses.length, hasFetched, loading, fetchWarehouseList]);
 
   const handleManualRefresh = () => {
-    setHasFetched(false); // Сбрасываем флаг, чтобы разрешить повторный запрос
+    setHasFetched(false);
     fetchWarehouseList();
   };
 
   const handleModalClose = () => {
     setIsWarehouseSaveModalOpen(false);
-    setHasFetched(false); // Сбрасываем флаг для обновления данных
+    setHasFetched(false);
     fetchWarehouseList();
   };
 
-  const handleWarehouseClick = (warehouse) => {
+  const
+
+ handleWarehouseClick = (warehouse) => {
     setSelectedWarehouse(warehouse);
     setIsPanelOpen(true);
   };
 
   const handleClosePanel = () => {
     setIsPanelOpen(false);
-    setHasFetched(false); // Сбрасываем флаг для обновления данных
+    setHasFetched(false);
     fetchWarehouseList();
     setTimeout(() => setSelectedWarehouse(null), 300);
   };
@@ -127,9 +124,9 @@ const WarehouseList = () => {
   );
 
   return (
-    <div className="w-full min-h-screen p-4 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="flex flex-col max-w-7xl mx-auto space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-4 rounded-xl shadow-md">
+    <div className="w-full min-h-screen p-2 overflow-auto bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex flex-col w-full space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-2 rounded-xl shadow-md">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-1.5">
               <IoIosNotificationsOutline size={22} className="text-blue-600" />
@@ -171,7 +168,7 @@ const WarehouseList = () => {
         ) : error ? (
           <div className="text-center text-red-600">Ошибка: {error}</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 w-full">
             {filteredWarehouses.length > 0 ? (
               filteredWarehouses.map((warehouse) => {
                 const capacity = warehouse.warehouseCapacity || 0;
@@ -179,55 +176,66 @@ const WarehouseList = () => {
                 return (
                   <div
                     key={warehouse.id}
-                    className="bg-white shadow-md rounded-lg p-4 border border-gray-100 cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+                    className="relative bg-white shadow-lg rounded-xl p-4 border border-gray-50 cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group"
                     onClick={() => handleWarehouseClick(warehouse)}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <h2 className="text-base font-semibold text-gray-900 truncate max-w-[70%] leading-tight">
+                    {/* Фоновая декоративная полоса */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    <div className="flex justify-between items-start mb-3">
+                      <h2 className="text-lg font-bold text-gray-800 truncate max-w-[70%] leading-tight">
                         {warehouse.name}
                       </h2>
                       <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap ${
+                        className={`text-xs font-semibold px-3 py-1 rounded-full shadow-sm ${
                           capacity < 50
-                            ? "bg-red-100 text-red-600"
+                            ? "bg-red-50 text-red-700"
                             : capacity < 80
-                            ? "bg-orange-100 text-orange-600"
-                            : "bg-green-100 text-green-600"
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-green-50 text-green-700"
                         }`}
                       >
                         {capacity.toFixed(0)}%
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-200 rounded-full mb-2 overflow-hidden">
+
+                    <div className="w-full h-2 bg-gray-100 rounded-full mb-4 overflow-hidden">
                       <div
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-500 ease-out"
                         style={{
                           width: `${Math.min(capacity, 100)}%`,
-                          backgroundColor:
-                            capacity < 50 ? "#f87171" : capacity < 80 ? "#fb923c" : "#34d399",
+                          background: `linear-gradient(to right, ${
+                            capacity < 50 ? "#ef4444" : capacity < 80 ? "#f59e0b" : "#10b981"
+                          }, ${capacity < 50 ? "#dc2626" : capacity < 80 ? "#d97706" : "#059669"})`,
                         }}
                       />
                     </div>
-                    <ul className="space-y-1 text-xs text-gray-700">
-                      <li className="flex items-center gap-1 truncate">
-                        <FaMapMarkerAlt size={10} className="text-gray-500 flex-shrink-0" />
-                        <span>{warehouse.location || "—"}</span>
+
+                    <ul className="space-y-2 text-sm text-gray-600">
+                      <li className="flex items-center gap-2 truncate">
+                        <FaMapMarkerAlt size={12} className="text-gray-400 flex-shrink-0" />
+                        <span className="truncate">{warehouse.location || "—"}</span>
                       </li>
                       {hasCoordinates && (
-                        <li className="flex items-center gap-1 truncate">
-                          <FaMapMarkerAlt size={10} className="text-blue-500 flex-shrink-0" />
-                          <span>
+                        <li className="flex items-center gap-2 truncate">
+                          <FaMapMarkerAlt size={12} className="text-blue-400 flex-shrink-0" />
+                          <span className="truncate">
                             {warehouse.latitude.toFixed(4)}, {warehouse.longitude.toFixed(4)}
                           </span>
                         </li>
                       )}
                       <li className="truncate">
-                        <span className="font-medium">Создан:</span> {warehouse.createdAt || "—"}
+                        <span className="font-semibold text-gray-700">Создан:</span>{" "}
+                        {warehouse.createdAt || "—"}
                       </li>
                       <li>
-                        <span className="font-medium">Зон:</span> {warehouse.zonesCount || 0}
+                        <span className="font-semibold text-gray-700">Зон:</span>{" "}
+                        {warehouse.zonesCount || 0}
                       </li>
                     </ul>
+
+                    {/* Эффект при наведении */}
+                    <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </div>
                 );
               })

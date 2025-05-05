@@ -4,10 +4,10 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { useParams } from "react-router-dom";
 import { API_GET_NOMENCLATURES_BY_CATEGORY } from "../../../api/API";
-import { 
-  fetchNomenclaturesStart, 
-  fetchNomenclaturesSuccess, 
-  fetchNomenclaturesFailure 
+import {
+  fetchNomenclaturesStart,
+  fetchNomenclaturesSuccess,
+  fetchNomenclaturesFailure
 } from "../../../store/slices/inventorySlice/nomenclatureListSlice";
 import { HiOutlineRefresh } from "react-icons/hi";
 import { FiSettings } from "react-icons/fi";
@@ -55,11 +55,6 @@ const NomenclatureList = () => {
   }, [authToken, categoryId, dispatch]);
 
   useEffect(() => {
-    // Выполняем запрос только если:
-    // 1. Есть токен
-    // 2. Данные еще не загружены (nomenclatures пустой)
-    // 3. Запрос еще не выполнялся (hasFetched === false)
-    // 4. Нет активной загрузки
     if (authToken && nomenclatures.length === 0 && !hasFetched && !loading) {
       fetchNomenclatureList();
     }
@@ -112,6 +107,7 @@ const NomenclatureList = () => {
       "Создатель",
       "Дата создания",
       "Последнее изменение",
+      "Дата синхронизации"
     ];
 
     const rows = filteredNomenclatures.map((nomenclature) => [
@@ -128,6 +124,7 @@ const NomenclatureList = () => {
       nomenclature.createdBy || "",
       nomenclature.createdAt || "",
       nomenclature.updatedAt || "",
+      nomenclature.syncDate || "Синхронизации не было",
     ]);
 
     let csvContent = headers.join(",") + "\n";
@@ -155,9 +152,8 @@ const NomenclatureList = () => {
           <button
             onClick={handleManualRefresh} // Изменено на handleManualRefresh
             disabled={loading || isRefreshButtonDisabled}
-            className={`p-2 rounded-full ${
-              loading || isRefreshButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
-            }`}
+            className={`p-2 rounded-full ${loading || isRefreshButtonDisabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-100"
+              }`}
             title="Обновить"
           >
             <HiOutlineRefresh className="w-6 h-6 text-gray-600" />
@@ -194,10 +190,10 @@ const NomenclatureList = () => {
               <tr>
                 <th className="text-left px-3 py-2">ID</th>
                 <th className="text-left px-3 py-2">Имя</th>
-                <th className="text-left px-3 py-2">Артикль</th>
+                <th className="text-left px-3 py-2">Артикуль</th>
                 <th className="text-left px-3 py-2">Код</th>
                 <th className="text-left px-3 py-2">Тип</th>
-                <th className="text-left px-3 py-2">Единица измерения</th>
+                <th className="text-left px-3 py-2">Ед.изм</th>
                 <th className="text-left px-3 py-2">Объем (м³)</th>
                 <th className="text-left px-3 py-2">Высота (м)</th>
                 <th className="text-left px-3 py-2">Длина (м)</th>
@@ -205,7 +201,7 @@ const NomenclatureList = () => {
                 <th className="text-left px-3 py-2">Создатель</th>
                 <th className="text-left px-3 py-2">Дата создания</th>
                 <th className="text-left px-3 py-2">Последнее изменение</th>
-                <th className="text-left px-3 py-2">Действия</th>
+                <th className="text-left px-3 py-2">Дата синхронизации</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -229,17 +225,7 @@ const NomenclatureList = () => {
                     <td className="px-3 py-2">{nomenclature.createdBy || "-"}</td>
                     <td className="px-3 py-2">{nomenclature.createdAt || "-"}</td>
                     <td className="px-3 py-2">{nomenclature.updatedAt || "-"}</td>
-                    <td className="px-3 py-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedNomenclature(nomenclature);
-                        }}
-                        className="p-2 rounded-full hover:bg-gray-100"
-                      >
-                        <FiSettings className="w-5 h-5 text-gray-600" />
-                      </button>
-                    </td>
+                    <td className="px-3 py-2">{nomenclature.syncDate || "Синхронизации не было"}</td>
                   </tr>
                 ))
               ) : (
@@ -255,9 +241,8 @@ const NomenclatureList = () => {
       </div>
 
       <button
-        className={`fixed bottom-6 right-6 w-12 h-12 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center ${
-          loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
-        } transition-all`}
+        className={`fixed bottom-6 right-6 w-12 h-12 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
+          } transition-all`}
         onClick={handleCreateNomenclatureModal}
         disabled={loading}
         aria-label="Добавить номенклатуру"

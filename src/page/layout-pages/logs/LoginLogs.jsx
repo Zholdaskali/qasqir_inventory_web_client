@@ -8,6 +8,11 @@ import { saveLogInLogs } from "../../../store/slices/logSlices/logInSlice";
 import { API_GET_LOGIN_LOGS } from "../../../api/API";
 import { CiCalendarDate } from "react-icons/ci";
 import Notification from "../../../components/notification/Notification";
+import { Line, Pie } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend } from "chart.js";
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
 
 const LoginLogs = () => {
   const date = new Date();
@@ -66,48 +71,155 @@ const LoginLogs = () => {
     toast.success("Логи входов экспортированы в CSV");
   };
 
+  // Расчет метрик для дашборда
+  const totalLogs = logInLogs.length;
+  const uniqueUsers = [...new Set(logInLogs.map(log => log.userId))].length;
+  const mostActiveUser = logInLogs.length > 0
+    ? Object.entries(
+        logInLogs.reduce((acc, log) => {
+          acc[log.userName] = (acc[log.userName] || 0) + 1;
+          return acc;
+        }, {})
+      ).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
+    : "N/A";
+
+  // Данные для линейного графика (входы по дням)
+  const loginsPerDay = logInLogs.reduce((acc, log) => {
+    const date = new Date(log.timestamp).toISOString().split('T')[0];
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {});
+
+  const lineChartData = {
+    labels: Object.keys(loginsPerDay).sort(),
+    datasets: [
+      {
+        label: "Входы по дням",
+        data: Object.keys(loginsPerDay).sort().map(date => loginsPerDay[date]),
+        borderColor: "rgba(59, 130, 246, 1)",
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        fill: true,
+        tension: 0.4,
+      },
+    ],
+  };
+
+  // Данные для круговой диаграммы (распределение входов по пользователям)
+  const userLoginCounts = logInLogs.reduce((acc, log) => {
+    acc[log.userName] = (acc[log.userName] || 0) + 1;
+    return acc;
+  }, {});
+
+  const pieChartData = {
+    labels: Object.keys(userLoginCounts),
+    datasets: [
+      {
+        data: Object.values(userLoginCounts),
+        backgroundColor: [
+          "rgba(59, 130, 246, 0.8)",
+          "rgba(16, 185, 129, 0.8)",
+          "rgba(147, 51, 234, 0.8)",
+          "rgba(245, 158, 11, 0.8)",
+          "rgba(239, 68, 68, 0.8)",
+        ],
+      },
+    ],
+  };
+
   return (
-    <div className="h-[90vh] w-full flex flex-col p-4">
+    <div className="h-[90vh] w-full flex flex-col p-6 bg-gray-50">
+      {/* Мини-дашборд */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Обзор входов</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Карточки с метриками */}
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+            <h3 className="text-sm font-semibold text-gray-600">Всего входов</h3>
+            <p className="text-3xl font-bold text-blue-600">{totalLogs}</p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+            <h3 className="text-sm font-semibold text-gray-600">Уникальные пользователи</h3>
+            <p className="text-3xl font-bold text-green-600">{uniqueUsers}</p>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+            <h3 className="text-sm font-semibold text-gray-600">Активный пользователь</h3>
+            <p className="text-lg font-bold text-Purple-600 truncate">{mostActiveUser}</p>
+          </div>
+          {/* Графики */}
+          <div className="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
+            <h3 className="text-sm font-semibold text-gray-600 mb-4">Входы по дням</h3>
+            <div className="h-64">
+              <Line
+                data={lineChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  scales: {
+                    y: { beginAtZero: true, title: { display: true, text: "Количество входов" } },
+                    x: { title: { display: true, text: "Дата" } },
+                  },
+                }}
+              />
+            </div>
+          </div>
+          <div className="bg-white p-6 rounded-xl shadow-lg">
+            <h3 className="text-sm font-semibold text-gray-600 mb-4">Распределение входов</h3>
+            <div className="h-64">
+              <Pie
+                data={pieChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { position: "bottom" },
+                  },
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Заголовок и фильтры */}
-      <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-3 gap-3">
-        <h1 className="text-xl font-semibold">Входы</h1>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-4 gap-4 bg-white rounded-xl p-6 shadow-lg">
+        <h1 className="text-2xl font-bold text-gray-800">Входы</h1>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
           {/* Кнопки */}
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-3 items-end">
             <button
               onClick={fetchLogInLogs}
-              className="bg-blue-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-blue-700 transition-all duration-200"
+              className="bg-blue-600 px-6 py-2.5 text-sm text-white rounded-md shadow-md hover:bg-blue-700 transition-all duration-200"
             >
               Вывести
             </button>
             <button
               onClick={exportToCSV}
-              className="bg-green-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-green-700 transition-all duration-200"
+              className="bg-green-600 px-6 py-2.5 text-sm text-white rounded-md shadow-md hover:bg-green-700 transition-all duration-200"
             >
               Экспорт в CSV
             </button>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+          <div className="flex gap-3 w-full sm:w-auto">
             <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm">
-                <CiCalendarDate /> Начало
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                <CiCalendarDate className="text-lg" /> Начало
               </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="border px-2 py-1 rounded-md w-full text-sm"
+                className="border border-gray-300 px-3 py-2 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm">
-                <CiCalendarDate /> Конец
+              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
+                <CiCalendarDate className="text-lg" /> Конец
               </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="border px-2 py-1 rounded-md w-full text-sm"
+                className="border border-gray-300 px-3 py-2 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -115,21 +227,21 @@ const LoginLogs = () => {
       </div>
 
       {/* Таблица */}
-      <div className="flex-1 overflow-auto mt-4 rounded-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+      <div className="flex-1 overflow-auto mt-6 rounded-xl bg-white shadow-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         <table className="w-full table-auto border-separate border-spacing-y-1">
           <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
             <tr>
-              <th className="text-left px-3 py-2">ID Пользователя</th>
-              <th className="text-left px-3 py-2">Имя Пользователя</th>
-              <th className="text-left px-3 py-2">Дата</th>
+              <th className="text-left px-4 py-3 font-semibold">ID Пользователя</th>
+              <th className="text-left px-4 py-3 font-semibold">Имя Пользователя</th>
+              <th className="text-left px-4 py-3 font-semibold">Дата</th>
             </tr>
           </thead>
           <tbody className="bg-white text-sm">
             {logInLogs.map((log) => (
-              <tr key={log.loginLogId} className="hover:bg-gray-50">
-                <td className="px-3 py-2">{log.userId}</td>
-                <td className="px-3 py-2">{log.userName}</td>
-                <td className="px-3 py-2">{log.timestamp}</td>
+              <tr key={log.loginLogId} className="hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3">{log.userId}</td>
+                <td className="px-4 py-3">{log.userName}</td>
+                <td className="px-4 py-3">{log.timestamp}</td>
               </tr>
             ))}
           </tbody>
