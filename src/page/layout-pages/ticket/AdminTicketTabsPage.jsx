@@ -6,6 +6,8 @@ const tabs = [
   { name: 'ПРОДАЖА', page: 'SALES' },
   { name: 'ПРОИЗВОДСТВО', page: 'PRODUCTION' },
   { name: '1C-ПРОДАЖА', page: '1C-SALES' },
+  { name: '1C-УТИЛИЗАЦИЯ', page: '1C-WRITE-OFF' },
+  { name: '1C-ПРОИЗВОДСТВО', page: '1C-PRODUCTION' },
 ];
 
 const WriteOffTicketTabsPage = () => {
@@ -21,6 +23,10 @@ const WriteOffTicketTabsPage = () => {
         return <AdminTicketApprovalPage ticketType="PRODUCTION" />;
       case '1C-SALES':
         return <AdminTicketApprovalPage ticketType="1C-SALES" />;
+      case '1C-PRODUCTION':
+        return <AdminTicketApprovalPage ticketType="1C-PRODUCTION" />;
+      case '1C-WRITE-OFF':
+        return <AdminTicketApprovalPage ticketType="1C-WRITE-OFF" />;
       default:
         return <div className="h-full text-gray-600 text-sm sm:text-base">Выберите вкладку</div>;
     }
