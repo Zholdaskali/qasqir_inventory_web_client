@@ -14,15 +14,15 @@ const CustomerSaveModal = ({ onClose, fetchSupplierList }) => {
     const handleSave = async () => {
         try {
             await axios.post(
-                API_ADD_CUSTOMER, // Замена хардкод URL на константу
+                API_ADD_CUSTOMER, 
                 { name, contactInfo },
                 {
                     headers: { "Auth-token": authToken },
                 }
             );
             toast.success("Заказчик успешно создан");
-            fetchSupplierList(); // Обновляем список поставщиков
-            onClose(); // Закрываем модальное окно
+            fetchSupplierList(); 
+            onClose(); 
         } catch (error) {
             toast.error("Ошибка при создании заказщика");
         }
@@ -31,7 +31,7 @@ const CustomerSaveModal = ({ onClose, fetchSupplierList }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="bg-white p-6 rounded-lg w-96">
-                <h2 className="text-xl mb-4">Создать поставщика</h2>
+                <h2 className="text-xl mb-4">Создать заказчика</h2>
                 <div className="flex flex-col gap-4">
                     <input
                         type="text"

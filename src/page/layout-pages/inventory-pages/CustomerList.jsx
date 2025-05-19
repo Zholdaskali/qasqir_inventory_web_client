@@ -237,7 +237,7 @@ const CustomerList = () => {
 
       {selectedCustomer && (
         <CustomerSettingModal
-          supplier={selectedCustomer} // Здесь возможно нужно изменить на customer, если это опечатка
+          customer={selectedCustomer} 
           onClose={handleModalClose}
         />
       )}
@@ -245,7 +245,7 @@ const CustomerList = () => {
       {isCreateModalOpen && (
         <CustomerSaveModal
           onClose={handleCreateModalClose}
-          fetchSupplierList={fetchCustomerList} // Возможно, стоит переименовать в fetchCustomerList для ясности
+          fetchSupplierList={fetchCustomerList} 
         />
       )}
     </div>
