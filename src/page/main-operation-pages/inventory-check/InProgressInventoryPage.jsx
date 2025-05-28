@@ -38,18 +38,23 @@ const InProgressInventoryPage = ({ onContinueInventory }) => {
     fetchInProgressInventories();
   }, [authToken, startDate, endDate]);
 
-  const handleContinue = (inventoryId, results) => {
+  const handleContinue = async (inventoryId, results) => {
     const checkedZoneIds = [...new Set(results.map((result) => String(result.zoneId)))].filter(Boolean);
     console.log("Extracted checkedZoneIds:", checkedZoneIds);
     if (checkedZoneIds.length === 0) {
       toast.warn("Нет зон для продолжения");
+      return;
     }
+
+    // Определяем, является ли инвентаризация системной (например, по наличию results с иерархией складов)
+    const isSystemInventory = results.some(result => result.warehouseId !== undefined);
+
     if (onContinueInventory) {
-      console.log("Sending to onContinueInventory:", { inventoryId, checkedZoneIds });
-      onContinueInventory(inventoryId, checkedZoneIds);
+      console.log("Sending to onContinueInventory:", { inventoryId, checkedZoneIds, isSystem: isSystemInventory });
+      onContinueInventory(inventoryId, checkedZoneIds, isSystemInventory); // Передаем isSystemInventory
     } else {
-      console.log("Navigating to:", `/inventory/${inventoryId}`, "with state:", { checkedZoneIds });
-      navigate(`/inventory/${inventoryId}`, { state: { checkedZoneIds } });
+      console.log("Navigating to:", `/inventory/${inventoryId}`, "with state:", { checkedZoneIds, isSystem: isSystemInventory });
+      navigate(`/inventory/${inventoryId}`, { state: { checkedZoneIds, isSystem: isSystemInventory } });
     }
   };
 

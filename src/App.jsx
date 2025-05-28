@@ -44,6 +44,7 @@ import InventoryItemsList from './page/layout-pages/operation/InventoryItemsList
 import InventoryResultPage from './page/main-operation-pages/inventory-check/InventoryResultPage';
 import TransactionList from './page/layout-pages/operation/TransactionList';
 import AdminTicketTabsPage from './page/layout-pages/ticket/AdminTicketTabsPage';
+import TransactionHistoryPage from './page/layout-pages/operation/TransactionHistoryPage';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -109,6 +110,7 @@ function App() {
                                     <Route path="supplier-list" element={<SupplierList />} />
                                     <Route path="customer-list" element={<CustomerList />} />
                                     <Route path="transaction-list" element={<TransactionList />} />
+                                    <Route path="transaction-history" element={<TransactionHistoryPage />} />
                                     <Route
                                         path="/inventory-result/:auditId"
                                         element={<InventoryResultPage />}

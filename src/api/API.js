@@ -132,6 +132,7 @@ export const API_START_INVENTORY_CHECK = API_BASE + API_PATH_STOREKEEPER + "inve
 export const API_PROCESS_INVENTORY_CHECK = API_BASE + API_PATH_STOREKEEPER + "inventory-check/process/{inventoryId}" // Завершить проверку инвентаризации
 export const API_GET_ALL_INVENTORY_CHECKS = API_BASE + API_PATH_STOREKEEPER + "inventory-check" // Получить все проверки инвентаризации
 export const API_GET_INVENTORY_CHECK_BY_ID = API_BASE + API_PATH_STOREKEEPER + "inventory-check/{inventoryId}" // Получить проверку инвентаризации по ID
+export const API_GET_INVENTORY_CHECK_SYSTEM_BY_ID = API_BASE + API_PATH_STOREKEEPER + "inventory-check-system/{inventoryId}"
 export const API_GET_INVENTORY_CHECK_RESULT = API_BASE + API_PATH_STOREKEEPER + "inventory-check/result/{auditId}" // Получить результаты проверки инвентаризации
 export const API_GET_INVENTORY_CHECKS_IN_PROGRESS = API_BASE + API_PATH_STOREKEEPER + "inventory-check/in-progress" // Получить текущие проверки инвентаризации
 export const API_GET_INVENTORY_CHECKS_COMPLETED = API_BASE + API_PATH_STOREKEEPER + "inventory-check/completed" // Получить завершенные проверки инвентаризации
