@@ -18,7 +18,7 @@ const API_PATH_STOREKEEPER = "/api/v1/storekeeper/"
 
 const API_WAREHOUSE_MANAGER = API_BASE + API_PATH_WAREHOUSE_MANAGER
 
-// --------------------------------------------------------------------- //
+// --------------------------------------------------------------------- --------------------------------------------------------------------- //
 
 // API ДЛЯ СОТРУДНИКОВ (EMPLOYEE)
 
@@ -37,10 +37,9 @@ export const API_GET_DASHBOARD_STATS = API_BASE + API_PATH_EMPLOYEE + "dashboard
 export const API_GET_CURRENT_DASHBOARD = API_BASE + API_PATH_EMPLOYEE + "dashboard/current" // Получить текущую статистику дашборда
 export const API_GET_ALL_CUSTOMERS = API_BASE + API_PATH_EMPLOYEE + "customers" // Получить всех клиентов
 
-// --------------------------------------------------------------------- //
+// --------------------------------------------------------------------- --------------------------------------------------------------------- //
 
 // API ДЛЯ ПОЛЬЗОВАТЕЛЕЙ (USER)
-
 export const API_PASS_RECOVER = API_BASE + API_PATH_USER + "password/reset-invite?Invite-token=" // Сброс пароля для приглашенного пользователя
 export const API_UPDATE_USERNAME = API_BASE + API_PATH_USER + "profile/" // Обновление профиля пользователя (PUT)
 export const API_NEW_PASSWORD = API_BASE + API_PATH_USER + "password/reset/" // Сброс пароля с токеном
@@ -51,6 +50,7 @@ export const API_GET_PROFILE = API_BASE + API_PATH_USER + "profile" // Полу�
 export const API_GET_ORGANIZATION = API_BASE + API_PATH_USER + "organization" // Получить данные об организации
 
 // Добавленные API для пользователей
+export const API_UPDATE_USEREMAIL = API_BASE + API_PATH_USER + "profile/email/{userId}" // Обновить профиль пользователя по ID
 export const API_RECOVER_PASSWORD = API_BASE + API_PATH_USER + "password/recovery" // Инициировать восстановление пароля
 export const API_UPDATE_PROFILE = API_BASE + API_PATH_USER + "profile/{userId}" // Обновить профиль пользователя по ID
 export const API_UPLOAD_AVATAR = API_BASE + API_PATH_USER + "{userId}/image" // Загрузить аватар пользователя
@@ -58,7 +58,7 @@ export const API_DELETE_USER = API_BASE + API_PATH_USER + "{userId}" // Удал
 export const API_GET_INVENTORY_ITEMS_BY_WAREHOUSE = API_BASE + API_PATH_USER + "warehouse/items/{warehouseId}" // Получить элементы инвентаря по ID склада
 export const API_GET_INVENTORY_ITEMS_BY_ZONE = API_BASE + API_PATH_USER + "inventory/items/{warehouseZoneId}" // Получить элементы инвентаря по ID зоны склада
 
-// --------------------------------------------------------------------- //
+// --------------------------------------------------------------------- --------------------------------------------------------------------- //
 
 // API ДЛЯ УПРАВЛЕНИЯ СКЛАДАМИ (WAREHOUSE-MANAGER)
 

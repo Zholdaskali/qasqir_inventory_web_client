@@ -129,10 +129,6 @@ const SettingsPage = () => {
                         alt="User Avatar"
                         className="w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-gray-200 object-cover shadow-sm"
                     />
-                    <button className="flex items-center gap-x-2 border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md">
-                        <span>Загрузить</span>
-                        <img src={camera} alt="Camera Icon" className="w-5 h-5" />
-                    </button>
                     <div className="text-center text-xs text-gray-500">
                         <p className="font-medium">Дата регистрации:</p>
                         <p>{user.registrationDate || "Не указано"}</p>

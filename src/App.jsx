@@ -8,6 +8,7 @@ import PassRecover from './page/main-pages/PassRecover';
 import SignInPage from './page/main-pages/SignInPage';
 import Layout from './components/ui/Layout';
 import NotFound from './page/main-pages/NotFound';
+import PasswordReset from './page/main-pages/PasswordReset';
 
 // Super admin pages
 import CreateAdmin from './page/layout-pages/users/setting-user/CreateAdmin';
@@ -142,7 +143,7 @@ function App() {
                         </Route>
                     </>
                 )}
-
+                <Route path="reset-password" element={<PasswordReset />} />
                 <Route path="recover-password" element={<PassRecover />} />
                 <Route
                     path="/sign-in"

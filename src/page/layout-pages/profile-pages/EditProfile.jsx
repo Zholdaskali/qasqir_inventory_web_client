@@ -14,7 +14,9 @@ import Notification from "../../../components/notification/Notification";
 import { toast } from "react-toastify";
 import { setUser } from "../../../store/slices/userSlice";
 import ChangePasswordModal from "../../../components/password-components/ChangePasswordModal";
+import ChangeEmailModal from "../../../components/password-components/ChangeEmailModal";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
+import UploadPhotoModal from "../../../components/password-components/UploadPhotoModal"; // Новый компонент
 
 // Функция для перевода ролей
 const translateRole = (role) => {
@@ -36,8 +38,10 @@ const EditProfile = () => {
     const [newUserNumber, setNewUserNumber] = useState("");
     const [newUserEmail, setNewUserEmail] = useState("");
     const [passResetModal, setPassResetModal] = useState(false);
+    const [emailChangeModal, setEmailChangeModal] = useState(false);
+    const [photoUploadModal, setPhotoUploadModal] = useState(false); // Состояние для модалки загрузки фото
 
-    const isSaveDisabled = () => !newUserName && !newUserNumber && !newUserEmail;
+    const isSaveDisabled = () => !newUserName && !newUserNumber;
     const navigate = useNavigate();
 
     const updateUserData = async () => {
@@ -45,7 +49,6 @@ const EditProfile = () => {
             const updatedData = {};
             const hasNameChanged = newUserName.trim() !== "";
             const hasNumberChanged = newUserNumber.trim() !== "";
-            const hasEmailChanged = newUserEmail.trim() !== "";
 
             if (hasNameChanged && hasNumberChanged) {
                 updatedData.userName = newUserName;
@@ -76,6 +79,8 @@ const EditProfile = () => {
     };
 
     const handlePassReset = () => setPassResetModal((prev) => !prev);
+    const handleEmailChange = () => setEmailChangeModal((prev) => !prev);
+    const handlePhotoUpload = () => setPhotoUploadModal((prev) => !prev); // Обработчик для открытия/закрытия модалки
 
     return (
         <div className="bg-white w-full md:w-4/5 max-w-4xl mx-auto h-[90vh] md:h-[70vh] rounded-2xl shadow-lg flex flex-col items-center py-8 px-6 md:px-12 overflow-y-auto">
@@ -98,7 +103,10 @@ const EditProfile = () => {
                         alt="User Avatar"
                         className="w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-gray-200 object-cover shadow-sm"
                     />
-                    <button className="flex items-center gap-x-2 border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md">
+                    <button
+                        onClick={handlePhotoUpload} // Открываем модалку
+                        className="flex items-center gap-x-2 border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md"
+                    >
                         <span>Загрузить</span>
                         <img src={camera} alt="Camera Icon" className="w-5 h-5" />
                     </button>
@@ -125,9 +133,9 @@ const EditProfile = () => {
                             <input
                                 type="text"
                                 placeholder={user.email || "Введите почту"}
-                                value={newUserEmail}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-main-dull-blue shadow-sm"
-                                onChange={(e) => setNewUserEmail(e.target.value)}
+                                value={user.email}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                disabled
                             />
                         </div>
                         <div>
@@ -183,11 +191,19 @@ const EditProfile = () => {
                         >
                             Сменить пароль
                         </button>
+                        <button
+                            className="w-full border-2 border-main-dull-blue text-main-dull-blue px-6 py-2 rounded-lg hover:bg-main-dull-blue hover:text-white transition-all duration-200 shadow-md"
+                            onClick={handleEmailChange}
+                        >
+                            Сменить email
+                        </button>
                     </div>
                 </div>
             </div>
 
             {passResetModal && <ChangePasswordModal setPassResetModal={setPassResetModal} />}
+            {emailChangeModal && <ChangeEmailModal setEmailChangeModal={setEmailChangeModal} />}
+            {photoUploadModal && <UploadPhotoModal setPhotoUploadModal={setPhotoUploadModal} />} {/* Вызов новой модалки */}
             <Notification />
         </div>
     );
