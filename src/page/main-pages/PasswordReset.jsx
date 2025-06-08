@@ -1,22 +1,30 @@
 import axios from "axios";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { useSearchParams } from "react-router-dom"; // Для извлечения параметров из URL
+import { useSearchParams, useNavigate } from "react-router-dom";
+import Notification from "../../components/notification/Notification";
 
 const ResetPasswordModal = ({ onClose }) => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [searchParams] = useSearchParams(); // Получаем параметры из URL
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Извлекаем токен из URL
   const token = searchParams.get("Password-reset-token");
+
+  useEffect(() => {
+    if (token) {
+      console.log("TOKEN:", token, "| LENGTH:", token.length);
+    } else {
+      toast.error("Токен отсутствует в ссылке");
+    }
+  }, [token]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Проверка совпадения паролей
     if (newPassword !== confirmPassword) {
       toast.error("Пароли не совпадают");
       setIsLoading(false);
@@ -24,14 +32,14 @@ const ResetPasswordModal = ({ onClose }) => {
     }
 
     try {
-      // Отправляем PUT-запрос на бэкенд с токеном в query-параметре
       const response = await axios.put(
         `http://localhost:8081/api/v1/user/password/reset?Password-reset-token=${token}`,
-        { newPassword } // Соответствует структуре PasswordRecoveryRequest
+        { newPassword }
       );
       toast.success(response.data.message || "Пароль успешно изменен");
-      onClose(); // Закрываем модалку после успеха
+      navigate("/sign-in");
     } catch (err) {
+      console.log(token);
       toast.error(err.response?.data?.message || "Ошибка при сбросе пароля");
     } finally {
       setIsLoading(false);
@@ -41,7 +49,9 @@ const ResetPasswordModal = ({ onClose }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 className="text-xl font-semibold mb-4 text-main-dull-blue">Сброс пароля</h2>
+        <h2 className="text-xl font-semibold mb-4 text-main-dull-blue">
+          Сброс пароля
+        </h2>
         <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
           <input
             type="password"
@@ -74,6 +84,7 @@ const ResetPasswordModal = ({ onClose }) => {
           Отмена
         </button>
       </div>
+      <Notification />
     </div>
   );
 };

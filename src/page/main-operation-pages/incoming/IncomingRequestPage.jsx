@@ -17,8 +17,9 @@ import {
   setContainersForZone,
   setSuppliers,
 } from "../../../store/slices/main-operation-slice/incoming/incomingCacheSlice";
-import { FaPlus, FaTrash, FaCheckCircle, FaSpinner, FaEye } from "react-icons/fa";
+import { FaPlus, FaTrash, FaCheckCircle, FaSpinner, FaEye, FaUpload } from "react-icons/fa";
 import Notification from "../../../components/notification/Notification";
+import UploadFileModal from "../../../components/modal-components/UploadFileModal";
 import {
   API_GET_ALL_WAREHOUSES,
   API_GET_ALL_SUPPLIERS,
@@ -28,7 +29,7 @@ import {
   API_PROCESS_INCOMING_GOODS,
 } from "../../../api/API";
 
-// Компонент для отображения подсказок вместимости
+// CapacityHint component remains unchanged
 const CapacityHint = ({ status, message }) => {
   const getStyles = () => {
     switch (status) {
@@ -71,8 +72,10 @@ const IncomingRequestPage = () => {
   const [requestSuccess, setRequestSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [nomenclaturesLoaded, setNomenclaturesLoaded] = useState(false);
+  const [uploadFileModal, setUploadFileModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null); // Теперь хранит { base64, fileName }
 
-  // Загрузка складов и поставщиков при монтировании
+  // Fetch initial data (warehouses and suppliers)
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
@@ -96,7 +99,7 @@ const IncomingRequestPage = () => {
     }
   }, [authToken, dispatch, warehouses.length, suppliers.length]);
 
-  // Функция загрузки номенклатур
+  // Fetch nomenclatures
   const fetchNomenclatures = async () => {
     if (nomenclaturesLoaded) return;
     setIsLoading(true);
@@ -108,11 +111,10 @@ const IncomingRequestPage = () => {
       dispatch(setNomenclatures(nomenclaturesData));
       setNomenclaturesLoaded(true);
       toast.success("Номенклатуры успешно загружены");
-      console.log("Номенклатуры загружены:", nomenclaturesData);
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка загрузки номенклатур");
       console.error("Ошибка загрузки номенклатур:", error);
-      setNomenclaturesLoaded(false); // Сбрасываем флаг в случае ошибки
+      setNomenclaturesLoaded(false);
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +155,6 @@ const IncomingRequestPage = () => {
   );
 
   const handleAddItem = () => {
-    console.log("Добавление нового товара...");
     try {
       dispatch(
         addItem({
@@ -167,7 +168,7 @@ const IncomingRequestPage = () => {
           returnable: false,
         })
       );
-      console.log("Товар успешно добавлен в состояние");
+      toast.success("Товар успешно добавлен");
     } catch (error) {
       console.error("Ошибка при добавлении товара:", error);
       toast.error("Не удалось добавить товар");
@@ -227,7 +228,7 @@ const IncomingRequestPage = () => {
     [handleItemChange]
   );
 
-  // Расчет объема номенклатуры
+  // Calculate nomenclature volume
   const calculateNomenclatureVolume = (nomenclatureId, quantity) => {
     const nomenclature = nomenclatures.find((n) => n.id === nomenclatureId);
     if (!nomenclature || !quantity) return 0;
@@ -242,7 +243,7 @@ const IncomingRequestPage = () => {
     return 0;
   };
 
-  // Подсказка о вместимости зоны и контейнера
+  // Capacity hint logic
   const getCapacityHint = (item) => {
     const totalVolume = calculateNomenclatureVolume(item.nomenclatureId, parseFloat(item.quantity || 0));
 
@@ -327,12 +328,17 @@ const IncomingRequestPage = () => {
 
     setIsLoading(true);
     try {
+      console.log("Формирование payload...");
+      console.log("selectedFile:", selectedFile);
+
       const payload = {
         documentType: "INCOMING",
         documentNumber: data.documentNumber,
         documentDate: data.documentDate,
+        fileName: selectedFile ? selectedFile.fileName : null,
+        fileData: selectedFile ? selectedFile.base64 : null,
         supplierId: parseInt(data.supplierId, 10),
-        tnvedCode: data.tnvedCode || null,
+        customerId: null,
         items: items.map((item) => ({
           nomenclatureId: parseInt(item.nomenclatureId, 10),
           quantity: parseFloat(item.quantity),
@@ -343,19 +349,29 @@ const IncomingRequestPage = () => {
         createdBy: userId,
       };
 
+      console.log("Payload:", JSON.stringify(payload, null, 2));
+      console.log("Отправка запроса к:", API_PROCESS_INCOMING_GOODS);
+
       const response = await axios.post(API_PROCESS_INCOMING_GOODS, payload, {
-        headers: { "Auth-token": authToken },
+        headers: {
+          "Auth-token": authToken,
+          "Content-Type": "application/json; charset=utf-8",
+        },
       });
+
+      console.log("Ответ сервера:", response.data);
 
       toast.success(response?.data?.message || "Заявка успешно создана");
       setRequestSuccess(true);
+      setSelectedFile(null);
       setTimeout(() => {
         setRequestSuccess(false);
         dispatch(setItems([]));
       }, 2000);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Ошибка при создании заявки");
-      console.error("Ошибка при создании заявки:", error);
+      console.error("Ошибка в onSubmit:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Ошибка при создании заявки";
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -423,6 +439,13 @@ const IncomingRequestPage = () => {
         </div>
       )}
 
+      {uploadFileModal && (
+        <UploadFileModal
+          setUploadFileModal={setUploadFileModal}
+          setSelectedFile={setSelectedFile}
+        />
+      )}
+
       <h2 className="text-lg font-semibold text-main-dull-gray text-center">
         Новая заявка на оприходование
       </h2>
@@ -481,6 +504,25 @@ const IncomingRequestPage = () => {
               />
               {errors.supplierId && (
                 <p className="text-red-500 text-xs">{errors.supplierId.message}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                Файл
+              </label>
+              <button
+                type="button"
+                onClick={() => setUploadFileModal(true)}
+                className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                disabled={isLoading}
+              >
+                <FaUpload className="mr-1" />
+                Загрузить файл
+              </button>
+              {selectedFile && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Выбран файл: {selectedFile.fileName}
+                </p>
               )}
             </div>
           </div>
