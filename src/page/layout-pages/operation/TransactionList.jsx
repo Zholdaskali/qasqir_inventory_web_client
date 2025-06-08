@@ -75,33 +75,45 @@ const TransactionList = () => {
     try {
       dispatch(downloadDocumentStart());
       const response = await axios.get(
-        `/api/v1/warehouse-manager/document/${documentId}/download`, // Используем относительный путь с прокси
+        `http://localhost:8081/api/v1/storekeeper/file/download/by-document/${documentId}`,
         {
           headers: { 'Auth-token': authToken },
-          responseType: 'blob',
+          responseType: 'blob', // Expect a binary response
         }
       );
 
-      const contentType = response.headers['content-type'];
-      if (!contentType || !contentType.includes('application/pdf')) {
-        throw new Error('Сервер не вернул PDF-файл');
+      let filename = `document_${documentId}.pdf`; // Fallback filename
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          filename = decodeURIComponent(match[1]); // Decode URI-encoded filename
+        }
       }
 
-      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `document_${documentId}.pdf`);
+      link.setAttribute('download', filename); // Use the extracted or fallback filename
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+
       dispatch(downloadDocumentSuccess());
       toast.success('Документ успешно скачан');
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Ошибка при скачивании документа';
+      let errorMessage = 'Ошибка при скачивании документа';
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMessage = 'Файл не найден';
+        } else {
+          errorMessage = error.response.data?.message || errorMessage;
+        }
+      }
       dispatch(downloadDocumentFailure(errorMessage));
       toast.error(errorMessage);
-      console.error('Ошибка скачивания PDF:', error.message || error);
+      console.error('Ошибка скачивания файла:', error.message || error);
     }
   };
 
@@ -409,25 +421,25 @@ const TransactionList = () => {
                       Список транзакций
                     </h3>
                     {transactions.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-3 sm:gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                         {transactions.map((transaction) => {
                           const typeStyles = getTransactionTypeStyles(transaction.transactionType);
                           return (
                             <div
                               key={transaction.id}
-                              className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 hover:bg-gray-100 transition-colors"
+                              className="bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-200 hover:bg-gray-100 transition-colors flex flex-col"
                             >
-                              <div className="flex justify-between items-center mb-1 sm:mb-2">
-                                <h4 className="text-sm sm:text-md font-semibold text-gray-700">
+                              <div className="flex justify-between items-center mb-1">
+                                <h4 className="text-xs sm:text-sm font-semibold text-gray-700">
                                   Транзакция #{transaction.id}
                                 </h4>
                                 <span
-                                  className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-xs font-medium ${typeStyles.className}`}
+                                  className={`px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded-full text-xs font-medium ${typeStyles.className}`}
                                 >
                                   {typeStyles.label}
                                 </span>
                               </div>
-                              <div className="text-xs sm:text-sm text-gray-600 space-y-0.5 sm:space-y-1">
+                              <div className="text-xs text-gray-600 space-y-0.5 flex-grow">
                                 <p>
                                   <span className="font-medium">Номенклатура:</span>{' '}
                                   {transaction.nomenclatureName}
@@ -437,16 +449,24 @@ const TransactionList = () => {
                                   {transaction.quantity}
                                 </p>
                                 <p>
-                                  <span className="font-medium">Дата транзакции:</span>{' '}
-                                  {new Date(transaction.date).toLocaleString()}
+                                  <span className="font-medium">Дата:</span>{' '}
+                                  {new Date(transaction.date).toLocaleString('ru-RU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
                                 </p>
                                 <p className="hidden sm:block">
                                   <span className="font-medium">Создатель:</span>{' '}
-                                  {transaction.createdBy}
+                                  {transaction.createdBy || 'N/A'}
                                 </p>
                                 <p className="hidden sm:block">
                                   <span className="font-medium">Создано:</span>{' '}
-                                  {new Date(transaction.createdAt).toLocaleString()}
+                                  {new Date(transaction.createdAt).toLocaleString('ru-RU', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
                                 </p>
                               </div>
                             </div>
