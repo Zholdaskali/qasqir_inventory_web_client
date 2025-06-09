@@ -6,13 +6,15 @@ import "react-toastify/dist/ReactToastify.css";
 import { List, AutoSizer } from "react-virtualized";
 import debounce from "lodash/debounce";
 import ConfirmationWrapper from "../../../components/ui/ConfirmationWrapper";
+import UploadFileModal from "../../../components/modal-components/UploadFileModal";
+import { FaUpload } from "react-icons/fa";
 
 // Импорт API-путей
 import {
-  API_GET_WAREHOUSE_LIST, // Замена для http://localhost:8081/api/v1/employee/warehouses
-  API_GET_ALL_CUSTOMERS,  // Замена для http://localhost:8081/api/v1/employee/customers
-  API_GET_INVENTORY_ITEMS_BY_WAREHOUSE, // Замена для http://localhost:8081/api/v1/user/warehouse/items/{warehouseId}
-  API_ADD_BATCH_WRITE_OFF_TICKETS, // Замена для http://localhost:8081/api/v1/storekeeper/ticket/batch
+  API_GET_WAREHOUSE_LIST,
+  API_GET_ALL_CUSTOMERS,
+  API_GET_INVENTORY_ITEMS_BY_WAREHOUSE,
+  API_ADD_BATCH_WRITE_OFF_TICKETS,
 } from "../../../api/API";
 
 const BatchWriteOffPage = () => {
@@ -31,9 +33,12 @@ const BatchWriteOffPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [documentType, setDocumentType] = useState("WRITE-OFF");
   const [documentNumber, setDocumentNumber] = useState(`WO-${Date.now()}`);
+  const [documentDate, setDocumentDate] = useState("2025-06-09"); // Default as per provided structure
   const [customers, setCustomers] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [isItemListOpen, setIsItemListOpen] = useState(false);
+  const [uploadFileModal, setUploadFileModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null); // { base64, fileName }
 
   // Дебаунс для поиска
   const debouncedSearch = useMemo(() => debounce((query) => setSearchQuery(query), 300), []);
@@ -154,9 +159,11 @@ const BatchWriteOffPage = () => {
       const payload = {
         documentType,
         documentNumber,
-        documentDate: "2025-03-24",
+        documentDate, // Используем выбранную дату или дефолтную
         createdBy: userId,
-        ...(documentType === "SALES" && { customerId: parseInt(selectedCustomerId) }),
+        customerId: documentType === "SALES" ? parseInt(selectedCustomerId) : null,
+        fileName: selectedFile ? selectedFile.fileName : null,
+        fileData: selectedFile ? selectedFile.base64 : null,
         ticketRequests: selectedItems.map((item) => ({
           comment: comment || `Групповой процесс: ${documentType}`,
           inventoryId: item.id,
@@ -171,13 +178,27 @@ const BatchWriteOffPage = () => {
       setQuantities({});
       setComment("");
       setSelectedCustomerId("");
+      setSelectedFile(null); // Очищаем файл после успешной отправки
       setDocumentNumber(`${documentType.slice(0, 2).toUpperCase()}-${Date.now()}`);
     } catch (error) {
       toast.error(error.response?.data?.message || "Ошибка при создании заявки");
     } finally {
       setLoading(false);
     }
-  }, [authToken, userId, documentType, documentNumber, selectedWarehouseId, selectedZoneId, selectedCustomerId, selectedItems, quantities, comment]);
+  }, [
+    authToken,
+    userId,
+    documentType,
+    documentNumber,
+    documentDate,
+    selectedWarehouseId,
+    selectedZoneId,
+    selectedCustomerId,
+    selectedItems,
+    quantities,
+    comment,
+    selectedFile,
+  ]);
 
   const rowRenderer = useCallback(
     ({ index, key, style }) => {
@@ -202,6 +223,12 @@ const BatchWriteOffPage = () => {
   return (
     <div className="container mx-auto p-6 bg-gray-100 min-h-screen">
       <ToastContainer position="top-center" autoClose={3000} />
+      {uploadFileModal && (
+        <UploadFileModal
+          setUploadFileModal={setUploadFileModal}
+          setSelectedFile={setSelectedFile}
+        />
+      )}
       <header className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Групповая заявка</h1>
         <p className="text-sm text-gray-600 mt-1">Создайте заявку на списание, продажу или производство</p>
@@ -284,6 +311,33 @@ const BatchWriteOffPage = () => {
                 className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 text-sm"
                 disabled={loading}
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Дата документа *</label>
+              <input
+                type="date"
+                value={documentDate}
+                onChange={(e) => setDocumentDate(e.target.value)}
+                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 text-sm"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Файл</label>
+              <button
+                type="button"
+                onClick={() => setUploadFileModal(true)}
+                className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition"
+                disabled={loading}
+              >
+                <FaUpload className="mr-1" />
+                Загрузить файл
+              </button>
+              {selectedFile && (
+                <p className="text-sm text-gray-600 mt-1">
+                  Выбран файл: {selectedFile.fileName}
+                </p>
+              )}
             </div>
           </div>
         </section>

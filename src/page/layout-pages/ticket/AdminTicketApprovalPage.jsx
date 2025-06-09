@@ -5,6 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CiCalendarDate } from 'react-icons/ci';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { HiDownload } from 'react-icons/hi'; // Added for download button
 import ConfirmationWrapper from '../../../components/ui/ConfirmationWrapper';
 import {
   API_GET_TICKETS_BY_TYPE,
@@ -42,6 +43,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const [endDate, setEndDate] = useState(tomorrow.toISOString().split('T')[0]);
   const [hasFetchedByType, setHasFetchedByType] = useState({});
   const [expandedDocs, setExpandedDocs] = useState({});
+  const [downloadLoading, setDownloadLoading] = useState(false); // Added for download state
 
   const fetchTickets = useCallback(
     async (forceFetch = false) => {
@@ -98,6 +100,56 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets, ticketType]);
+
+  const handleDownloadDocument = async (documentId) => {
+    if (!authToken) {
+      toast.error('Токен авторизации отсутствует');
+      return;
+    }
+    try {
+      setDownloadLoading(true);
+      const response = await axios.get(
+        `http://localhost:8081/api/v1/storekeeper/file/download/by-document/${documentId}`,
+        {
+          headers: { 'Auth-token': authToken },
+          responseType: 'blob',
+        }
+      );
+
+      let filename = `document_${documentId}.pdf`;
+      const contentDisposition = response.headers['content-disposition'];
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match && match[1]) {
+          filename = decodeURIComponent(match[1]);
+        }
+      }
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Документ успешно скачан');
+    } catch (error) {
+      let errorMessage = 'Ошибка при скачивании документа';
+      if (error.response) {
+        if (error.response.status === 404) {
+          errorMessage = 'Файл не найден';
+        } else {
+          errorMessage = error.response.data?.message || errorMessage;
+        }
+      }
+      toast.error(errorMessage);
+      console.error('Ошибка скачивания файла:', error.message || error);
+    } finally {
+      setDownloadLoading(false);
+    }
+  };
 
   const handleCancelTicket = async (ticketId) => {
     try {
@@ -394,6 +446,17 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
             </p>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadDocument(documentGroup.document.id);
+              }}
+              className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
+              title="Скачать документ (PDF)"
+              disabled={downloadLoading}
+            >
+              <HiDownload className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
+            </button>
             {activeTicketIds.length > 0 && status === 'ACTIVE' && (
               <ConfirmationWrapper
                 title="Подтверждение массового одобрения"
