@@ -4,9 +4,9 @@ import { useSelector } from 'react-redux';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CheckCircleIcon, ClockIcon } from '@heroicons/react/20/solid';
-import { API_GET_INVENTORY_CHECK_SYSTEM_BY_ID } from '../../../api/API';
+import { API_GET_INVENTORY_CHECK_SYSTEM_BY_ID, API_PATH_STOREKEEPER,API_BASE } from '../../../api/API';
 
-const API_BASE_URL = 'http://localhost:8081/api/v1/storekeeper';
+const API_BASE_URL = API_BASE + API_BASE;
 
 const SystemInventoryStartPage = ({ onSelectInventory }) => {
   const authToken = useSelector((state) => state.token.token);
@@ -22,7 +22,7 @@ const SystemInventoryStartPage = ({ onSelectInventory }) => {
   const fetchInventories = async () => {
     setLoading(true);
     try {
-      const activeResponse = await axios.get(`${API_BASE_URL}/inventory-check-system/in-progress`, {
+      const activeResponse = await axios.get(`${API_BASE_URL}inventory-check-system/in-progress`, {
         headers: { 'Auth-token': authToken },
         params: { startDate, endDate },
       });

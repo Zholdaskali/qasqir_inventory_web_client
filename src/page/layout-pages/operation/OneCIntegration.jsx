@@ -10,6 +10,7 @@ import {
     fetchNotSyncedNomenclaturesSuccess,
     fetchNomenclaturesFailure,
 } from '../../../store/slices/inventorySlice/nomenclatureOneCListSlice';
+import { SYNCED, NOT_SYNCED } from "../../../api/API";
 
 const NomenclatureList = () => {
     const authToken = useSelector((state) => state.token.token);
@@ -34,8 +35,8 @@ const NomenclatureList = () => {
 
         const endpoint =
             type === 'synced'
-                ? 'http://localhost:8081/api/v1/1C/nomenclatures/synced'
-                : 'http://localhost:8081/api/v1/1C/nomenclatures/not-synced';
+                ? SYNCED
+                : NOT_SYNCED;
 
         try {
             dispatch(fetchNomenclaturesStart());

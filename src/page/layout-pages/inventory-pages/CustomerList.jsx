@@ -12,6 +12,7 @@ import {
   fetchCustomersSuccess, 
   fetchCustomersFailure 
 } from "../../../store/slices/layout/setting/customerSlice";
+import { API_ADD_CUSTOMER } from "../../../api/API";
 
 const CustomerList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -35,7 +36,7 @@ const CustomerList = () => {
     setIsRefreshButtonDisabled(true);
     dispatch(fetchCustomersStart());
     try {
-      const response = await axios.get("http://localhost:8081/api/v1/employee/customers", {
+      const response = await axios.get(API_ADD_CUSTOMER, {
         headers: { "Auth-token": authToken },
       });
       dispatch(fetchCustomersSuccess(response.data.body || [])); // Устанавливаем пустой массив по умолчанию

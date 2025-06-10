@@ -3,6 +3,9 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import Notification from "../../components/notification/Notification";
+import {
+  API_NEW_PASSWORD,
+} from '../../api/API';
 
 const ResetPasswordModal = ({ onClose }) => {
   const [newPassword, setNewPassword] = useState("");
@@ -33,7 +36,7 @@ const ResetPasswordModal = ({ onClose }) => {
 
     try {
       const response = await axios.put(
-        `http://localhost:8081/api/v1/user/password/reset?Password-reset-token=${token}`,
+        API_NEW_PASSWORD+`?Password-reset-token=${token}`,
         { newPassword }
       );
       toast.success(response.data.message || "Пароль успешно изменен");

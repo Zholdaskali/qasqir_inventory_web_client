@@ -4,6 +4,9 @@ import { toast } from "react-toastify";
 import { useState } from "react";
 import axios from "axios";
 import { setUser } from "../../store/slices/userSlice";
+import {
+  API_EMAIL_VERIFY,
+} from "../../api/API";
 
 const VerifyEmailModal = ({ setVerifyEmailModal, setEmailChangeModal, newEmail }) => {
   const user = useSelector((state) => state.user);
@@ -17,7 +20,7 @@ const VerifyEmailModal = ({ setVerifyEmailModal, setEmailChangeModal, newEmail }
     console.log('VerifyEmailModal: Sending request', { userId: user.userId, email: newEmail, code });
     try {
       const response = await axios.put(
-        `http://localhost:8081/api/v1/user/profile/email/verify/${user.userId}`,
+        API_EMAIL_VERIFY+`/${user.userId}`,
         {
           email: newEmail,
           code: code,

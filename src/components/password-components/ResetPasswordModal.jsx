@@ -1,6 +1,9 @@
 import axios from "axios";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import {
+  API_RECOVER_PASSWORD,
+} from "../../api/API";
 
 const ResetPasswordModal = ({ onClose }) => {
   const [email, setEmail] = useState("");
@@ -11,7 +14,7 @@ const ResetPasswordModal = ({ onClose }) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:8081/api/v1/user/password/recovery", { email });
+      const response = await axios.post(API_RECOVER_PASSWORD, { email });
       toast.success(response.data.message || "Ссылка для сброса пароля отправлена на ваш email");
       onClose(); // Закрываем модалку после успеха
     } catch (err) {

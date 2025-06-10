@@ -6,17 +6,15 @@ const swagger = "http://localhost:8081/swagger-ui/index.html#/"
 // БАЗОВЫЕ API 
 
 // const API_BASE = 'http://192.168.1.5:8081'
-const API_BASE = 'http://localhost:8081'
+// const API_BASE = 'http://localhost:8081'
+export const API_BASE = 'https://qasqir-inventory-pchq.onrender.com'
 
-const API_PATH_ADMIN = "/api/v1/admin/"
-const API_PATH_USER = "/api/v1/user/"
-const API_PATH_EMPLOYEE = "/api/v1/employee/"
-const API_PATH_WAREHOUSE_MANAGER = "/api/v1/warehouse-manager/"
-const API_PATH_STOREKEEPER = "/api/v1/storekeeper/"
+export const API_PATH_ADMIN = "/api/v1/admin/"
+export const API_PATH_USER = "/api/v1/user/"
+export const API_PATH_EMPLOYEE = "/api/v1/employee/" 
+export const API_PATH_WAREHOUSE_MANAGER = "/api/v1/warehouse-manager/"
+export const API_PATH_STOREKEEPER = "/api/v1/storekeeper/"
 
-// БАЗОВЫЕ API 
-
-const API_WAREHOUSE_MANAGER = API_BASE + API_PATH_WAREHOUSE_MANAGER
 
 // --------------------------------------------------------------------- --------------------------------------------------------------------- //
 
@@ -48,6 +46,7 @@ export const API_EMAIL_GENERATE = API_BASE + API_PATH_USER + "email/generate" //
 export const API_EMAIL_VERIFY = API_BASE + API_PATH_USER + "email/verify" // Проверка кода подтверждения email
 export const API_GET_PROFILE = API_BASE + API_PATH_USER + "profile" // Получить профиль пользователя
 export const API_GET_ORGANIZATION = API_BASE + API_PATH_USER + "organization" // Получить данные об организации
+
 
 // Добавленные API для пользователей
 export const API_UPDATE_USEREMAIL = API_BASE + API_PATH_USER + "profile/email/{userId}" // Обновить профиль пользователя по ID
@@ -118,7 +117,9 @@ export const API_SIGN_OUT = API_BASE + "/api/v1/auth/sign-out" // Выход п�
 
 // --------------------------------------------------------------------- //
 
-// API ДЛЯ КЛАДОВЩИКОВ (STOREKEEPER)
+// API 1C
+export const SYNCED = "/api/v1/1C/nomenclatures/synced"
+export const NOT_SYNCED = "/api/v1/1C/nomenclatures/not-synced"
 
 // Добавленные API для кладовщиков
 export const API_PROCESS_INCOMING_GOODS = API_BASE + API_PATH_STOREKEEPER + "incoming" // Обработать поступление товаров

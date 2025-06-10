@@ -11,6 +11,7 @@ import {
   BeakerIcon,
   ShoppingCartIcon,
 } from '@heroicons/react/20/solid';
+import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API";
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
@@ -135,7 +136,7 @@ const TransactionHistoryPage = () => {
   const pageSize = 10;
 
   const authToken = useSelector((state) => state.token.token);
-  const API_BASE_URL = 'http://localhost:8081/api/v1/warehouse-manager/document/transaction';
+  const API_BASE_URL = API_GET_DOCUMENTS_WITH_TRANSACTIONS;
 
   const fetchTransactions = async (code, pageNum) => {
     setLoading(true);

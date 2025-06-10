@@ -3,6 +3,10 @@ import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { setUser } from "../../store/slices/userSlice";
+import {
+  API_BASE,
+  API_PATH_USER,
+} from "../../api/API";
 
 const UploadPhotoModal = ({ setPhotoUploadModal }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -41,7 +45,7 @@ const UploadPhotoModal = ({ setPhotoUploadModal }) => {
 
     try {
       const response = await axios.post(
-        `http://localhost:8081/api/v1/user/${user.userId}/image`,
+        API_BASE+API_PATH_USER+`${user.userId}/image`,
         formData,
         {
           headers: {

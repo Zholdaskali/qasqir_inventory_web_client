@@ -5,6 +5,9 @@ import { toast } from "react-toastify";
 import { useState } from "react";
 import axios from "axios";
 import VerifyEmailModal from "./VerifyEmailModal";
+import {
+  API_EMAIL_GENERATE,
+} from "../../api/API";
 
 const ChangeEmailModal = ({ setEmailChangeModal }) => {
   const user = useSelector((state) => state.user);
@@ -20,7 +23,7 @@ const ChangeEmailModal = ({ setEmailChangeModal }) => {
     console.log('ChangeEmailModal: Sending request', { userId: user.userId, email: newEmail, password });
     try {
       const response = await axios.put(
-        "http://localhost:8081/api/v1/user/profile/email/generate",
+        API_EMAIL_GENERATE,
         {
           userId: user.userId,
           email: newEmail,
