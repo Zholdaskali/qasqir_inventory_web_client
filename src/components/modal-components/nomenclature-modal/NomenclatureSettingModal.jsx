@@ -15,7 +15,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const [code, setCode] = useState(nomenclature?.code || "");
     const [type, setType] = useState(nomenclature?.type || "");
     const [tnved_code, setTnvedCode] = useState(nomenclature?.tnved_code || "");
-    const [measurement_unit, setMeasurementUnit] = useState(nomenclature?.measurement_unit || "");
+    const [measurement, setMeasurementUnit] = useState(nomenclature?.measurement || "");
     const [categoryId, setCategoryId] = useState(nomenclature?.categoryId || "");
     const [height, setHeight] = useState(nomenclature?.height || 0);
     const [length, setLength] = useState(nomenclature?.length || 0);
@@ -99,7 +99,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                 type,
                 updated_by: userId,
                 tnved_code,
-                measurement_unit,
+                measurement,
                 categoryId,
             };
 
@@ -195,7 +195,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                             <label className="block text-sm text-main-dull-blue">Ед. изм.</label>
                             <input
                                 className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-main-blue"
-                                value={measurement_unit}
+                                value={measurement}
                                 onChange={(e) => setMeasurementUnit(e.target.value)}
                             />
                         </div>

@@ -11,7 +11,7 @@ import {
   BeakerIcon,
   ShoppingCartIcon,
 } from '@heroicons/react/20/solid';
-import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from "../../../api/API";
+import { API_GET_DOCUMENTS_WITH_TRANSACTIONS } from '../../../api/API';
 
 // Error Boundary Component
 class ErrorBoundary extends Component {
@@ -74,7 +74,7 @@ const getQuantitySign = (type) => {
 };
 
 // Function to export transactions to CSV
-const exportTransactionsToCSV = (transactions, nomenclatureCode) => {
+const exportTransactionsToCSV = (transactions, nomenclatureCode, startDate, endDate) => {
   try {
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
       throw new Error('Транзакции отсутствуют или имеют неверный формат');
@@ -99,7 +99,7 @@ const exportTransactionsToCSV = (transactions, nomenclatureCode) => {
         `"${getTransactionStyle(item.transactionDTO?.transactionType).label || 'N/A'}"`,
         `"${item.transactionDTO?.nomenclatureName || 'N/A'}"`,
         `"${formattedQuantity}"`,
-        item.transactionDTO?.date ? `"${new Date(item.transactionDTO.date).toLocaleString('ru-RU')}"` : '"N/A"',
+        item.transactionDTO?.createdAt ? `"${new Date(item.transactionDTO.createdAt).toLocaleString('ru-RU')}"` : '"N/A"',
         `"${item.warehouseZoneDTO?.warehouseName || 'N/A'}"`,
         `"${item.warehouseZoneDTO?.name || 'N/A'}"`,
         `"${item.warehouseContainerDTO?.serialNumber || 'N/A'}"`,
@@ -114,7 +114,7 @@ const exportTransactionsToCSV = (transactions, nomenclatureCode) => {
     link.setAttribute('href', encodedUri);
     link.setAttribute(
       'download',
-      `transactions_${nomenclatureCode || 'unknown'}_${new Date().toISOString().split('T')[0]}.csv`
+      `transactions_${nomenclatureCode || 'unknown'}_${startDate || 'no-start'}_${endDate || 'no-end'}.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -128,6 +128,8 @@ const exportTransactionsToCSV = (transactions, nomenclatureCode) => {
 
 const TransactionHistoryPage = () => {
   const [nomenclatureCode, setNomenclatureCode] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -138,13 +140,18 @@ const TransactionHistoryPage = () => {
   const authToken = useSelector((state) => state.token.token);
   const API_BASE_URL = API_GET_DOCUMENTS_WITH_TRANSACTIONS;
 
-  const fetchTransactions = async (code, pageNum) => {
+  const fetchTransactions = async (code, start, end, pageNum) => {
     setLoading(true);
     setError(null);
     try {
       const response = await axios.get(`${API_BASE_URL}/${code}`, {
         headers: { 'Auth-token': authToken },
-        params: { page: pageNum, size: pageSize },
+        params: {
+          startDate: start,
+          endDate: end,
+          page: pageNum,
+          size: pageSize,
+        },
       });
       const data = response.data;
       if (data.body && Array.isArray(data.body)) {
@@ -169,14 +176,22 @@ const TransactionHistoryPage = () => {
       toast.error('Введите код номенклатуры');
       return;
     }
+    if (!startDate || !endDate) {
+      toast.error('Выберите начальную и конечную даты');
+      return;
+    }
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error('Начальная дата не может быть позже конечной');
+      return;
+    }
     setPage(0);
-    fetchTransactions(nomenclatureCode, 0);
+    fetchTransactions(nomenclatureCode, startDate, endDate, 0);
   };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 0 && newPage < totalPages) {
       setPage(newPage);
-      fetchTransactions(nomenclatureCode, newPage);
+      fetchTransactions(nomenclatureCode, startDate, endDate, newPage);
     }
   };
 
@@ -195,6 +210,20 @@ const TransactionHistoryPage = () => {
               placeholder="Введите код номенклатуры"
               className="w-full sm:w-64 px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              placeholder="Начальная дата"
+              className="w-full sm:w-44 px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              placeholder="Конечная дата"
+              className="w-full sm:w-44 px-2 sm:px-3 py-1 sm:py-2 border rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <button
               type="submit"
               disabled={loading}
@@ -204,7 +233,7 @@ const TransactionHistoryPage = () => {
             </button>
             {transactions.length > 0 && (
               <button
-                onClick={() => exportTransactionsToCSV(transactions, nomenclatureCode)}
+                onClick={() => exportTransactionsToCSV(transactions, nomenclatureCode, startDate, endDate)}
                 className="w-full sm:w-auto px-3 sm:px-4 py-1 sm:py-2 bg-green-500 text-white rounded-lg text-xs sm:text-sm hover:bg-green-600"
               >
                 Экспорт в CSV
@@ -263,8 +292,8 @@ const TransactionHistoryPage = () => {
                       <td className="px-2 sm:px-4 py-2 sm:py-3">{item.transactionDTO?.nomenclatureName || '-'}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">{formattedQuantity}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
-                        {item.transactionDTO?.date
-                          ? new Date(item.transactionDTO.date).toLocaleDateString('ru-RU')
+                        {item.transactionDTO?.createdAt
+                          ? new Date(item.transactionDTO.createdAt).toLocaleDateString('ru-RU')
                           : '-'}
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">{item.warehouseZoneDTO?.warehouseName || '-'}</td>

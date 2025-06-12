@@ -6,8 +6,8 @@ const swagger = "http://localhost:8081/swagger-ui/index.html#/"
 // БАЗОВЫЕ API 
 
 // const API_BASE = 'http://192.168.1.5:8081'
-// const API_BASE = 'http://localhost:8081'
-export const API_BASE = 'https://qasqir-inventory-pchq.onrender.com'
+export const API_BASE = 'http://localhost:8081'
+// export const API_BASE = 'https://qasqir-inventory-pchq.onrender.com'
 
 export const API_PATH_ADMIN = "/api/v1/admin/"
 export const API_PATH_USER = "/api/v1/user/"
