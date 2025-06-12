@@ -238,10 +238,10 @@ const DashboardPage = () => {
                         <p className="text-xs text-gray-600">{stat.title}</p>
                         <div className="flex items-center justify-between mt-1">
                             <span className="text-base sm:text-xl font-bold text-gray-800">{stat.value}</span>
-                            <span className={`text-xs ${stat.increase ? 'text-green-600' : 'text-red-600'} flex items-center gap-1`}>
+                            {/* <span className={`text-xs ${stat.increase ? 'text-green-600' : 'text-red-600'} flex items-center gap-1`}>
                                 {stat.increase ? <ArrowUpRight size={12} className="sm:w-4 sm:h-4" /> : <ArrowDownRight size={12} className="sm:w-4 sm:h-4" />}
-                                {stat.change}
-                            </span>
+                                
+                            </span> */}
                         </div>
                     </div>
                 ))}

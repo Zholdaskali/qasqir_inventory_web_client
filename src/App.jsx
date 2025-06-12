@@ -46,6 +46,7 @@ import InventoryResultPage from './page/main-operation-pages/inventory-check/Inv
 import TransactionList from './page/layout-pages/operation/TransactionList';
 import AdminTicketTabsPage from './page/layout-pages/ticket/AdminTicketTabsPage';
 import TransactionHistoryPage from './page/layout-pages/operation/TransactionHistoryPage';
+import InventoryReportPage from './page/main-operation-pages/inventory-check/InventoryReportPage';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -130,6 +131,7 @@ function App() {
                                         path="/inventory-result/:auditId"
                                         element={<InventoryResultPage />}
                                     />
+                                    <Route path="/inventory-report/:inventoryId" element={<InventoryReportPage />} />
                                 </>
                             )}
 

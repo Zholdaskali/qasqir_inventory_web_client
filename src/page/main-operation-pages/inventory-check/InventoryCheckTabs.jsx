@@ -6,48 +6,25 @@ import SystemInventoryCheckPage from './SystemInventoryCheckPage.jsx';
 import SystemInventoryStartPage from './SystemInventoryStartPage.jsx';
 
 const tabs = [
-  { name: 'НОВАЯ ИНВЕНТАРИЗАЦИЯ', page: 'inventory_check' },
-  { name: 'ТЕКУЩИЕ ИНВЕНТАРИЗАЦИИ', page: 'in_progress' },
-  { name: 'ЗАВЕРЩЕННЫЕ ИНВЕНТАРИЗАЦИИ', page: 'in_complete' },
   { name: 'СИСТЕМНАЯ ИНВЕНТАРИЗАЦИЯ', page: 'system_inventory_start' },
   { name: 'ПРОДОЛЖЕНИЕ СИСТЕМНОЙ ИНВЕНТАРИЗАЦИИ', page: 'system_inventory_check' },
 ];
+
 
 const InventoryCheckTabs = () => {
   const [activeTab, setActiveTab] = useState(tabs[0].page);
   const [selectedInventoryId, setSelectedInventoryId] = useState(null);
   const [showInventoryCheck, setShowInventoryCheck] = useState(false);
 
-  const handleContinueInventory = (inventoryId, checkedZoneIds) => {
-    setSelectedInventoryId(inventoryId);
-    setShowInventoryCheck(true);
-    setActiveTab(tabs[0].page); // Обычная инвентаризация
-  };
-
   const handleSelectInventory = (inventoryId) => {
     setSelectedInventoryId(inventoryId);
     setShowInventoryCheck(true);
-    setActiveTab(tabs[4].page); // Переключаемся на "Продолжение системной инвентаризации" (индекс 4)
+    setActiveTab('system_inventory_check');
   };
+
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'inventory_check':
-        return (
-          <div className="space-y-2 sm:space-y-4">
-            <InventoryCheckPage
-              inventoryId={showInventoryCheck ? selectedInventoryId : null}
-            />
-          </div>
-        );
-      case 'in_progress':
-        return (
-          <div className="space-y-2 sm:space-y-4">
-            <InProgressInventoryPage onContinueInventory={handleContinueInventory} />
-          </div>
-        );
-      case 'in_complete':
-        return <InCompleteInventoryPage />;
       case 'system_inventory_start':
         return <SystemInventoryStartPage onSelectInventory={handleSelectInventory} />;
       case 'system_inventory_check':
@@ -62,6 +39,7 @@ const InventoryCheckTabs = () => {
         return <div className="text-gray-600 text-sm sm:text-base">Выберите вкладку</div>;
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-white sm:bg-gray-50 p-2 sm:p-4">
@@ -81,11 +59,10 @@ const InventoryCheckTabs = () => {
                   setSelectedInventoryId(null);
                 }
               }}
-              className={`px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-medium transition-all min-h-[36px] snap-center ${
-                tab.page === activeTab
+              className={`px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-medium transition-all min-h-[36px] snap-center ${tab.page === activeTab
                   ? 'bg-main-dull-blue text-white shadow-md border-b-2 border-blue-700'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
               role="tab"
               aria-selected={tab.page === activeTab}
               aria-controls={`panel-${tab.page}`}

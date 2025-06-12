@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
   ChevronDownIcon,
@@ -9,15 +9,16 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import { API_GET_INVENTORY_ITEMS_BY_WAREHOUSE } from "../../../../api/API";
-import { 
-  fetchWarehouseItemsStart, 
-  fetchWarehouseItemsSuccess, 
-  fetchWarehouseItemsFailure 
+import {
+  fetchWarehouseItemsStart,
+  fetchWarehouseItemsSuccess,
+  fetchWarehouseItemsFailure
 } from "../../../../store/slices/warehouseSlice/warehouse-structure/warehouseItemsSlice";
 
 const WarehouseItemsPage = () => {
   const { warehouseId } = useParams();
   const { state: { warehouse } = {} } = useLocation();
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const warehouseItems = useSelector((state) => state.warehouseItems || {});
   const { zones = [], currentWarehouseId, loading } = warehouseItems;
@@ -45,9 +46,9 @@ const WarehouseItemsPage = () => {
           { headers: { "Auth-token": authToken } }
         );
         const groupedZones = groupItemsByZones(inventory);
-        dispatch(fetchWarehouseItemsSuccess({ 
-          zones: groupedZones, 
-          warehouseId 
+        dispatch(fetchWarehouseItemsSuccess({
+          zones: groupedZones,
+          warehouseId
         }));
         setFilteredZones(groupedZones);
       } catch (err) {
@@ -144,6 +145,12 @@ const WarehouseItemsPage = () => {
               className="pl-8 pr-2 py-1 rounded border focus:ring-1 focus:ring-indigo-500"
             />
           </div>
+          <button
+            onClick={() => navigate('/warehouse-list')}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Вернуться
+          </button>
         </div>
       </header>
 

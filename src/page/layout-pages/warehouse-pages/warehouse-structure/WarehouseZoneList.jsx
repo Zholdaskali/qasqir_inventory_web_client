@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import ZoneCard from './ZoneCard';
 import { useSelector } from "react-redux";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import WarehouseZoneCreateModal from '../../../../components/modal-components/WarehouseZoneCreateModal';
 import { HiOutlineCube, HiRefresh, HiPlus, HiViewGrid, HiCube } from "react-icons/hi";
 import { toast } from 'react-toastify';
@@ -13,6 +13,7 @@ import Warehouse3DViewer from './Warehouse3DViewer';
 import { API_GET_WAREHOUSE_STRUCTURE_BY_ID } from "../../../../api/API";
 
 const WarehouseZoneList = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { warehouse } = location.state || {};
   const authToken = useSelector((state) => state.token.token);
@@ -193,10 +194,16 @@ const WarehouseZoneList = () => {
                 >
                   Экспорт в CSV
                 </button>
+                <button
+                  onClick={() => navigate('/warehouse-list')}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Вернуться
+                </button>
               </div>
             </div>
           </div>
-  
+
           {/* Основное содержимое */}
           <div className="flex-grow w-full h-full overflow-auto p-4">
             {loading && (
@@ -210,7 +217,7 @@ const WarehouseZoneList = () => {
                 {error}
               </div>
             )}
-  
+
             {!loading && !error && viewMode === 'list' && (
               <div className="flex flex-col gap-4 h-full overflow-y-auto">
                 {filteredCabinets.length > 0 ? (
@@ -238,7 +245,7 @@ const WarehouseZoneList = () => {
                 )}
               </div>
             )}
-  
+
             {!loading && !error && viewMode === '3d' && warehouseData && (
               <div className="h-full w-full">
                 <Warehouse3DViewer warehouseData={warehouseData} />
@@ -246,7 +253,7 @@ const WarehouseZoneList = () => {
             )}
           </div>
         </div>
-  
+
         {/* Кнопка добавления шкафа */}
         {hasRole("warehouse_manager") && (
           <button
@@ -257,7 +264,7 @@ const WarehouseZoneList = () => {
             +
           </button>
         )}
-  
+
         {/* Модальное окно */}
         {isModalOpen && (
           <WarehouseZoneCreateModal
