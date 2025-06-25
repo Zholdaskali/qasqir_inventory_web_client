@@ -1,76 +1,142 @@
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
-import { useDispatch, useSelector } from "react-redux";
-import { saveInviteList } from "../../../store/slices/inviteListSlice";
-import { API_GET_INVITE_LIST } from "../../../api/API";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
+import { API_GET_INVITE_LIST } from "../../../api/API";
+import { saveInviteList } from "../../../store/slices/inviteListSlice";
 import Notification from "../../../components/notification/Notification";
-import { CiCalendarDate } from "react-icons/ci"; // Иконка для фильтров (если нужно)
+import BaseTable from "../../../components/ui/BaseTable";
+import AddButton from "../../../components/ui/AddButton";
+import CreateInviteModal from "../../../components/super-admin-components/log-components/CreateInviteModal";
+import TableHeader from "../../../components/ui/Header";
 
 const InviteList = () => {
-    const authToken = useSelector((state) => state.token.token);
-    const dispatch = useDispatch();
-    const inviteList = useSelector((state) => state.inviteList);
+  const authToken = useSelector((state) => state.token.token);
+  const dispatch = useDispatch();
+  const inviteList = useSelector((state) => state.inviteList || []);
+  const [createInviteModal, setCreateInviteModal] = useState(false);
+  const [isInviteButtonDisabled, setIsInviteButtonDisabled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-    const fetchInviteList = async () => {
-        try {
-            const response = await axios.get(API_GET_INVITE_LIST, {
-                headers: { "Auth-token": authToken },
-            });
+  const fetchInviteList = useCallback(async () => {
+    if (!authToken) return;
+    setIsLoading(true);
+    try {
+      const response = await axios.get(API_GET_INVITE_LIST, {
+        headers: { "Auth-token": authToken },
+      });
+      const data = response.data.body;
 
-            const data = response.data.body;
+      if (data) {
+        dispatch(saveInviteList(data));
+        toast.success(response.data.message || "Успешно");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Ошибка загрузки данных");
+      console.error("Error fetching invite list:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [authToken, dispatch]);
 
-            if (data) {
-                dispatch(saveInviteList(data)); // Заменяем список новыми данными
-                toast.success(response.data.message || "Успешно");
-            }
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Ошибка при загрузке данных");
-        }
-    };
+  useEffect(() => {
+    if (authToken && inviteList.length === 0) {
+      fetchInviteList();
+    }
+  }, [authToken, inviteList.length, fetchInviteList]);
 
-    return (
-        <div className="h-[90vh] w-full flex flex-col p-4">
-            {/* Заголовок и фильтры */}
-            <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-3 gap-3">
-                <h1 className="text-xl font-semibold">Приглашения</h1>
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    {/* Кнопка "Вывести" */}
-                    <div className="flex gap-2 items-end">
-                        <button
-                            onClick={fetchInviteList}
-                            className="bg-blue-600 px-5 py-2 text-sm text-white rounded-md shadow-md hover:bg-blue-700 transition-all duration-200"
-                        >
-                            Вывести
-                        </button>
-                    </div>
-                </div>
-            </div>
+  const handleCreateInviteModal = () => {
+    setCreateInviteModal(true);
+  };
 
-            {/* Таблица */}
-            <div className="flex-1 overflow-auto mt-4 rounded-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-                <table className="w-full table-auto border-separate border-spacing-y-1">
-                    <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
-                        <tr>
-                            <th className="text-left px-3 py-2">ID</th>
-                            <th className="text-left px-3 py-2">Имя пользователя</th>
-                            <th className="text-left px-3 py-2">Почта пользователя</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white text-sm">
-                        {inviteList.map((item) => (
-                            <tr key={item.id} className="hover:bg-gray-50">
-                                <td className="px-3 py-2">{item.id}</td>
-                                <td className="px-3 py-2">{item.userName}</td>
-                                <td className="px-3 py-2">{item.email}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+  const handleInviteModalClose = () => {
+    setCreateInviteModal(false);
+    fetchInviteList();
+  };
 
-            <Notification />
-        </div>
-    );
+  const filteredInvites = useMemo(() => {
+    return inviteList.filter((inviteItem) => {
+      const query = searchQuery.toLowerCase();
+      return (
+        (inviteItem.userName && inviteItem.userName.toLowerCase().includes(query)) ||
+        (inviteItem.email && inviteItem.email.toLowerCase().includes(query))
+      );
+    });
+  }, [inviteList, searchQuery]);
+
+  const exportToExcel = () => {
+    if (!filteredInvites.length) {
+      toast.error("Нет данных для экспорта");
+      return;
+    }
+
+    const headers = ["ID", "Имя пользователя", "Email"];
+    const rows = filteredInvites.map((item) => ({
+      ID: item.id,
+      "Имя пользователя": item.userName || "-",
+      Email: item.email || "-",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Приглашения");
+    XLSX.writeFile(workbook, `invites_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Список приглашений экспортирован в Excel");
+  };
+
+  const columns = [
+    { title: "ID", field: "id", className: "px-2 text-sm" },
+    { title: "Имя пользователя", field: "userName", className: "px-2 text-sm" },
+    { title: "Email", field: "email", className: "px-2 text-sm" },
+  ];
+
+  return (
+    <div className="min-h-screen w-full flex flex-col overflow-y-auto p-3 bg-gray-50">
+      <TableHeader
+        title="Приглашения"
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onExport={exportToExcel}
+        exportDisabled={!filteredInvites.length || isLoading}
+        searchPlaceholder="Поиск по имени или email..."
+      />
+
+      <div className="flex-1 mt-3">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <BaseTable
+            columns={columns}
+            data={filteredInvites.map((inviteItem) => ({
+              ...inviteItem,
+              className: "bg-white hover:bg-gray-50",
+            }))}
+            maxHeight="500px"
+          />
+        )}
+      </div>
+
+      <AddButton
+        onClick={handleCreateInviteModal}
+        disabled={isInviteButtonDisabled}
+        title="Создать приглашение"
+      />
+
+      {createInviteModal && (
+        <CreateInviteModal
+          authToken={authToken}
+          onClose={handleInviteModalClose}
+          setIsInviteButtonDisabled={setIsInviteButtonDisabled}
+        />
+      )}
+
+      <Notification />
+    </div>
+  );
 };
 
 export default InviteList;

@@ -14,8 +14,9 @@ const WarehouseSettingsModal = ({ warehouse, onClose, onUpdate }) => {
     const handleSave = async () => {
         setLoading(true);
         try {
+            const deleteUrl = API_UPDATE_WAREHOUSE.replace("{warehouseId}", warehouse.id)
             const response = await axios.put(
-                `${API_UPDATE_WAREHOUSE}/${warehouse.id}`, // Замена на константу
+                deleteUrl, // Замена на константу
                 { name, location },
                 {
                     headers: { "Auth-token": authToken },

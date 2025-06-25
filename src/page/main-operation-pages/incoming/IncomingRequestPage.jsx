@@ -29,7 +29,7 @@ import {
   API_PROCESS_INCOMING_GOODS,
 } from "../../../api/API";
 
-// CapacityHint component remains unchanged
+// CapacityHint component
 const CapacityHint = ({ status, message }) => {
   const getStyles = () => {
     switch (status) {
@@ -73,7 +73,7 @@ const IncomingRequestPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [nomenclaturesLoaded, setNomenclaturesLoaded] = useState(false);
   const [uploadFileModal, setUploadFileModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null); // Теперь хранит { base64, fileName }
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Fetch initial data (warehouses and suppliers)
   useEffect(() => {
@@ -108,7 +108,12 @@ const IncomingRequestPage = () => {
         headers: { "Auth-token": authToken },
       });
       const nomenclaturesData = response.data.body || [];
-      dispatch(setNomenclatures(nomenclaturesData));
+      // Валидация данных номенклатур
+      const validNomenclatures = nomenclaturesData.filter(n => n.measurement && (n.volume != null || (n.length != null && n.width != null && n.height != null)));
+      if (validNomenclatures.length < nomenclaturesData.length) {
+        toast.warn("Некоторые номенклатуры исключены из-за отсутствия единицы измерения или размеров");
+      }
+      dispatch(setNomenclatures(validNomenclatures));
       setNomenclaturesLoaded(true);
       toast.success("Номенклатуры успешно загружены");
     } catch (error) {
@@ -161,7 +166,7 @@ const IncomingRequestPage = () => {
           nomenclatureId: "",
           nomenclatureName: "",
           quantity: 1,
-          measurementUnit: "",
+          measurementUnit: null,
           warehouseId: "",
           zoneId: "",
           containerId: "",
@@ -171,11 +176,14 @@ const IncomingRequestPage = () => {
       toast.success("Товар успешно добавлен");
     } catch (error) {
       console.error("Ошибка при добавлении товара:", error);
-      toast.error("Не удалось добавить товар");
+      toast.error("Не удалось добавить");
     }
   };
 
-  const handleRemoveItem = (index) => dispatch(removeItem(index));
+  const handleRemoveItem = useCallback((index) => {
+    dispatch(removeItem(index));
+    toast.success("Товар удален");
+  }, [dispatch]);
 
   const handleItemChange = useCallback(
     (index, field, value) => {
@@ -188,6 +196,10 @@ const IncomingRequestPage = () => {
     (index, selectedOption) => {
       if (selectedOption) {
         const { value, label, measurement } = selectedOption;
+        if (!measurement) {
+          toast.error("У выбранной номенклатуры отсутствует единица измерения");
+          return;
+        }
         handleItemChange(index, "nomenclatureId", value);
         handleItemChange(index, "nomenclatureName", label);
         handleItemChange(index, "measurementUnit", measurement);
@@ -228,29 +240,42 @@ const IncomingRequestPage = () => {
     [handleItemChange]
   );
 
-  // Calculate nomenclature volume
   const calculateNomenclatureVolume = (nomenclatureId, quantity) => {
     const nomenclature = nomenclatures.find((n) => n.id === nomenclatureId);
-    if (!nomenclature || !quantity) return 0;
+    if (!nomenclature || !quantity) {
+      console.log(`No nomenclature or quantity for ID: ${nomenclatureId}`);
+      return 0;
+    }
 
-    if (nomenclature.volume) {
+    // Проверка габаритов в метрах с валидацией минимальных значений
+    if (nomenclature.volume != null) {
+      console.log(`Using volume: ${nomenclature.volume} * ${quantity}`);
       return nomenclature.volume * quantity;
     }
-    if (nomenclature.length && nomenclature.width && nomenclature.height) {
-      const volumePerUnit = (nomenclature.length * nomenclature.width * nomenclature.height) / 1000000;
+
+    if (
+      nomenclature.length != null &&
+      nomenclature.width != null &&
+      nomenclature.height != null &&
+      nomenclature.length > 0 &&
+      nomenclature.width > 0 &&
+      nomenclature.height > 0
+    ) {
+      const volumePerUnit = nomenclature.length * nomenclature.width * nomenclature.height;
+      console.log(`Calculated volume: ${volumePerUnit} * ${quantity}`);
       return volumePerUnit * quantity;
     }
+
+    console.log(`No valid volume or dimensions for nomenclature ID: ${nomenclatureId}`);
     return 0;
   };
 
-  // Capacity hint logic
   const getCapacityHint = (item) => {
     const totalVolume = calculateNomenclatureVolume(item.nomenclatureId, parseFloat(item.quantity || 0));
-
     let zoneHint = { status: "neutral", message: "Выберите зону" };
     let containerHint = item.zoneId ? { status: "neutral", message: "Контейнер не выбран" } : null;
 
-    if (item.warehouseId && item.zoneId) {
+    if (item.warehouseId && item.zoneId && !item.containerId) {
       const zone = zonesByWarehouse[item.warehouseId]?.find((z) => z.id === item.zoneId);
       if (!zone || !totalVolume) {
         zoneHint = { status: "neutral", message: "Данные о зоне недоступны" };
@@ -284,6 +309,7 @@ const IncomingRequestPage = () => {
             status: "success",
             message: `Помещается в контейнер (${totalVolume.toFixed(3)} м³ из ${freeCapacity.toFixed(3)} м³)`,
           };
+          zoneHint = { status: "neutral", message: "Зона не проверяется, так как выбран контейнер" };
         } else {
           const excess = (totalVolume - freeCapacity).toFixed(3);
           containerHint = {
@@ -304,21 +330,24 @@ const IncomingRequestPage = () => {
     }
 
     const invalidItems = items.some(
-      (item) => !item.nomenclatureId || !item.warehouseId || !item.zoneId || !item.quantity
+      (item) => !item.nomenclatureId || !item.warehouseId || !item.zoneId || !item.quantity || !item.measurementUnit
     );
     if (invalidItems) {
-      toast.error("Все обязательные поля для товаров должны быть заполнены");
+      toast.error("Все обязательные поля для товаров должны быть заполнены, включая единицу измерения");
       return;
     }
 
     const capacityIssues = items.some((item) => {
       const totalVolume = calculateNomenclatureVolume(item.nomenclatureId, parseFloat(item.quantity));
       const zone = zonesByWarehouse[item.warehouseId]?.find((z) => z.id === item.zoneId);
-      const zoneIssue = zone && totalVolume > zone.capacity;
       const container =
         item.containerId && containersByZone[item.zoneId]?.find((c) => c.id === item.containerId);
-      const containerIssue = container && totalVolume > container.capacity;
-      return zoneIssue || containerIssue;
+
+      if (container) {
+        return totalVolume > container.capacity;
+      }
+
+      return zone && totalVolume > zone.capacity;
     });
 
     if (capacityIssues) {
@@ -328,9 +357,7 @@ const IncomingRequestPage = () => {
 
     setIsLoading(true);
     try {
-      console.log("Формирование payload...");
-      console.log("selectedFile:", selectedFile);
-
+      console.log("Формирование payload:", { data, items, selectedFile });
       const payload = {
         documentType: "INCOMING",
         documentNumber: data.documentNumber,
@@ -345,13 +372,12 @@ const IncomingRequestPage = () => {
           warehouseZoneId: parseInt(item.zoneId, 10),
           containerId: item.containerId ? parseInt(item.containerId, 10) : null,
           returnable: item.returnable,
+          measurementUnit: item.measurementUnit,
         })),
         createdBy: userId,
       };
 
       console.log("Payload:", JSON.stringify(payload, null, 2));
-      console.log("Отправка запроса к:", API_PROCESS_INCOMING_GOODS);
-
       const response = await axios.post(API_PROCESS_INCOMING_GOODS, payload, {
         headers: {
           "Auth-token": authToken,
@@ -360,7 +386,6 @@ const IncomingRequestPage = () => {
       });
 
       console.log("Ответ сервера:", response.data);
-
       toast.success(response?.data?.message || "Заявка успешно создана");
       setRequestSuccess(true);
       setSelectedFile(null);
@@ -377,24 +402,59 @@ const IncomingRequestPage = () => {
     }
   };
 
+  const updateNomenclature = async (id, data) => {
+    console.log("Updating nomenclature with data:", JSON.stringify(data, null, 2));
+    try {
+      const response = await axios.put(
+        `/api/v1/warehouse-manager/${id}/nomenclatures`,
+        {
+          ...data,
+          measurement_unit: data.measurementUnit || "шт",
+          length: data.length || null,
+          width: data.width || null,
+          height: data.height || null,
+          volume: data.volume || null,
+        },
+        { headers: { "Auth-token": authToken } }
+      );
+      toast.success("Номенклатура обновлена");
+      return response.data;
+    } catch (error) {
+      console.error("Error updating nomenclature:", error);
+      toast.error(error.response?.data?.message || "Ошибка обновления номенклатуры");
+      throw error;
+    }
+  };
+
   const supplierOptions = useMemo(
     () => suppliers.map((s) => ({ value: s.id, label: s.name })),
     [suppliers]
   );
   const nomenclatureSelectOptions = useMemo(
     () =>
-      nomenclatures.map((n) => ({
-        value: n.id,
-        label: n.name,
-        measurement: n.measurement,
-        details: `Ед. изм.: ${n.measurement} | ${
-          n.volume
-            ? `Объем: ${n.volume} м³`
-            : n.length && n.width && n.height
-            ? `${n.length} x ${n.width} x ${n.height}`
-            : "Нет данных"
-        } | ${n.value}`,
-      })),
+      nomenclatures.map((n) => {
+        // Расчет объема на основе габаритов в метрах, если volume отсутствует
+        const calculatedVolume = n.volume != null
+          ? n.volume
+          : n.length != null && n.width != null && n.height != null
+          ? n.length * n.width * n.height
+          : null;
+
+        const volumeDisplay = calculatedVolume != null
+          ? `Объем: ${calculatedVolume.toFixed(3)} м³`
+          : "Нет объема";
+
+        const dimensionDisplay = n.length != null && n.width != null && n.height != null
+          ? `${n.length} x ${n.width} x ${n.height} м`
+          : "Нет размеров";
+
+        return {
+          value: n.id,
+          label: n.name,
+          measurement: n.measurement,
+          details: `Ед. изм.: ${n.measurement || "Не указано"} | ${calculatedVolume != null ? volumeDisplay : dimensionDisplay} | ${n.value || "Нет значения"}`,
+        };
+      }),
     [nomenclatures]
   );
   const warehouseOptions = useMemo(
@@ -413,7 +473,7 @@ const IncomingRequestPage = () => {
     (zoneId) =>
       containersByZone[zoneId]?.map((c) => ({
         value: c.id,
-        label: `${c.serialNumber} (Доступно: ${c.capacity})`,
+        label: `${c.serialNumber} (Доступно: ${c.capacity} м³)`,
       })) || [],
     [containersByZone]
   );
@@ -567,7 +627,7 @@ const IncomingRequestPage = () => {
                   className="bg-white p-4 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-6 gap-4"
                 >
                   <div className="col-span-1">
-                    <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                    <label className="block text-sm text-main-dull-blue font-semibold mb-1">
                       Номенклатура *
                     </label>
                     <Select
@@ -581,7 +641,7 @@ const IncomingRequestPage = () => {
                       isDisabled={isLoading}
                       formatOptionLabel={({ label, details }) => (
                         <div>
-                          <span className="font-medium">{label}</span>
+                          <span className="font-semibold">{label}</span>
                           <span className="text-xs text-gray-500 block">{details}</span>
                         </div>
                       )}
@@ -589,14 +649,14 @@ const IncomingRequestPage = () => {
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                    <label className="block text-sm text-main-dull-blue font-semibold mb-1">
                       Количество *
                     </label>
                     <input
                       type="number"
-                      min="1"
-                      step="0.1"
-                      className="w-full border border-main-dull-blue rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-main-purp-dark transition"
+                      min="0.01"
+                      step="0.01"
+                      className="w-full border border-blue-600 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-700 transition"
                       value={item.quantity}
                       onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
                       required
@@ -604,7 +664,7 @@ const IncomingRequestPage = () => {
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                    <label className="block text-sm text-main-dull-blue font-semibold mb-1">
                       Склад *
                     </label>
                     <Select
@@ -618,7 +678,7 @@ const IncomingRequestPage = () => {
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                    <label className="block text-sm text-main-dull-blue font-semibold mb-1">
                       Зона *
                     </label>
                     <Select
@@ -638,7 +698,7 @@ const IncomingRequestPage = () => {
                   </div>
                   {item.zoneId && (
                     <div className="col-span-1">
-                      <label className="block text-sm text-main-dull-blue font-medium mb-1">
+                      <label className="block text-sm text-main-dull-blue font-semibold mb-1">
                         Контейнер
                       </label>
                       <Select
@@ -663,7 +723,7 @@ const IncomingRequestPage = () => {
                     </div>
                   )}
                   <div className="col-span-1 flex items-center gap-4">
-                    <label className="flex items-center text-sm text-main-dull-blue">
+                    <label className="flex items-center text-sm text-blue-600">
                       <input
                         type="checkbox"
                         checked={item.returnable}
@@ -673,12 +733,12 @@ const IncomingRequestPage = () => {
                         className="mr-2"
                         disabled={isLoading}
                       />
-                      Возвратная
+                      Возврат
                     </label>
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(index)}
-                      className="text-red-500 hover:text-red-700 transition"
+                      className="text-red-600 hover:text-red-700 transition-colors"
                       title="Удалить"
                       disabled={isLoading}
                     >
@@ -695,13 +755,11 @@ const IncomingRequestPage = () => {
           <button
             type="submit"
             disabled={isLoading || items.length === 0}
-            className={`flex items-center px-4 py-2 bg-main-dull-blue text-white text-sm rounded-md hover:bg-main-purp-dark transition ${
-              isLoading || items.length === 0 ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`flex items-center px-4 py-2 bg-blue-700 text-white text-sm rounded-md hover:bg-blue-800 transition-colors ${isLoading || items.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isLoading ? (
               <>
-                <FaSpinner className="animate-spin mr-1" />
+                <FaSpinner className="animate-spin mr-2" />
                 Создание...
               </>
             ) : (

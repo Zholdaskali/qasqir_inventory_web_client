@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 import { IoIosNotificationsOutline } from "react-icons/io";
 import { FaMapMarkerAlt } from "react-icons/fa";
 import { API_GET_WAREHOUSE_LIST } from "../../../api/API";
@@ -12,6 +13,7 @@ import {
 } from "../../../store/slices/warehouseSlice/warehouseListSlice";
 import WarehouseDetailPanel from "./WarehouseDetailPanel";
 import WarehouseSaveModal from "../../../components/modal-components/warehouse-modal/WarehouseSaveModal";
+import AddButton from "../../../components/ui/AddButton";
 
 const WarehouseList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -45,7 +47,7 @@ const WarehouseList = () => {
           longitude: warehouse.longitude || null,
         }));
         dispatch(fetchWarehousesSuccess(validatedData));
-        toast.success(response.data.message || "Склады успешно загружены");
+        toast.success(response.data?.message || "Склады успешно загружены");
       } else {
         throw new Error("Некорректные данные от сервера");
       }
@@ -70,15 +72,17 @@ const WarehouseList = () => {
     fetchWarehouseList();
   };
 
+  const handleOpenSaveModal = () => {
+    setIsWarehouseSaveModalOpen(true);
+  };
+
   const handleModalClose = () => {
     setIsWarehouseSaveModalOpen(false);
     setHasFetched(false);
     fetchWarehouseList();
   };
 
-  const
-
- handleWarehouseClick = (warehouse) => {
+  const handleWarehouseClick = (warehouse) => {
     setSelectedWarehouse(warehouse);
     setIsPanelOpen(true);
   };
@@ -90,33 +94,30 @@ const WarehouseList = () => {
     setTimeout(() => setSelectedWarehouse(null), 300);
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     if (!filteredWarehouses.length) {
       toast.error("Нет данных для экспорта");
       return;
     }
-    const headers = ["Название", "Заполненность", "Местоположение", "Координаты", "Дата создания", "Зоны"];
-    const rows = filteredWarehouses.map((warehouse) => [
-      warehouse.name,
-      warehouse.warehouseCapacity.toFixed(1),
-      warehouse.location || "—",
-      warehouse.latitude && warehouse.longitude
-        ? `${warehouse.latitude.toFixed(4)}, ${warehouse.longitude.toFixed(4)}`
-        : "—",
-      warehouse.createdAt || "—",
-      warehouse.zonesCount || 0,
-    ]);
 
-    const csvContent = headers.join(",") + "\n" + rows.map((row) => row.map(item => `"${item}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `warehouses_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Склады экспортированы в CSV");
+    const headers = ["Название", "Заполненность", "Местоположение", "Координаты", "Дата создания", "Зоны"];
+    const rows = filteredWarehouses.map((warehouse) => ({
+      Название: warehouse.name,
+      Заполненность: warehouse.warehouseCapacity.toFixed(1),
+      Местоположение: warehouse.location || "—",
+      Координаты:
+        warehouse.latitude && warehouse.longitude
+          ? `${warehouse.latitude.toFixed(4)}, ${warehouse.longitude.toFixed(4)}`
+          : "—",
+      "Дата создания": warehouse.createdAt || "—",
+      Зоны: warehouse.zonesCount || 0,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Склады");
+    XLSX.writeFile(workbook, `warehouses_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Склады экспортированы в Excel");
   };
 
   const filteredWarehouses = warehouses.filter((warehouse) =>
@@ -152,11 +153,11 @@ const WarehouseList = () => {
               className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64 shadow-sm transition-all duration-200 hover:shadow-md placeholder-gray-400"
             />
             <button
-              onClick={exportToCSV}
+              onClick={exportToExcel}
               disabled={!filteredWarehouses.length}
-              className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 text-sm disabled:bg-green-300 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
             >
-              Экспорт в CSV
+              Экспорт в Excel
             </button>
           </div>
         </div>
@@ -179,7 +180,6 @@ const WarehouseList = () => {
                     className="relative bg-white shadow-lg rounded-xl p-4 border border-gray-50 cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300 overflow-hidden group"
                     onClick={() => handleWarehouseClick(warehouse)}
                   >
-                    {/* Фоновая декоративная полоса */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                     <div className="flex justify-between items-start mb-3">
@@ -234,7 +234,6 @@ const WarehouseList = () => {
                       </li>
                     </ul>
 
-                    {/* Эффект при наведении */}
                     <div className="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
                   </div>
                 );
@@ -251,16 +250,7 @@ const WarehouseList = () => {
         )}
       </div>
 
-      <button
-        className={`fixed bottom-6 right-6 w-12 h-12 bg-main-dull-blue rounded-full shadow-lg text-white text-xl flex items-center justify-center ${
-          loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
-        } transition-all`}
-        onClick={() => setIsWarehouseSaveModalOpen(true)}
-        disabled={loading}
-        title="Добавить склад"
-      >
-        +
-      </button>
+      <AddButton onClick={handleOpenSaveModal} />
 
       {isWarehouseSaveModalOpen && (
         <WarehouseSaveModal

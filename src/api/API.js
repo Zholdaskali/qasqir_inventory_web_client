@@ -5,7 +5,7 @@ const swagger = "http://localhost:8081/swagger-ui/index.html#/"
 
 // БАЗОВЫЕ API 
 
-// const API_BASE = 'http://192.168.1.5:8081'
+// export const API_BASE = 'http://192.168.10.179:8081'
 export const API_BASE = 'http://localhost:8081'
 // export const API_BASE = 'https://qasqir-inventory-pchq.onrender.com'
 
@@ -21,6 +21,7 @@ export const API_PATH_STOREKEEPER = "/api/v1/storekeeper/"
 // API ДЛЯ СОТРУДНИКОВ (EMPLOYEE)
 
 export const API_GET_CATEGORIES = API_BASE + API_PATH_EMPLOYEE + "categories" // Получить список категорий
+export const API_GET_SUPLIERS = API_BASE + API_PATH_EMPLOYEE + "suppliers" // Получить список категорий
 
 // Добавленные API для сотрудников
 export const API_GET_NOMENCLATURES_BY_CATEGORY = API_BASE + API_PATH_EMPLOYEE + "categories/{categoryId}/nomenclatures" // Получить номенклатуры по ID категории
@@ -32,7 +33,6 @@ export const API_GET_TICKETS_BY_TYPE = API_BASE + API_PATH_EMPLOYEE + "ticket/{t
 export const API_GET_ALL_SUPPLIERS = API_BASE + API_PATH_EMPLOYEE + "suppliers" // Получить всех поставщиков
 export const API_GET_ALL_NOMENCLATURES = API_BASE + API_PATH_EMPLOYEE + "nomenclatures" // Получить все номенклатуры
 export const API_GET_DASHBOARD_STATS = API_BASE + API_PATH_EMPLOYEE + "dashboard/stats" // Получить статистику дашборда с необязательным диапазоном дат
-export const API_GET_CURRENT_DASHBOARD = API_BASE + API_PATH_EMPLOYEE + "dashboard/current" // Получить текущую статистику дашборда
 export const API_GET_ALL_CUSTOMERS = API_BASE + API_PATH_EMPLOYEE + "customers" // Получить всех клиентов
 
 // --------------------------------------------------------------------- --------------------------------------------------------------------- //

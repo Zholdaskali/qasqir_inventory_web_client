@@ -1,247 +1,258 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
+
 import { saveActionLogs } from "../../../store/slices/logSlices/actionLogSlice";
 import { API_GET_ACTION_LOGS } from "../../../api/API";
 import Notification from "../../../components/notification/Notification";
-import { CiCalendarDate } from "react-icons/ci";
-import { Line, Pie } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend } from "chart.js";
-
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, ArcElement, Tooltip, Legend);
+import LogDashboard from "../../../components/ui/LogDashboard";
+import TableHeader from "../../../components/ui/Header";
 
 const ActionLogs = () => {
   const date = new Date();
-  const currentDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  const currentDate = `${date.getFullYear()}-${(date.getMonth() + 1)
+    .toString()
+    .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
 
   const [startDate, setStartDate] = useState(currentDate);
   const [endDate, setEndDate] = useState(currentDate);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const actionLogs = useSelector((state) => state.actionLogs);
-  const authToken = useSelector((state) => state.token.token);
+  const actionLogs = useSelector((state) => state.actionLogs || []);
+  const authToken = useSelector((state) => state.token?.token || "");
   const dispatch = useDispatch();
 
-  const fetchActionLogs = async () => {
+  const fetchActionLogs = useCallback(async () => {
+    if (!startDate || !endDate) {
+      toast.error("Пожалуйста, выберите обе даты.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
     try {
       const response = await axios.get(API_GET_ACTION_LOGS, {
         params: { startDate, endDate },
         headers: { "Auth-token": authToken },
       });
-      const data = response.data.body;
-      const sortedData = data?.length > 0 ? data.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) : [];
+      const data = response.data.body || [];
+      const sortedData = data.length > 0
+        ? data.sort((a, b) => {
+            const dateA = new Date(a.timestamp);
+            const dateB = new Date(b.timestamp);
+            if (isNaN(dateA.getTime())) return 1;
+            if (isNaN(dateB.getTime())) return -1;
+            return dateB - dateA;
+          })
+        : [];
       dispatch(saveActionLogs(sortedData));
-      toast.success("Успешно", { toastId: "fetchSuccess" });
-    } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.success("Логи успешно загружены");
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || "Ошибка загрузки логов";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
+  }, [authToken, dispatch, startDate, endDate]);
+
+  useEffect(() => {
+    if (authToken) {
+      fetchActionLogs();
+    }
+  }, [authToken, fetchActionLogs]);
+
+  const columns = useMemo(() => [
+    { header: "Дата", accessor: "timestamp", className: "px-2 text-sm",
+      render: (log) =>
+        log.timestamp && !isNaN(new Date(log.timestamp).getTime())
+          ? new Date(log.timestamp).toLocaleString()
+          : "N/A",
+    },
+    { header: "Пользователь", accessor: "userEmail", className: "px-2 text-sm" },
+    { header: "Действие", accessor: "action", className: "px-2 text-sm" },
+    { header: "Эндпоинт", accessor: "endpoint", className: "px-2 text-sm" },
+  ], []);
+
+  const filteredLogs = useMemo(() => {
+    return Array.isArray(actionLogs)
+      ? actionLogs.filter((log) =>
+          [log.userEmail, log.action, log.endpoint].some((field) =>
+            field?.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        )
+      : [];
+  }, [actionLogs, searchQuery]);
+
+  const processData = (logs) => {
+    const validLogs = logs.filter(
+      (log) => log.timestamp && !isNaN(new Date(log.timestamp).getTime())
+    );
+    const totalLogs = logs.length;
+    const uniqueUsers = [...new Set(logs.map((log) => log.userEmail))].length;
+    const mostCommonAction = logs.length > 0
+      ? Object.entries(
+          logs.reduce((acc, log) => {
+            acc[log.action] = (acc[log.action] || 0) + 1;
+            return acc;
+          }, {})
+        ).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
+      : "N/A";
+
+    const actionsPerDay = validLogs.reduce((acc, log) => {
+      const date = new Date(log.timestamp).toISOString().split("T")[0];
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    }, {});
+
+    const lineChartData = {
+      labels: Object.keys(actionsPerDay).sort(),
+      datasets: [
+        {
+          label: "Действия по дням",
+          data: Object.keys(actionsPerDay).sort().map((date) => actionsPerDay[date]),
+          borderColor: "rgba(59, 130, 246, 1)",
+          backgroundColor: "rgba(59, 130, 246, 0.2)",
+          fill: true,
+          tension: 0.4,
+        },
+      ],
+    };
+
+    const actionCounts = logs.reduce((acc, log) => {
+      acc[log.action] = (acc[log.action] || 0) + 1;
+      return acc;
+    }, {});
+
+    const pieChartData = {
+      labels: Object.keys(actionCounts),
+      datasets: [
+        {
+          data: Object.values(actionCounts),
+          backgroundColor: [
+            "rgba(59, 130, 246, 0.8)",
+            "rgba(16, 185, 129, 0.8)",
+            "rgba(147, 51, 234, 0.8)",
+            "rgba(245, 158, 11, 0.8)",
+            "rgba(239, 68, 68, 0.8)",
+          ],
+        },
+      ],
+    };
+
+    return {
+      metrics: [
+        { label: "Всего логов", value: totalLogs },
+        { label: "Уникальные пользователи", value: uniqueUsers },
+        { label: "Частое действие", value: mostCommonAction },
+      ],
+      charts: [
+        {
+          type: "line",
+          data: lineChartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: { beginAtZero: true, title: { display: true, text: "Количество действий" } },
+              x: { title: { display: true, text: "Дата" } },
+            },
+          },
+        },
+        {
+          type: "pie",
+          data: pieChartData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "bottom" } },
+          },
+        },
+      ],
+    };
   };
 
-  // Функция для экспорта логов в CSV
-  const exportToCSV = () => {
-    if (!actionLogs.length) {
+  const handleExport = () => {
+    if (!filteredLogs.length) {
       toast.error("Нет данных для экспорта");
       return;
     }
 
-    const headers = ["Дата", "Пользователь", "Действие", "Эндпоинт"];
-    const rows = actionLogs.map((log) => [
-      `"${log.timestamp}"`,
-      `"${log.userEmail}"`,
-      `"${log.action}"`,
-      `"${log.endpoint}"`,
-    ]);
+    const headers = columns.map((col) => col.header);
+    const rows = filteredLogs.map((log) => ({
+      Дата: log.timestamp && !isNaN(new Date(log.timestamp).getTime())
+        ? new Date(log.timestamp).toLocaleString()
+        : "N/A",
+      Пользователь: log.userEmail || "N/A",
+      Действие: log.action || "N/A",
+      Эндпоинт: log.endpoint || "N/A",
+    }));
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(row => row.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `action_logs_from_${startDate}_to_${endDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Логи экспортированы в CSV");
-  };
-
-  // Расчет метрик для дашборда
-  const totalLogs = actionLogs.length;
-  const uniqueUsers = [...new Set(actionLogs.map(log => log.userEmail))].length;
-  const mostCommonAction = actionLogs.length > 0
-    ? Object.entries(
-        actionLogs.reduce((acc, log) => {
-          acc[log.action] = (acc[log.action] || 0) + 1;
-          return acc;
-        }, {})
-      ).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A"
-    : "N/A";
-
-  // Данные для линейного графика (действия по дням)
-  const actionsPerDay = actionLogs.reduce((acc, log) => {
-    const date = new Date(log.timestamp).toISOString().split('T')[0];
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {});
-
-  const lineChartData = {
-    labels: Object.keys(actionsPerDay).sort(),
-    datasets: [
-      {
-        label: "Действия по дням",
-        data: Object.keys(actionsPerDay).sort().map(date => actionsPerDay[date]),
-        borderColor: "rgba(59, 130, 246, 1)",
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
-        fill: true,
-        tension: 0.4,
-      },
-    ],
-  };
-
-  // Данные для круговой диаграммы (распределение типов действий)
-  const actionCounts = actionLogs.reduce((acc, log) => {
-    acc[log.action] = (acc[log.action] || 0) + 1;
-    return acc;
-  }, {});
-
-  const pieChartData = {
-    labels: Object.keys(actionCounts),
-    datasets: [
-      {
-        data: Object.values(actionCounts),
-        backgroundColor: [
-          "rgba(59, 130, 246, 0.8)",
-          "rgba(16, 185, 129, 0.8)",
-          "rgba(147, 51, 234, 0.8)",
-          "rgba(245, 158, 11, 0.8)",
-          "rgba(239, 68, 68, 0.8)",
-        ],
-      },
-    ],
+    const worksheet = XLSX.utils.json_to_sheet(rows, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Логи действий");
+    XLSX.writeFile(workbook, `action_logs_from_${startDate}_to_${endDate}.xlsx`);
+    toast.success("Логи успешно экспортированы в Excel");
   };
 
   return (
-    <div className="h-[90vh] w-full flex flex-col p-6 bg-gray-50">
-      {/* Мини-дашборд */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Обзор активности</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Карточки с метриками */}
-          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
-            <h3 className="text-sm font-semibold text-gray-600">Всего логов</h3>
-            <p className="text-3xl font-bold text-blue-600">{totalLogs}</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
-            <h3 className="text-sm font-semibold text-gray-600">Уникальные пользователи</h3>
-            <p className="text-3xl font-bold text-green-600">{uniqueUsers}</p>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
-            <h3 className="text-sm font-semibold text-gray-600">Частое действие</h3>
-            <p className="text-lg font-bold text-purple-600 truncate">{mostCommonAction}</p>
-          </div>
-          {/* Графики */}
-          <div className="bg-white p-6 rounded-xl shadow-lg lg:col-span-2">
-            <h3 className="text-sm font-semibold text-gray-600 mb-4">Действия по дням</h3>
-            <div className="h-64">
-              <Line
-                data={lineChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: { beginAtZero: true, title: { display: true, text: "Количество действий" } },
-                    x: { title: { display: true, text: "Дата" } },
-                  },
-                }}
-              />
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-sm font-semibold text-gray-600 mb-4">Распределение действий</h3>
-            <div className="h-64">
-              <Pie
-                data={pieChartData}
-                options={{
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: "bottom" },
-                  },
-                }}
-              />
-            </div>
-          </div>
+    <div className="min-h-screen w-full flex flex-col overflow-y-auto p-3 bg-gray-50">
+      <TableHeader
+        title="Действия"
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onExport={handleExport}
+        exportDisabled={!filteredLogs.length || loading}
+        searchPlaceholder="Поиск по пользователю, действию или эндпоинту..."
+        onAction={fetchActionLogs}
+        actionLabel={loading ? "Загрузка..." : "Вывести"}
+        actionDisabled={loading || !startDate || !endDate}
+      />
+
+      <div className="flex gap-4 mt-3 w-full sm:w-auto">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Начало
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Конец
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+          />
         </div>
       </div>
 
-      {/* Заголовок и фильтры */}
-      <div className="flex flex-col sm:flex-row justify-between items-center border-b pb-4 gap-4 bg-white rounded-xl p-6 shadow-lg">
-        <h1 className="text-2xl font-bold text-gray-800">Действия</h1>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          {/* Кнопки */}
-          <div className="flex gap-3 items-end">
-            <button
-              onClick={fetchActionLogs}
-              className="bg-blue-600 px-6 py-2.5 text-sm text-white rounded-md shadow-md hover:bg-blue-700 transition-all duration-200"
-            >
-              Вывести
-            </button>
-            <button
-              onClick={exportToCSV}
-              className="bg-green-600 px-6 py-2.5 text-sm text-white rounded-md shadow-md hover:bg-green-700 transition-all duration-200"
-            >
-              Экспорт в CSV
-            </button>
+      <div className="flex-1 mt-3">
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           </div>
-          <div className="flex gap-3 w-full sm:w-auto">
-            <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
-                <CiCalendarDate className="text-lg" /> Начало
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border border-gray-300 px-3 py-2 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm font-medium text-gray-600">
-                <CiCalendarDate className="text-lg" /> Конец
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border border-gray-300 px-3 py-2 rounded-md w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Таблица */}
-      <div className="flex-1 overflow-auto mt-6 rounded-xl bg-white shadow-lg scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-        <table className="w-full table-auto border-separate border-spacing-y-1">
-          <thead className="bg-gray-100 text-gray-600 sticky top-0 text-sm">
-            <tr>
-              <th className="text-left px-4 py-3 font-semibold">Дата</th>
-              <th className="text-left px-4 py-3 font-semibold">Пользователь</th>
-              <th className="text-left px-4 py-3 font-semibold">Действие</th>
-              <th className="text-left px-4 py-3 font-semibold">Эндпоинт</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white text-sm">
-            {actionLogs.map((log) => (
-              <tr key={log.actionLoId} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3">{log.timestamp}</td>
-                <td className="px-4 py-3">{log.userEmail}</td>
-                <td className="px-4 py-3">{log.action}</td>
-                <td className="px-4 py-3">{log.endpoint}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        ) : error ? (
+          <div className="text-center text-lg text-red-500">Ошибка: {error}</div>
+        ) : (
+          <LogDashboard
+            data={filteredLogs}
+            columns={columns}
+            processData={processData}
+            exportFilename={`action_logs_from_${startDate}_to_${endDate}`}
+          />
+        )}
       </div>
 
       <Notification />

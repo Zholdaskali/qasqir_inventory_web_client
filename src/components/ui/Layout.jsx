@@ -113,6 +113,7 @@ const Layout = ({ setIsAuthenticated }) => {
                                     <NavLink to="/transaction-list">Транзакции</NavLink>
                                     <NavLink to="/transaction-history">История товаров</NavLink>
                                     <NavLink to="/inventory-item-list">Товары</NavLink>
+                                    <NavLink to="/1c-sync">1C-синхронизация</NavLink>
                                 </div>
                             )}
                         </>

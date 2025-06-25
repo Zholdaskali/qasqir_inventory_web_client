@@ -1,27 +1,30 @@
 import React, { useState } from 'react';
-import InProgressInventoryPage from './InProgressInventoryPage.jsx';
-import InCompleteInventoryPage from './InCompleteInventoryPage.jsx';
-import InventoryCheckPage from './InventoryCheckPage.jsx';
-import SystemInventoryCheckPage from './SystemInventoryCheckPage.jsx';
 import SystemInventoryStartPage from './SystemInventoryStartPage.jsx';
+import SystemInventoryCheckPage from './SystemInventoryCheckPage.jsx';
+import AddButton from "../../../components/ui/AddButton";
 
 const tabs = [
   { name: 'СИСТЕМНАЯ ИНВЕНТАРИЗАЦИЯ', page: 'system_inventory_start' },
   { name: 'ПРОДОЛЖЕНИЕ СИСТЕМНОЙ ИНВЕНТАРИЗАЦИИ', page: 'system_inventory_check' },
 ];
 
-
 const InventoryCheckTabs = () => {
   const [activeTab, setActiveTab] = useState(tabs[0].page);
   const [selectedInventoryId, setSelectedInventoryId] = useState(null);
-  const [showInventoryCheck, setShowInventoryCheck] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const handleSelectInventory = (inventoryId) => {
     setSelectedInventoryId(inventoryId);
-    setShowInventoryCheck(true);
     setActiveTab('system_inventory_check');
   };
 
+  const handleCreateInventory = () => {
+    setShowCreateModal(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -40,7 +43,6 @@ const InventoryCheckTabs = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen flex flex-col bg-white sm:bg-gray-50 p-2 sm:p-4">
       <div className="mb-2 sm:mb-4 border-b bg-white shadow-sm p-2 sm:p-4">
@@ -48,21 +50,12 @@ const InventoryCheckTabs = () => {
           {tabs.map((tab) => (
             <button
               key={tab.page}
-              onClick={() => {
-                setActiveTab(tab.page);
-                if (tab.page === 'in_progress' || tab.page === 'in_complete') {
-                  setShowInventoryCheck(false);
-                } else if (tab.page === 'inventory_check' && !showInventoryCheck) {
-                  setSelectedInventoryId(null);
-                } else if (tab.page === 'system_inventory_start') {
-                  setShowInventoryCheck(false);
-                  setSelectedInventoryId(null);
-                }
-              }}
-              className={`px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-medium transition-all min-h-[36px] snap-center ${tab.page === activeTab
+              onClick={() => setActiveTab(tab.page)}
+              className={`px-3 sm:px-4 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-medium transition-all min-h-[36px] snap-center ${
+                tab.page === activeTab
                   ? 'bg-main-dull-blue text-white shadow-md border-b-2 border-blue-700'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              }`}
               role="tab"
               aria-selected={tab.page === activeTab}
               aria-controls={`panel-${tab.page}`}
@@ -80,6 +73,12 @@ const InventoryCheckTabs = () => {
       >
         {renderContent()}
       </div>
+
+      <AddButton
+        onClick={handleCreateInventory}
+        disabled={showCreateModal}
+        title="Создать новую инвентаризацию"
+      />
     </div>
   );
 };

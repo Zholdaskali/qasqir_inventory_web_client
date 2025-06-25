@@ -5,6 +5,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
+import { Download } from 'lucide-react'; // Import Download from lucide-react
+import * as XLSX from 'xlsx'; // Import xlsx for Excel export
 import { API_BASE, API_PATH_STOREKEEPER } from '../../../api/API';
 
 const API_BASE_URL = API_BASE + API_PATH_STOREKEEPER;
@@ -37,7 +39,7 @@ const InventoryReportPage = () => {
   };
 
   useEffect(() => {
-    if (inventoryId) {
+    if (inventoryId && authToken) {
       fetchInventoryData();
     }
   }, [inventoryId, authToken]);
@@ -49,7 +51,7 @@ const InventoryReportPage = () => {
     }));
   };
 
-  const exportToCSV = () => {
+  const exportToExcel = () => {
     if (!inventoryData || !inventoryData.inventoryAudits?.length) {
       toast.error('Нет данных для экспорта');
       return;
@@ -70,41 +72,44 @@ const InventoryReportPage = () => {
         'Название зоны',
         'ID Номенклатуры',
         'Название номенклатуры',
+        'Код номенклатуры',
         'Ожидаемое количество',
         'Фактическое количество',
         'Расхождение',
       ];
-      const rows = inventoryData.inventoryAudits.flatMap((audit) =>
-        audit.inventoryAuditResults.map((result) => [
-          `"${inventoryData.id}"`,
-          `"${inventoryData.auditDate ? new Date(inventoryData.auditDate).toLocaleDateString('ru-RU') : '-'}"`,
-          `"${inventoryData.status}"`,
-          `"${inventoryData.createdById || '-'}"`,
-          `"${inventoryData.createdAt ? new Date(inventoryData.createdAt).toLocaleString('ru-RU') : '-'}"`,
-          `"${inventoryData.updatedAt ? new Date(inventoryData.updatedAt).toLocaleString('ru-RU') : '-'}"`,
-          `"${audit.warehouseId}"`,
-          `"${audit.warehouseName}"`,
-          `"${audit.auditDate ? new Date(audit.auditDate).toLocaleDateString('ru-RU') : '-'}"`,
-          `"${audit.status}"`,
-          `"${result.zoneId}"`,
-          `"${result.zoneName}"`,
-          `"${result.nomenclatureId}"`,
-          `"${result.nomenclatureName}"`,
-          `"${result.expectedQuantity}"`,
-          `"${result.actualQuantity}"`,
-          `"${result.discrepancy}"`,
-        ])
-      );
-      const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.setAttribute('download', `inventory_report_${inventoryId}_${new Date().toISOString().split('T')[0]}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success('Отчет успешно экспортирован в CSV');
+
+      const data = inventoryData.inventoryAudits.flatMap((audit) =>
+        audit.inventoryAuditResults.map((result) => ({
+          'ID Инвентаризации': inventoryData.id || '-',
+          'Дата аудита': inventoryData.auditDate ? new Date(inventoryData.auditDate).toLocaleDateString('ru-RU') : '-',
+          'Статус': inventoryData.status || '-',
+          'Создатель': inventoryData.createdById || '-',
+          'Создано': inventoryData.createdAt ? new Date(inventoryData.createdAt).toLocaleString('ru-RU') : '-',
+          'Обновлено': inventoryData.updatedAt ? new Date(inventoryData.updatedAt).toLocaleString('ru-RU') : '-',
+          'ID Склада': audit.warehouseId || '-',
+          'Название склада': audit.warehouseName || '-',
+          'Дата аудита склада': audit.auditDate ? new Date(audit.auditDate).toLocaleDateString('ru-RU') : '-',
+          'Статус склада': audit.status || '-',
+          'ID Зоны': result.zoneId || '-',
+          'Название зоны': result.zoneName || '-',
+          'ID Номенклатуры': result.nomenclatureId || '-',
+          'Название номенклатуры': result.nomenclatureName || '-',
+          'Код номенклатуры': result.nomenclatureCode || '-',
+          'Ожидаемое количество': result.expectedQuantity ?? '-',
+          'Фактическое количество': result.actualQuantity ?? '-',
+          'Расхождение': result.discrepancy ?? '-',
+        })
+      ));
+
+      const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+      worksheet['!cols'] = headers.map(() => ({ wch: 20 })); // Set column widths
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'InventoryReport');
+      XLSX.writeFile(workbook, `inventory_report_${inventoryId}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+      toast.success('Отчет успешно экспортирован в Excel');
     } catch (error) {
+      console.error('Error exporting to Excel:', error);
       toast.error(`Ошибка экспорта: ${error.message}`);
     }
   };
@@ -114,8 +119,16 @@ const InventoryReportPage = () => {
       case 'COMPLETED':
         return { className: 'bg-green-100 text-green-600', label: 'Завершена', icon: CheckCircleIcon };
       default:
-        return { className: 'bg-gray-100 text-gray-600', label: status, icon: null };
+        return { className: 'bg-gray-100 text-gray-600', label: status || 'Неизвестно', icon: null };
     }
+  };
+
+  const handleViewTransactions = (nomenclatureCode) => {
+    if (!nomenclatureCode) {
+      toast.error('Код номенклатуры отсутствует');
+      return;
+    }
+    navigate(`/transaction-history/${nomenclatureCode}`);
   };
 
   return (
@@ -126,15 +139,15 @@ const InventoryReportPage = () => {
           <h1 className="text-xl font-semibold">Отчет по системной инвентаризации #{inventoryId}</h1>
           <div className="flex gap-4">
             <button
-              onClick={exportToCSV}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:bg-green-300"
+              onClick={exportToExcel}
+              className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap transition-colors"
               disabled={loading || !inventoryData}
             >
-              Экспорт в CSV
+              <Download size={16} /> Экспорт
             </button>
             <button
               onClick={() => navigate('/warehouse-tabs')}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm flex items-center gap-1 transition-colors"
             >
               Вернуться
             </button>
@@ -200,6 +213,7 @@ const InventoryReportPage = () => {
                               <th className="px-4 py-2 text-left">Название зоны</th>
                               <th className="px-4 py-2 text-left">ID Номенклатуры</th>
                               <th className="px-4 py-2 text-left">Название номенклатуры</th>
+                              <th className="px-4 py-2 text-left">Код номенклатуры</th>
                               <th className="px-4 py-2 text-left">Ожидаемое количество</th>
                               <th className="px-4 py-2 text-left">Фактическое количество</th>
                               <th className="px-4 py-2 text-left">Расхождение</th>
@@ -213,11 +227,24 @@ const InventoryReportPage = () => {
                                 <td className="px-4 py-2">{result.zoneName}</td>
                                 <td className="px-4 py-2">{result.nomenclatureId}</td>
                                 <td className="px-4 py-2">{result.nomenclatureName}</td>
-                                <td className="px-4 py-2">{result.expectedQuantity}</td>
-                                <td className="px-4 py-2">{result.actualQuantity}</td>
+                                <td className="px-4 py-2">
+                                  {result.nomenclatureCode ? (
+                                    <button
+                                      onClick={() => handleViewTransactions(result.nomenclatureCode)}
+                                      className="text-blue-500 hover:text-blue-700 underline"
+                                      aria-label="Просмотреть историю транзакций"
+                                    >
+                                      {result.nomenclatureCode}
+                                    </button>
+                                  ) : (
+                                    '-'
+                                  )}
+                                </td>
+                                <td className="px-4 py-2">{result.expectedQuantity ?? '-'}</td>
+                                <td className="px-4 py-2">{result.actualQuantity ?? '-'}</td>
                                 <td className="px-4 py-2">
                                   <span className={result.discrepancy !== 0 ? 'text-red-500' : 'text-green-500'}>
-                                    {result.discrepancy}
+                                    {result.discrepancy ?? '-'}
                                   </span>
                                 </td>
                                 <td className="px-4 py-2">{result.createdAt ? new Date(result.createdAt).toLocaleString('ru-RU') : '-'}</td>

@@ -9,7 +9,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
     const authToken = useSelector((state) => state.token.token);
     const userId = useSelector((state) => state.user.userId);
 
-    const isExisting = !!nomenclature?.id; // Проверяем, редактируем ли существующую номенклатуру
+    const isExisting = !!nomenclature?.id;
     const [name, setName] = useState(nomenclature?.name || "");
     const [article, setArticle] = useState(nomenclature?.article || "");
     const [code, setCode] = useState(nomenclature?.code || "");
@@ -41,7 +41,6 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
         fetchCategories();
     }, [authToken]);
 
-    // Валидация полей
     const validateField = (name, value) => {
         switch (name) {
             case "name":
@@ -72,15 +71,13 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
             name: validateField("name", name),
             categoryId: validateField("categoryId", categoryId),
         };
-        if (!isExisting) {
-            // Валидация размеров только для новых записей
-            if (sizeType === "volume") {
-                errors.volume = validateField("volume", volume);
-            } else {
-                errors.height = validateField("height", height);
-                errors.length = validateField("length", length);
-                errors.width = validateField("width", width);
-            }
+
+        if (sizeType === "volume") {
+            errors.volume = validateField("volume", volume);
+        } else {
+            errors.height = validateField("height", height);
+            errors.length = validateField("length", length);
+            errors.width = validateField("width", width);
         }
 
         setFormErrors(errors);
@@ -101,18 +98,11 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                 tnved_code,
                 measurement,
                 categoryId,
+                height: sizeType === "dimensions" ? parseFloat(height) || null : null,
+                length: sizeType === "dimensions" ? parseFloat(length) || null : null,
+                width: sizeType === "dimensions" ? parseFloat(width) || null : null,
+                volume: sizeType === "volume" ? parseFloat(volume) || null : null,
             };
-
-            // Добавляем размеры только для новых записей
-            if (!isExisting) {
-                if (sizeType === "volume") {
-                    data.volume = parseFloat(volume);
-                } else {
-                    data.width = parseFloat(width);
-                    data.height = parseFloat(height);
-                    data.length = parseFloat(length);
-                }
-            }
 
             await axios.put(url, data, { headers: { "Auth-token": authToken } });
             toast.success("Номенклатура сохранена");
@@ -128,10 +118,9 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
         try {
             const url = API_DELETE_NOMENCLATURE.replace("{nomenclatureId}", nomenclature.id);
             await axios.delete(
-                url, 
-                {
-                headers: { "Auth-token": authToken },
-                });
+                url,
+                { headers: { "Auth-token": authToken } }
+            );
             toast.success("Номенклатура удалена");
             onClose();
         } catch (error) {
@@ -221,7 +210,6 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                         </select>
                         {formErrors.categoryId && <p className="text-red-500 text-xs mt-1">{formErrors.categoryId}</p>}
                     </div>
-                    {/* Переключатель типа размера */}
                     <div>
                         <label className="block text-sm text-main-dull-blue">Тип размера</label>
                         <div className="flex gap-4">
@@ -252,7 +240,6 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                             </p>
                         )}
                     </div>
-                    {/* Условное отображение полей размеров */}
                     {sizeType === "volume" ? (
                         <div>
                             <label className="block text-sm text-main-dull-blue">Объем (м³)</label>
@@ -263,7 +250,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                                 onChange={handleInputChange((val) => setVolume(parseFloat(val) || 0), "volume")}
                                 min="0"
                                 step="0.1"
-                                readOnly={isExisting}
+                                disabled={isExisting}
                             />
                             {formErrors.volume && <p className="text-red-500 text-xs mt-1">{formErrors.volume}</p>}
                         </div>
@@ -278,12 +265,12 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                                     onChange={handleInputChange((val) => setHeight(parseFloat(val) || 0), "height")}
                                     min="0"
                                     step="0.1"
-                                    readOnly={isExisting}
+                                    disabled={isExisting}
                                 />
                                 {formErrors.height && <p className="text-red-500 text-xs mt-1">{formErrors.height}</p>}
                             </div>
                             <div>
-                                <label className="block text-sm text-main-dull-blue">Длина (м)</label>
+                                <label className="block text-sm text-main-dull-blue">Длина (m)</label>
                                 <input
                                     type="number"
                                     className={`w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-main-blue ${formErrors.length ? "border-red-500" : "border-gray-300"}`}
@@ -291,12 +278,12 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                                     onChange={handleInputChange((val) => setLength(parseFloat(val) || 0), "length")}
                                     min="0"
                                     step="0.1"
-                                    readOnly={isExisting}
+                                    disabled={isExisting}
                                 />
                                 {formErrors.length && <p className="text-red-500 text-xs mt-1">{formErrors.length}</p>}
                             </div>
                             <div>
-                                <label className="block text-sm text-main-dull-blue">Ширина (м)</label>
+                                <label className="block text-sm text-main-dull-blue">Ширина (m)</label>
                                 <input
                                     type="number"
                                     className={`w-full border rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-main-blue ${formErrors.width ? "border-red-500" : "border-gray-300"}`}
@@ -304,7 +291,7 @@ const NomenclatureSettingsModal = ({ nomenclature, onClose }) => {
                                     onChange={handleInputChange((val) => setWidth(parseFloat(val) || 0), "width")}
                                     min="0"
                                     step="0.1"
-                                    readOnly={isExisting}
+                                    disabled={isExisting}
                                 />
                                 {formErrors.width && <p className="text-red-500 text-xs mt-1">{formErrors.width}</p>}
                             </div>

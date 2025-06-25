@@ -14,6 +14,7 @@ import {
   downloadDocumentFailure,
   clearDocuments,
 } from '../../../store/slices/layout/operation/transactionListSlice';
+import * as XLSX from 'xlsx'; // Import xlsx library
 
 const TransactionList = () => {
   const authToken = useSelector((state) => state.token.token);
@@ -78,23 +79,23 @@ const TransactionList = () => {
         `http://localhost:8081/api/v1/storekeeper/file/download/by-document/${documentId}`,
         {
           headers: { 'Auth-token': authToken },
-          responseType: 'blob', // Expect a binary response
+          responseType: 'blob',
         }
       );
 
-      let filename = `document_${documentId}.pdf`; // Fallback filename
+      let filename = `document_${documentId}.pdf`;
       const contentDisposition = response.headers['content-disposition'];
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="(.+)"/);
         if (match && match[1]) {
-          filename = decodeURIComponent(match[1]); // Decode URI-encoded filename
+          filename = decodeURIComponent(match[1]);
         }
       }
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', filename); // Use the extracted or fallback filename
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -117,7 +118,15 @@ const TransactionList = () => {
     }
   };
 
-  const exportDocumentToCSV = (docWithTransactions) => {
+  // Helper function to generate and download Excel file
+  const downloadExcelFile = (data, fileName) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+    XLSX.writeFile(workbook, fileName); // Исправлено: writeFile вместо write_file
+  };
+
+  const exportDocumentToExcel = (docWithTransactions) => {
     try {
       const doc = docWithTransactions.document;
       const transactions = docWithTransactions.transactions;
@@ -126,120 +135,68 @@ const TransactionList = () => {
         throw new Error('Некорректные данные документа или транзакции отсутствуют');
       }
 
-      const headers = [
-        'Номер документа',
-        'Тип документа',
-        'Дата документа',
-        'Статус',
-        'Поставщик',
-        'Клиент',
-        'ID транзакции',
-        'Тип транзакции',
-        'Номенклатура',
-        'Количество',
-        'Дата транзакции',
-        'Создатель',
-        'Дата создания',
-      ];
+      const data = transactions.map((transaction) => ({
+        'Номер документа': doc.documentNumber || 'N/A',
+        'Тип документа': doc.documentType || 'N/A',
+        'Дата документа': doc.documentDate ? new Date(doc.documentDate).toLocaleString() : 'N/A',
+        'Статус': doc.status || 'N/A',
+        'Поставщик': doc.supplier?.name || 'N/A',
+        'Клиент': doc.customer?.name || 'N/A',
+        'ID транзакции': transaction.id || 'N/A',
+        'Тип транзакции': transaction.transactionType || 'N/A',
+        'Номенклатура': transaction.nomenclatureName || 'N/A',
+        'Количество': transaction.quantity != null ? transaction.quantity : 'N/A',
+        'Дата транзакции': transaction.date ? new Date(transaction.date).toLocaleString() : 'N/A',
+        'Создатель': transaction.createdBy || 'N/A',
+        'Дата создания': transaction.createdAt ? new Date(transaction.createdAt).toLocaleString() : 'N/A',
+      }));
 
-      const rows = transactions.map((transaction) => [
-        `"${doc.documentNumber || 'N/A'}"`,
-        `"${doc.documentType || 'N/A'}"`,
-        doc.documentDate ? `"${new Date(doc.documentDate).toLocaleString()}"` : '"N/A"',
-        `"${doc.status || 'N/A'}"`,
-        `"${doc.supplier?.name || 'N/A'}"`,
-        `"${doc.customer?.name || 'N/A'}"`,
-        `"${transaction.id || 'N/A'}"`,
-        `"${transaction.transactionType || 'N/A'}"`,
-        `"${transaction.nomenclatureName || 'N/A'}"`,
-        transaction.quantity != null ? transaction.quantity.toString() : 'N/A',
-        transaction.date ? `"${new Date(transaction.date).toLocaleString()}"` : '"N/A"',
-        `"${transaction.createdBy || 'N/A'}"`,
-        transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
-      ]);
-
-      const csvContent =
-        'data:text/csv;charset=utf-8,' + [headers, ...rows].map((row) => row.join(',')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute(
-        'download',
-        `document_${doc.documentNumber || 'unknown'}_${new Date().toISOString().split('T')[0]}.csv`
-      );
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileName = `document_${doc.documentNumber || 'unknown'}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      downloadExcelFile(data, fileName);
       toast.success(`Экспорт документа #${doc.documentNumber || 'unknown'} выполнен успешно`);
     } catch (error) {
-      toast.error('Ошибка при экспорте в CSV: ' + (error.message || 'Неизвестная ошибка'));
-      console.error('Ошибка экспорта CSV:', error);
+      toast.error('Ошибка при экспорте в Excel: ' + (error.message || 'Неизвестная ошибка'));
+      console.error('Ошибка экспорта Excel:', error);
     }
   };
 
-  const exportAllDocumentsToCSV = () => {
+  const exportAllDocumentsToExcel = () => {
     try {
       if (!documents || !Array.isArray(documents) || documents.length === 0) {
         throw new Error('Нет данных для экспорта');
       }
 
-      const headers = [
-        'Номер документа',
-        'Тип документа',
-        'Дата документа',
-        'Статус',
-        'Поставщик',
-        'Клиент',
-        'ID транзакции',
-        'Тип транзакции',
-        'Номенклатура',
-        'Количество',
-        'Дата транзакции',
-        'Создатель',
-        'Дата создания',
-      ];
-
-      const rows = documents.flatMap((docWithTransactions) => {
+      const data = documents.flatMap((docWithTransactions) => {
         const doc = docWithTransactions.document;
         const transactions = docWithTransactions.transactions || [];
 
-        return transactions.map((transaction) => [
-          `"${doc.documentNumber || 'N/A'}"`,
-          `"${doc.documentType || 'N/A'}"`,
-          doc.documentDate ? `"${new Date(doc.documentDate).toLocaleString()}"` : '"N/A"',
-          `"${doc.status || 'N/A'}"`,
-          `"${doc.supplier?.name || 'N/A'}"`,
-          `"${doc.customer?.name || 'N/A'}"`,
-          `"${transaction.id || 'N/A'}"`,
-          `"${transaction.transactionType || 'N/A'}"`,
-          `"${transaction.nomenclatureName || 'N/A'}"`,
-          transaction.quantity != null ? transaction.quantity.toString() : 'N/A',
-          transaction.date ? `"${new Date(transaction.date).toLocaleString()}"` : '"N/A"',
-          `"${transaction.createdBy || 'N/A'}"`,
-          transaction.createdAt ? `"${new Date(transaction.createdAt).toLocaleString()}"` : '"N/A"',
-        ]);
+        return transactions.map((transaction) => ({
+          'Номер документа': doc.documentNumber || 'N/A',
+          'Тип документа': doc.documentType || 'N/A',
+          'Дата документа': doc.documentDate ? new Date(doc.documentDate).toLocaleString() : 'N/A',
+          'Статус': doc.status || 'N/A',
+          'Поставщик': doc.supplier?.name || 'N/A',
+          'Клиент': doc.customer?.name || 'N/A',
+          'ID транзакции': transaction.id || 'N/A',
+          'Тип транзакции': transaction.transactionType || 'N/A',
+          'Номенклатура': transaction.nomenclatureName || 'N/A',
+          'Количество': transaction.quantity != null ? transaction.quantity : 'N/A',
+          'Дата транзакции': transaction.date ? new Date(transaction.date).toLocaleString() : 'N/A',
+          'Создатель': transaction.createdBy || 'N/A',
+          'Дата создания': transaction.createdAt ? new Date(transaction.createdAt).toLocaleString() : 'N/A',
+        }));
       });
 
-      if (rows.length === 0) {
+      if (data.length === 0) {
         throw new Error('Нет транзакций для экспорта');
       }
 
-      const csvContent =
-        'data:text/csv;charset=utf-8,' + [headers, ...rows].map((row) => row.join(',')).join('\n');
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement('a');
-      link.setAttribute('href', encodedUri);
-      link.setAttribute(
-        'download',
-        `transaction_list_${new Date().toISOString().split('T')[0]}.csv`
-      );
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const fileName = `transaction_list_${new Date().toISOString().split('T')[0]}.xlsx`;
+      downloadExcelFile(data, fileName);
       toast.success('Экспорт всего списка выполнен успешно');
     } catch (error) {
       toast.error('Ошибка при экспорте списка: ' + (error.message || 'Неизвестная ошибка'));
-      console.error('Ошибка экспорта всего списка CSV:', error);
+      console.error('Ошибка экспорта всего списка Excel:', error);
     }
   };
 
@@ -312,12 +269,12 @@ const TransactionList = () => {
                   Вывод
                 </button>
                 <button
-                  onClick={exportAllDocumentsToCSV}
-                  className="px-2 py-1 sm:px-3 sm:py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs sm:text-sm"
-                  title="Экспорт всего списка в CSV"
+                  onClick={exportAllDocumentsToExcel}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
+                  title="Экспорт всего списка в Excel"
                   disabled={loading || documents.length === 0}
                 >
-                  Экспорт списка
+                  <HiDownload size={16} /> Экспорт
                 </button>
               </div>
             </div>
@@ -408,11 +365,12 @@ const TransactionList = () => {
                           <HiDownload className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
                         </button>
                         <button
-                          onClick={() => exportDocumentToCSV(docWithTransactions)}
-                          className="px-2 py-1 sm:px-3 sm:py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-xs sm:text-sm"
-                          disabled={downloadLoading}
+                          onClick={() => exportDocumentToExcel(docWithTransactions)}
+                          className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 whitespace-nowrap"
+                          title="Экспорт документа в Excel"
+                          disabled={downloadLoading || !transactions.length}
                         >
-                          Экспорт в CSV
+                          <HiDownload size={16} /> Экспорт
                         </button>
                       </div>
                     </div>

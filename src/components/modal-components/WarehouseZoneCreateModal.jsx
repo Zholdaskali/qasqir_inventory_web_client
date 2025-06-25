@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
@@ -30,9 +30,9 @@ const WarehouseZoneCreateModal = ({
 }) => {
     const initialName = parentZoneName ? `${parentZoneName} - ` : "";
     const [warehouseZoneName, setWarehouseZoneName] = useState(initialName);
-    const [height, setHeight] = useState(parentHeight/2 || 0.1);
-    const [length, setLength] = useState(parentLength/2 || 0.1);
-    const [width, setWidth] = useState(parentWidth/2 || 0.1);
+    const [height, setHeight] = useState(parentHeight / 2 || 0.1);
+    const [length, setLength] = useState(parentLength / 2 || 0.1);
+    const [width, setWidth] = useState(parentWidth / 2 || 0.1);
     const [isFormError, setIsFormError] = useState(false);
     const [formErrors, setFormErrors] = useState({ height: false, length: false, width: false });
     const [isLoading, setIsLoading] = useState(false);
@@ -49,24 +49,27 @@ const WarehouseZoneCreateModal = ({
         return "";
     };
 
-    const debounce = (func, wait) => {
-        let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func(...args), wait);
-        };
-    };
+    const handleDimensionChange = (value, setter, maxValue, fieldName) => {
+        // Разрешаем временно пустую строку
+        if (value === "") {
+            setter(value);
+            setFormErrors(prev => ({
+                ...prev,
+                [fieldName.toLowerCase()]: false
+            }));
+            return;
+        }
 
-    const handleDimensionChange = useCallback((value, setter, maxValue, fieldName) => {
-        const numValue = Math.max(0.1, Math.min(parseFloat(value) || 0.1, maxValue));
+        const numValue = parseFloat(value);
+        if (isNaN(numValue)) return;
+
         setter(numValue);
         setFormErrors(prev => ({
             ...prev,
             [fieldName.toLowerCase()]: numValue > maxValue || numValue < 0.1
         }));
-    }, []);
+    };
 
-    const debouncedDimensionChange = debounce(handleDimensionChange, 100);
 
     const handleNameChange = (e) => {
         const newValue = e.target.value;
@@ -81,9 +84,9 @@ const WarehouseZoneCreateModal = ({
 
     const resetForm = () => {
         setWarehouseZoneName(initialName);
-        setHeight(parentHeight/2 || 0.1);
-        setLength(parentLength/2 || 0.1);
-        setWidth(parentWidth/2 || 0.1);
+        setHeight(parentHeight / 2 || 0.1);
+        setLength(parentLength / 2 || 0.1);
+        setWidth(parentWidth / 2 || 0.1);
         setIsFormError(false);
         setFormErrors({ height: false, length: false, width: false });
     };
@@ -101,7 +104,6 @@ const WarehouseZoneCreateModal = ({
         light.position.set(5, 5, 5);
         scene.add(light);
 
-        // Добавляем оси координат
         const axesHelper = new THREE.AxesHelper(5);
         scene.add(axesHelper);
 
@@ -124,9 +126,7 @@ const WarehouseZoneCreateModal = ({
         const scene = sceneRef.current;
         if (!scene) return;
 
-        scene.children.forEach(child => {
-            if (child.type === 'Mesh') scene.remove(child);
-        });
+        scene.children = scene.children.filter(child => child.type !== 'Mesh');
 
         const parentGeometry = new THREE.BoxGeometry(parentLength || 1, parentHeight || 1, parentWidth || 1);
         const parentMaterial = new THREE.MeshPhongMaterial({
@@ -167,14 +167,14 @@ const WarehouseZoneCreateModal = ({
 
         setIsLoading(true);
         try {
-            const response = await axios.post(
+            await axios.post(
                 `${API_WAREHOUSE_ZONE_CREATE}/${warehouseId}/zones?userId=${userId}`,
                 {
                     name: warehouseZoneName,
                     parentId: parentId,
-                    height: height,
-                    length: length,
-                    width: width
+                    height,
+                    length,
+                    width
                 },
                 {
                     headers: { "Auth-token": authToken }
@@ -201,69 +201,70 @@ const WarehouseZoneCreateModal = ({
             <h2 className="text-2xl font-semibold text-gray-800 mb-8 text-center">Добавить подзону склада</h2>
             <div className="flex flex-col md:flex-row gap-8">
                 <div className="space-y-6 flex-1">
+                    {/* Название */}
                     <div>
                         <label htmlFor="name" className="block text-left mb-2 text-gray-700 font-medium">Название подзоны</label>
                         <input
                             id="name"
                             type="text"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${isFormError && !warehouseZoneName.trim() ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 ${isFormError && !warehouseZoneName.trim() ? 'border-red-500' : 'border-gray-300'}`}
                             value={warehouseZoneName}
                             onChange={handleNameChange}
-                            placeholder={parentZoneName ? `${parentZoneName} - ` : "Введите название подзоны"}
                         />
                         {isFormError && !warehouseZoneName.trim() && <p className="text-red-500 text-sm mt-1">Это поле обязательно</p>}
                     </div>
 
+                    {/* Высота */}
                     <div>
-                        <label htmlFor="height" className="block text-left mb-2 text-gray-700 font-medium">Высота (м) <span className="text-gray-500 text-sm">(макс: {parentHeight})</span></label>
+                        <label htmlFor="height" className="block mb-2 text-gray-700 font-medium">Высота (м)</label>
                         <input
                             id="height"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.height ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 ${formErrors.height ? 'border-red-500' : 'border-gray-300'}`}
                             value={height}
-                            onChange={(e) => debouncedDimensionChange(e.target.value, setHeight, parentHeight, "Высота")}
-                            placeholder="Введите высоту"
+                            onChange={(e) => handleDimensionChange(e.target.value, setHeight, parentHeight, "Высота")}
                             min="0.1"
                             step="0.1"
                         />
                         {formErrors.height && <p className="text-red-500 text-sm mt-1">{validateDimensions(height, parentHeight, "Высота")}</p>}
                     </div>
 
+                    {/* Длина */}
                     <div>
-                        <label htmlFor="length" className="block text-left mb-2 text-gray-700 font-medium">Длина (м) <span className="text-gray-500 text-sm">(макс: {parentLength})</span></label>
+                        <label htmlFor="length" className="block mb-2 text-gray-700 font-medium">Длина (м)</label>
                         <input
                             id="length"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.length ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 ${formErrors.length ? 'border-red-500' : 'border-gray-300'}`}
                             value={length}
-                            onChange={(e) => debouncedDimensionChange(e.target.value, setLength, parentLength, "Длина")}
-                            placeholder="Введите длину"
+                            onChange={(e) => handleDimensionChange(e.target.value, setLength, parentLength, "Длина")}
                             min="0.1"
                             step="0.1"
                         />
                         {formErrors.length && <p className="text-red-500 text-sm mt-1">{validateDimensions(length, parentLength, "Длина")}</p>}
                     </div>
 
+                    {/* Ширина */}
                     <div>
-                        <label htmlFor="width" className="block text-left mb-2 text-gray-700 font-medium">Ширина (м) <span className="text-gray-500 text-sm">(макс: {parentWidth})</span></label>
+                        <label htmlFor="width" className="block mb-2 text-gray-700 font-medium">Ширина (м)</label>
                         <input
                             id="width"
                             type="number"
-                            className={`w-full border rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-300 transition duration-200 ${formErrors.width ? 'border-red-500' : 'border-gray-300'}`}
+                            className={`w-full border rounded-lg px-4 py-3 ${formErrors.width ? 'border-red-500' : 'border-gray-300'}`}
                             value={width}
-                            onChange={(e) => debouncedDimensionChange(e.target.value, setWidth, parentWidth, "Ширина")}
-                            placeholder="Введите ширину"
+                            onChange={(e) => handleDimensionChange(e.target.value, setWidth, parentWidth, "Ширина")}
                             min="0.1"
                             step="0.1"
                         />
                         {formErrors.width && <p className="text-red-500 text-sm mt-1">{validateDimensions(width, parentWidth, "Ширина")}</p>}
                     </div>
 
+                    {/* Кнопки */}
                     <div className="flex justify-end space-x-4 mt-8">
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200 disabled:opacity-50"
+                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                             disabled={isLoading}
                         >
                             Отмена
@@ -275,7 +276,7 @@ const WarehouseZoneCreateModal = ({
                         >
                             <button
                                 type="button"
-                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50"
+                                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                                 disabled={isLoading}
                             >
                                 {isLoading ? "Сохранение..." : "Сохранить"}
@@ -283,8 +284,10 @@ const WarehouseZoneCreateModal = ({
                         </ConfirmationWrapper>
                     </div>
                 </div>
+
+                {/* Визуализация */}
                 <div className="flex-1 flex flex-col items-center justify-center">
-                    <canvas ref={canvasRef} className="border rounded-lg border-gray-300 bg-gray-50 w-full max-w-[300px] h-[300px]" />
+                    <canvas ref={canvasRef} className="border rounded-lg bg-gray-50 w-full max-w-[300px] h-[300px]" />
                     <div className="mt-4 flex items-center gap-4 text-sm font-medium">
                         <div className="flex items-center gap-1">
                             <span className="inline-block w-4 h-4 bg-gray-300 opacity-30 border border-gray-400"></span>
@@ -296,7 +299,7 @@ const WarehouseZoneCreateModal = ({
                         </div>
                     </div>
                     <div className="mt-2 text-sm text-gray-500">
-                        Красная ось: X (длина), Зеленая ось: Y (высота), Синяя ось: Z (ширина)
+                        Красная ось: X (длина), Зелёная: Y (высота), Синяя: Z (ширина)
                     </div>
                 </div>
             </div>

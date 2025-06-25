@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom'; // Добавляем useNavigate
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { CheckCircleIcon, ClockIcon, TrashIcon } from '@heroicons/react/20/solid';
@@ -10,11 +10,10 @@ import { API_GET_INVENTORY_CHECK_SYSTEM_BY_ID, API_PATH_STOREKEEPER, API_BASE } 
 
 const API_BASE_URL = API_BASE + API_PATH_STOREKEEPER;
 
-const SystemInventoryStartPage = () => {
+const SystemInventoryStartPage = ({ onSelectInventory }) => {
   const authToken = useSelector((state) => state.token.token);
   const userId = useSelector((state) => state.user.userId);
-  const navigate = useNavigate();
-
+  const navigate = useNavigate(); // Инициализируем useNavigate
   const today = new Date();
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
@@ -62,7 +61,7 @@ const SystemInventoryStartPage = () => {
       const inventoryId = response.data.body?.id || response.data.id;
       if (inventoryId) {
         toast.success(response.data.message || 'Системная инвентаризация успешно начата');
-        navigate(`/inventory-check/${inventoryId}`);
+        onSelectInventory(inventoryId);
         fetchInventories();
       } else {
         throw new Error('ID инвентаризации не получен');
@@ -80,7 +79,7 @@ const SystemInventoryStartPage = () => {
       await axios.get(`${API_GET_INVENTORY_CHECK_SYSTEM_BY_ID.replace('{inventoryId}', inventoryId)}`, {
         headers: { 'Auth-token': authToken },
       });
-      navigate(`/inventory-check/${inventoryId}`);
+      onSelectInventory(inventoryId);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Ошибка загрузки данных инвентаризации');
     } finally {
@@ -157,7 +156,13 @@ const SystemInventoryStartPage = () => {
                 <td className="px-4 py-2">{item.updatedAt ? new Date(item.updatedAt).toLocaleString('ru-RU') : '-'}</td>
                 <td className="px-4 py-2 flex gap-2">
                   <button
-                    onClick={() => (isActive ? handleContinueInventory(item.id) : navigate(`/inventory-report/${item.id}`))}
+                    onClick={() => {
+                      if (isActive) {
+                        handleContinueInventory(item.id); // Для активных инвентаризаций
+                      } else {
+                        navigate(`/inventory-report/${item.id}`); // Для завершенных — переход на отчет
+                      }
+                    }}
                     className="text-blue-500 hover:text-blue-700"
                   >
                     {isActive ? 'Продолжить' : 'Отчет'}

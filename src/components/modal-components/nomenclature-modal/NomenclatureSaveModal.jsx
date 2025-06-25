@@ -47,10 +47,11 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                 tnved_code: formData.tnvedCode,
                 measurement_unit: formData.measurement,
                 created_by: userId,
-                height: formData.isLargeItem ? formData.height : null,
-                length: formData.isLargeItem ? formData.length : null,
-                width: formData.isLargeItem ? formData.width : null,
-                volume: formData.isLargeItem ? null : formData.volume,
+                updated_by: userId,
+                height: formData.isLargeItem ? parseFloat(formData.height) || null : null,
+                length: formData.isLargeItem ? parseFloat(formData.length) || null : null,
+                width: formData.isLargeItem ? parseFloat(formData.width) || null : null,
+                volume: !formData.isLargeItem ? parseFloat(formData.volume) || null : null,
             };
 
             try {
@@ -146,7 +147,7 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                                     checked={!formData.isLargeItem}
                                     onChange={() => setFormData({ ...formData, isLargeItem: false })}
                                 />
-                                <span className="ml-1">Маленький</span>
+                                <span className="ml-1">Маленький (объем)</span>
                             </label>
                             <label className="flex items-center">
                                 <input
@@ -155,7 +156,7 @@ const NomenclatureSaveModal = ({ onClose, categoryId }) => {
                                     checked={formData.isLargeItem}
                                     onChange={() => setFormData({ ...formData, isLargeItem: true })}
                                 />
-                                <span className="ml-1">Большой</span>
+                                <span className="ml-1">Большой (габариты)</span>
                             </label>
                         </div>
                     </div>

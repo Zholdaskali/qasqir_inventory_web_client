@@ -1,11 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable no-unused-vars */
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { CiCalendarDate } from 'react-icons/ci';
 import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
-import { HiDownload } from 'react-icons/hi'; // Added for download button
 import ConfirmationWrapper from '../../../components/ui/ConfirmationWrapper';
 import {
   API_GET_TICKETS_BY_TYPE,
@@ -21,9 +21,11 @@ import {
   deleteTicket,
   clearTickets,
 } from '../../../store/slices/layout/ticket/ticketApprovalSlice';
+import * as XLSX from 'xlsx';
+import TableHeader from '../../../components/ui/Header';
 
 const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
-  console.log('AdminBatchTicketApprovalPage.jsx loaded');
+  console.log('AdminTicketApprovalPage.jsx loaded');
   const authToken = useSelector((state) => state.token.token);
   const adminId = useSelector((state) => state.user.userId);
   const { ticketsByType = {}, loading = false, error = null } = useSelector(
@@ -41,9 +43,10 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
 
   const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(tomorrow.toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [hasFetchedByType, setHasFetchedByType] = useState({});
   const [expandedDocs, setExpandedDocs] = useState({});
-  const [downloadLoading, setDownloadLoading] = useState(false); // Added for download state
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   const fetchTickets = useCallback(
     async (forceFetch = false) => {
@@ -69,15 +72,10 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
           API_GET_TICKETS_BY_TYPE.replace('{type}', ticketType),
           {
             headers: { 'Auth-token': authToken },
-            params: {
-              startDate,
-              endDate,
-            },
+            params: { startDate, endDate },
           }
         );
-        const ticketData = Array.isArray(response.data.body)
-          ? response.data.body
-          : [];
+        const ticketData = Array.isArray(response.data.body) ? response.data.body : [];
         dispatch(fetchTicketsSuccess({ ticketType, tickets: ticketData }));
         setHasFetchedByType((prev) => ({ ...prev, [ticketType]: true }));
         toast.success(
@@ -100,6 +98,25 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   useEffect(() => {
     fetchTickets();
   }, [fetchTickets, ticketType]);
+
+  const filteredTickets = useMemo(() => {
+    return Array.isArray(tickets)
+      ? tickets.filter((ticket) =>
+          [
+            ticket.id?.toString(),
+            ticket.createdByName,
+            ticket.document?.documentNumber,
+            ticket.document?.documentType,
+            ticket.document?.supplier,
+            ticket.document?.customer,
+            ticket.inventory?.nomenclatureName,
+            ticket.inventory?.containerSerial,
+          ].some((field) =>
+            field?.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        )
+      : [];
+  }, [tickets, searchQuery]);
 
   const handleDownloadDocument = async (documentId) => {
     if (!authToken) {
@@ -226,7 +243,12 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
     }
   };
 
-  const exportToCSV = (tickets, status) => {
+  const exportToExcel = (tickets, status) => {
+    if (!tickets.length) {
+      toast.error('Нет данных для экспорта');
+      return;
+    }
+
     const headers = [
       'ID Заявки',
       'Статус',
@@ -248,44 +270,38 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
       'Серийный №',
     ];
 
-    const rows = tickets.map((ticket) => [
-      ticket.id,
-      ticket.status,
-      ticket.type,
-      `${ticket.createdByName} (ID: ${ticket.createdBy})`,
-      new Date(ticket.createdAt).toLocaleString(),
-      ticket.managerName
+    const data = tickets.map((ticket) => ({
+      'ID Заявки': ticket.id || 'N/A',
+      Статус: ticket.status || 'N/A',
+      Тип: ticket.type || 'N/A',
+      Автор: `${ticket.createdByName} (ID: ${ticket.createdBy})` || 'N/A',
+      'Дата создания': ticket.createdAt ? new Date(ticket.createdAt).toLocaleString() : 'N/A',
+      Одобрил: ticket.managerName
         ? `${ticket.managerName} (ID: ${ticket.managerId})`
         : '—',
-      ticket.managedAt ? new Date(ticket.managedAt).toLocaleString() : '—',
-      ticket.comment || 'Нет',
-      ticket.document.documentNumber,
-      ticket.document.documentType,
-      ticket.document.documentDate,
-      ticket.document.supplier || '—',
-      ticket.document.customer || '—',
-      ticket.inventory.id,
-      ticket.inventory.nomenclatureName || '—',
-      ticket.quantity,
-      ticket.inventory.warehouseZoneId,
-      ticket.inventory.containerSerial,
-    ]);
+      'Дата одобрения': ticket.managedAt ? new Date(ticket.managedAt).toLocaleString() : '—',
+      Комментарий: ticket.comment || 'Нет',
+      '№ Документа': ticket.document.documentNumber || 'N/A',
+      'Тип документа': ticket.document.documentType || 'N/A',
+      'Дата документа': ticket.document.documentDate || 'N/A',
+      Поставщик: ticket.document.supplier || '—',
+      Клиент: ticket.document.customer || '—',
+      'ID Инвентаря': ticket.inventory.id || 'N/A',
+      'Название товара': ticket.inventory.nomenclatureName || '—',
+      Количество: ticket.quantity || 'N/A',
+      'Зона склада': ticket.inventory.warehouseZoneId || 'N/A',
+      'Серийный №': ticket.inventory.containerSerial || '—',
+    }));
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
-    ].join('\n');
+    const worksheet = XLSX.utils.json_to_sheet(data, { header: headers });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets');
+    XLSX.writeFile(
+      workbook,
+      `${ticketType}_tickets_${status.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${ticketType}_tickets_${status.toLowerCase()}_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Экспорт в CSV выполнен');
+    toast.success('Экспорт в Excel выполнен');
   };
 
   const handleApplyDates = () => {
@@ -453,9 +469,11 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
               }}
               className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
               title="Скачать документ (PDF)"
-              disabled={downloadLoading}
+              disabled={downloadLoading || loading}
             >
-              <HiDownload className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" />
+              <svg className="w-4 h-4 sm:w-6 sm:h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
             </button>
             {activeTicketIds.length > 0 && status === 'ACTIVE' && (
               <ConfirmationWrapper
@@ -491,7 +509,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
     );
   };
 
-  const groupedTickets = groupTicketsByDocument(tickets);
+  const groupedTickets = groupTicketsByDocument(filteredTickets);
   const activeDocuments = Object.values(groupedTickets).filter((group) =>
     group?.tickets?.some((ticket) => ticket.status === 'ACTIVE') || false
   );
@@ -505,7 +523,7 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
   const actionTitle = ticketType === 'sales' ? 'продажу' : 'списание';
 
   return (
-    <div className="w-full h-full px-4 py-6 lg:px-8 lg:py-8 rounded-xl overflow-auto bg-gray-50">
+    <div className="min-h-screen w-full flex flex-col overflow-y-auto p-3 bg-gray-50">
       <ToastContainer
         position="top-right"
         autoClose={1500}
@@ -522,50 +540,69 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
         toastClassName="text-sm max-w-sm p-3 rounded-lg shadow-md"
         bodyClassName="text-sm"
       />
-      <div className="flex flex-col gap-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <h1 className="text-2xl font-bold text-gray-800">
-              Одобрение заявок на {actionTitle}
-            </h1>
-            <button
-              onClick={handleApplyDates}
-              className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              disabled={loading}
-            >
-              Применить фильтр
-            </button>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-            <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm font-medium text-gray-600 mb-1">
-                <CiCalendarDate className="w-5 h-5" /> Начало
-              </label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border px-2 py-1 rounded-lg w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                disabled={loading}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="flex items-center gap-1 text-sm font-medium text-gray-600 mb-1">
-                <CiCalendarDate className="w-5 h-5" /> Конец
-              </label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border px-2 py-1 rounded-lg w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                disabled={loading}
-              />
-            </div>
-          </div>
-        </div>
+      <TableHeader
+        title={`Одобрение заявок на ${actionTitle}`}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        onExport={() =>
+          exportToExcel(
+            filteredTickets.filter((t) => t.status === 'ACTIVE'),
+            'ACTIVE'
+          )
+        }
+        exportDisabled={loading || !activeDocuments.length}
+        secondaryExport={() =>
+          exportToExcel(
+            filteredTickets.filter((t) => t.status === 'ALLOWED'),
+            'ALLOWED'
+          )
+        }
+        secondaryExportDisabled={loading || !allowedDocuments.length}
+        tertiaryExport={() =>
+          exportToExcel(
+            filteredTickets.filter((t) => t.status === 'COMPLETED'),
+            'COMPLETED'
+          )
+        }
+        tertiaryExportDisabled={loading || !completedDocuments.length}
+        searchPlaceholder="Поиск по ID, автору, документу..."
+        onAction={handleApplyDates}
+        actionLabel={loading ? 'Загрузка...' : 'Применить фильтр'}
+        actionDisabled={loading || !startDate || !endDate || new Date(startDate) > new Date(endDate)}
+      />
 
+      <div className="flex gap-4 mt-3 w-full sm:w-auto">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Начало
+          </label>
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+            disabled={loading}
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
+            Конец
+          </label>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="border px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 mt-3">
         {loading ? (
-          <div className="text-center text-lg text-gray-600">Загрузка...</div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
         ) : error ? (
           <div className="text-center py-4 text-red-500 text-base">
             Ошибка: {error}
@@ -573,26 +610,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
         ) : (
           <div className="space-y-8">
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Ожидающие одобрения
-                </h2>
-                {activeDocuments.length > 0 && (
-                  <button
-                    onClick={() =>
-                      exportToCSV(
-                        activeDocuments.flatMap((group) =>
-                          group.tickets.filter((t) => t.status === 'ACTIVE')
-                        ),
-                        'ACTIVE'
-                      )
-                    }
-                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm transition-colors"
-                  >
-                    Экспорт в CSV
-                  </button>
-                )}
-              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Ожидающие одобрения
+              </h2>
               {activeDocuments.length > 0 ? (
                 activeDocuments.map((group, index) =>
                   group ? (
@@ -611,26 +631,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
             <hr className="border-gray-200" />
 
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Одобренные заявки
-                </h2>
-                {allowedDocuments.length > 0 && (
-                  <button
-                    onClick={() =>
-                      exportToCSV(
-                        allowedDocuments.flatMap((group) =>
-                          group.tickets.filter((t) => t.status === 'ALLOWED')
-                        ),
-                        'ALLOWED'
-                      )
-                    }
-                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm transition-colors"
-                  >
-                    Экспорт в CSV
-                  </button>
-                )}
-              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Одобренные заявки
+              </h2>
               {allowedDocuments.length > 0 ? (
                 allowedDocuments.map((group, index) =>
                   group ? (
@@ -649,26 +652,9 @@ const AdminTicketApprovalPage = ({ ticketType, onTabChange }) => {
             <hr className="border-gray-200" />
 
             <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Выполненные заявки
-                </h2>
-                {completedDocuments.length > 0 && (
-                  <button
-                    onClick={() =>
-                      exportToCSV(
-                        completedDocuments.flatMap((group) =>
-                          group.tickets.filter((t) => t.status === 'COMPLETED')
-                        ),
-                        'COMPLETED'
-                      )
-                    }
-                    className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm transition-colors"
-                  >
-                    Экспорт в CSV
-                  </button>
-                )}
-              </div>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                Выполненные заявки
+              </h2>
               {completedDocuments.length > 0 ? (
                 completedDocuments.map((group, index) =>
                   group ? (

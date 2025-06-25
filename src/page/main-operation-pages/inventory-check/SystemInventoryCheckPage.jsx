@@ -29,7 +29,7 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [processedZoneIds, setProcessedZoneIds] = useState([]);
   const [processedWarehouseIds, setProcessedWarehouseIds] = useState([]);
-  const [inventoryStatus, setInventoryStatus] = useState(null); // Новое состояние для статуса инвентаризации
+  const [inventoryStatus, setInventoryStatus] = useState(null);
   const itemsPerPage = 50;
 
   // Форматируем зоны для react-select
@@ -83,8 +83,8 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
         nomenclatureName: item.nomenclatureName,
         measurementUnit: item.measurementUnit || 'шт',
         code: item.code || '',
-        quantity: item.quantity,
-        actualQuantity: item.quantity,
+        quantity: parseFloat(item.quantity) || 0,
+        actualQuantity: parseFloat(item.quantity) || 0,
         warehouseZoneId: parseInt(zoneId, 10),
         warehouseContainerId: item.warehouseContainer?.id || null,
         warehouseContainerSerial: item.warehouseContainer?.serialNumber || null,
@@ -187,8 +187,8 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
           nomenclatureName: item.nomenclatureName,
           measurementUnit: 'шт',
           code: '',
-          quantity: item.expectedQuantity,
-          actualQuantity: item.actualQuantity,
+          quantity: parseFloat(item.expectedQuantity) || 0,
+          actualQuantity: parseFloat(item.actualQuantity) || 0,
           warehouseZoneId: parseInt(item.zoneId, 10),
           warehouseContainerId: null,
           warehouseContainerSerial: null,
@@ -331,7 +331,9 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
   // Изменение количества
   const handleQuantityChange = (index, value) => {
     const newItems = [...inventoryItems];
-    newItems[index].actualQuantity = parseFloat(value) || 0;
+    const normalizedValue = value.replace(',', '.'); // Поддержка запятой в локалях
+    newItems[index].actualQuantity =
+      normalizedValue === '' ? 0 : parseFloat(normalizedValue) || 0;
     setInventoryItems(newItems);
   };
 
@@ -352,7 +354,9 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
           nomenclatureId: parseInt(item.nomenclatureId, 10),
           warehouseZoneId: parseInt(item.warehouseZoneId, 10),
           containerId: item.warehouseContainerId ? parseInt(item.warehouseContainerId, 10) : null,
-          actualQuantity: parseFloat(item.actualQuantity),
+          actualQuantity: isNaN(parseFloat(item.actualQuantity))
+            ? 0
+            : parseFloat(item.actualQuantity),
         }))
         .filter((item) => item.actualQuantity !== item.quantity);
 
@@ -417,7 +421,7 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                         key={warehouse.id}
                         onClick={() =>
                           !processedWarehouseIds.includes(String(warehouse.id)) &&
-                          handleWarehouseSelect(warehouse.id)
+                          handleWarehouseSelect(warehouse.id.toString())
                         }
                         className={`p-2 cursor-pointer text-gray-700 ${
                           processedWarehouseIds.includes(String(warehouse.id))
@@ -570,15 +574,17 @@ const SystemInventoryCheckPage = ({ inventoryId: initialInventoryId }) => {
                     <td className="py-3 px-2">
                       {item.warehouseContainerSerial || 'Без контейнера'}
                     </td>
-                    <td className="py-3 px-2">{item.quantity}</td>
+                    <td className="py-3 px-2">{item.quantity.toFixed(2)}</td>
                     <td className="py-3 px-2">
                       <input
                         type="number"
+                        step="0.01"
+                        min="0"
                         value={item.actualQuantity}
                         onChange={(e) =>
                           handleQuantityChange(
                             (currentPage - 1) * itemsPerPage + index,
-                            e.target.value
+                            e.target.value.replace(',', '.')
                           )
                         }
                         className="p-1 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"

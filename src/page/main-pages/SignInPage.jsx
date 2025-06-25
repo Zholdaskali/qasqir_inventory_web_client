@@ -23,7 +23,7 @@ const WelcomeScreen = ({ onBack }) => {
                 <img src="/logo.svg" alt="Logo" className="w-20 h-20 mb-3" />
                 <h1 className="text-3xl md:text-4xl font-bold text-center">QASQIR INVENTORY</h1>
                 <p className="text-lg mt-3 text-center">
-                    Система управления складом с <span className="text-main-purp-dark font-medium">БИТРИКС 24 - интеграцией</span> и <span className="text-main-purp-dark font-medium">3D визуализацией</span>
+                    Система управления складом с <span className="text-main-purp-dark font-medium">БИТРИКС 24 и 1С - интеграцией</span> и <span className="text-main-purp-dark font-medium">3D визуализацией</span>
                 </p>
             </div>
 
@@ -41,13 +41,13 @@ const WelcomeScreen = ({ onBack }) => {
                         "Контроль объема товаров"
                     ]
                 }, {
-                    icon: "📱", title: "Управление зонами", items: [
+                    icon: "📱", title: "Управление зонами и контейнерами", items: [
                         "Динамическое зонирование",
                         "Контроль объемов",
                         "Рекомендации по размещению"
                     ]
                 }, {
-                    icon: "⚡", title: "Эффективное управление", items: [
+                    icon: "⚡", title: "Эффективное управление и комбинирование ролей", items: [
                         "Админ", "Кладовщик", "Менеджер", "Сотрудник"
                     ]
                 }].map((feature, index) => (
@@ -69,7 +69,7 @@ const WelcomeScreen = ({ onBack }) => {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-sm border border-main-dull-blue/10 mb-8 w-full max-w-2xl">
-                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Контроль структуры склада</h3>
+                <h3 className="text-xl font-semibold mb-4 text-center text-main-dull-blue">Универсиальный контроль структуры склада</h3>
                 <div className="flex flex-wrap justify-center gap-2">
                     {["Секция", "Ряд", "Стеллаж", "Полка", "Ячейка"].map((item, i) => (
                         <div key={i} className="px-4 py-2 bg-main-light-gray rounded border border-main-dull-blue/10 text-sm">

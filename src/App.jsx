@@ -47,6 +47,8 @@ import TransactionList from './page/layout-pages/operation/TransactionList';
 import AdminTicketTabsPage from './page/layout-pages/ticket/AdminTicketTabsPage';
 import TransactionHistoryPage from './page/layout-pages/operation/TransactionHistoryPage';
 import InventoryReportPage from './page/main-operation-pages/inventory-check/InventoryReportPage';
+import SystemInventoryCheckPage from './page/main-operation-pages/inventory-check/SystemInventoryCheckPage'
+import OneCSyncNomenclaturePage from './page/layout-pages/operation/OneCIntegration';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -99,6 +101,7 @@ function App() {
                                     <Route path="nomenclature/:categoryId" element={<NomenclatureList />} />
                                     <Route path="category-list" element={<CategoryList />} />
                                     <Route path="inventory-item-list" element={<InventoryItemsList />} />
+                                    <Route path="inventory-item-list/:code" element={<InventoryItemsList />} />
                                 </>
                             )}
 
@@ -113,10 +116,13 @@ function App() {
                                     <Route path="customer-list" element={<CustomerList />} />
                                     <Route path="transaction-list" element={<TransactionList />} />
                                     <Route path="transaction-history" element={<TransactionHistoryPage />} />
+                                    <Route path="/transaction-history/:code" element={<TransactionHistoryPage />} />
                                     <Route
                                         path="/inventory-result/:auditId"
                                         element={<InventoryResultPage />}
                                     />
+                                    <Route path="/1c-sync" element={<OneCSyncNomenclaturePage />} />                                    
+                            
                                 </>
                             )}
 
